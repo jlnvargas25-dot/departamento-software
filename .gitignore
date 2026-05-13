@@ -1,0 +1,12 @@
+﻿# Zips de discovery (referencia, no se versionan)
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
