@@ -523,16 +523,34 @@ Componentes:
 - Postmortem template (cada incidente serio genera doc con root cause + acciones preventivas)
 - War room procedure (cómo coordinás, incluso solo, durante incidente en curso)
 
-### 8.4 — Tabla de incorporación al roadmap
+### 8.4 — Tabla de incorporación al roadmap (recalibrada 2026-05-13)
+
+Esta tabla refleja la decisión del ADR-004 (`decisions/ADR-004-calibracion-nivel-comercial.md`): el Departamento apunta a Nivel 2 comercial profesional en 12 semanas. Tier 3 features (compliance, multi-tenant, DR) NO están en scope salvo trigger explícito documentado.
 
 | Sprint | Tier 1 a agregar | Tier 2 a agregar | Tier 3 a agregar |
 |---|---|---|---|
-| 2 | Reversibilidad (soft delete, feature flags) | — | — |
-| 3 | Idempotencia (API + migrations) | — | — |
-| 3-4 | Timezones (UTC en BD, audit Stallen) | Observabilidad (logs estructurados, Sentry) | — |
-| 4 | Backups + restore test inicial | Ambientes con paridad (staging Stallen) | — |
-| 5 | — | Costos + rate limiting (especialmente Claude API) | — |
-| Post-Sprint 5 | — | — | Convenciones, docs viva, plan incidentes |
+| 2 | Reversibilidad (soft delete, feature flags) + Idempotencia básica | MCP servers propios + Captura de dominio | — |
+| 3 | Idempotencia API + Timezones UTC (audit Stallen) | **CI/CD obligatorio** + **Staging environment** | — |
+| 4 | — | **Observabilidad real** (Sentry + logs estructurados + dashboard) + **Tests adversariales sistemáticos** | — |
+| 5 | Backups con restore probado (primer ciclo) | Validación empírica end-to-end sobre Stallen feature real + **Release process formal** | — |
+| 6 | — | Monitoreo de costos APIs (budget alerts) + Tuning observabilidad | — |
+| Post-Sprint 6 | — | — | Convenciones, docs viva, plan incidentes formal |
+
+**Total: 10-12 semanas hasta Nivel 2 comercial profesional sólido.**
+
+Las 5 piezas críticas (en negrita) son las que separan "código que funciona" de "código de departamento de software comercial real". Detalle de cada una:
+
+**CI/CD obligatorio** (Sprint 3): GitHub Actions con workflow que corre linters estrictos, type check, tests + coverage threshold, security scan (bandit + trufflehog), SQL migrations dry-run. Branch protection en `main`: no merge sin CI passing. Deploy automático a staging después de merge.
+
+**Staging environment** (Sprint 3-4): Réplica de Stallen en proyecto Supabase separado. Datos sintéticos o anonimizados (NUNCA prod data en staging). Pipeline PR → staging → manual approval → prod. Smoke tests post-deploy automáticos.
+
+**Observabilidad real** (Sprint 4): Sentry para error tracking. Logging estructurado con structlog (Python) o pino (Node) + request_id consistente. Health checks `/health` y `/ready`. Dashboard básico (Grafana Cloud free tier o Better Stack). Alertas configuradas: error rate > X%, latencia p95 > Y ms, budget API externa > Z%.
+
+**Tests adversariales sistemáticos** (Sprint 4): Skill `/sigma:adversarial-tests` que para cada función nueva genere automáticamente tests de inputs vacíos/null/undefined, inputs malformados, boundary conditions, race conditions, network failures simuladas. Librerías: Hypothesis (Python) o fast-check (JS) para property-based testing.
+
+**Release process formal** (Sprint 5): SemVer + CHANGELOG.md automático con conventional-changelog + release tags en git + release notes + rollback documentado por release.
+
+Lectura cruzada: `decisions/ADR-004-calibracion-nivel-comercial.md` para racional completo de por qué estas 5 son críticas para Nivel 2 y NO opcionales.
 
 No agregar todo de una vez. Esfuerzo escalonado, validación empírica de cada dimensión antes de la siguiente.
 
