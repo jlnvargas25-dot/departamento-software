@@ -70,6 +70,9 @@ Los ADRs son numerados secuencialmente y nunca se renumeran. Si un ADR queda sup
 - **ADR-004**: Calibración del Nivel Comercial del Departamento
   *([`ADR-004-calibracion-nivel-comercial.md`](ADR-004-calibracion-nivel-comercial.md))*
 
+- **ADR-005**: Cierre oficial del Sprint 1
+  *([`ADR-005-cierre-sprint-1.md`](ADR-005-cierre-sprint-1.md))*
+
 ### Superados
 
 *(ninguno todavía)*
