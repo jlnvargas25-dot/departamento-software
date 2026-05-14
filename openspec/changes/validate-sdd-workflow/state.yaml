@@ -1,0 +1,42 @@
+change_name: validate-sdd-workflow
+domain: departamento-core
+created_at: 2026-05-14
+status: in-progress
+mode: auto
+artifact_store: hybrid
+intent: 'Validar end-to-end que el workflow SDD de Gentle AI opera correctamente en
+  este repo.
+
+  El "feature" especificado es meta: que las skills SDD se invocan en orden, producen
+
+  artifacts en los paths esperados, y respetan las rules de openspec/config.yaml.
+
+  No genera código real; no corre sdd-apply ni sdd-archive.
+
+  '
+phases:
+  exploration: skipped
+  proposal: done
+  spec: done
+  design: done
+  tasks: done
+  apply: skipped
+  verify: done
+  archive: skipped
+artifacts:
+- key: proposal
+  path: openspec/changes/validate-sdd-workflow/proposal.md
+  topic_key: sdd/validate-sdd-workflow/proposal
+- key: spec
+  path: openspec/changes/validate-sdd-workflow/specs/departamento-core/spec.md
+  topic_key: sdd/validate-sdd-workflow/spec
+- key: design
+  path: openspec/changes/validate-sdd-workflow/design.md
+  topic_key: sdd/validate-sdd-workflow/design
+- key: tasks
+  path: openspec/changes/validate-sdd-workflow/tasks.md
+  topic_key: sdd/validate-sdd-workflow/tasks
+- key: verify-report
+  path: openspec/changes/validate-sdd-workflow/verify-report.md
+  topic_key: sdd/validate-sdd-workflow/verify-report
+timing: {}
