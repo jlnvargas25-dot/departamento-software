@@ -1,0 +1,96 @@
+# OpenSpec Configuration — Departamento de Software
+# Consumido por: skills SDD de Gentle AI (sdd-init, sdd-spec, sdd-design, etc.)
+# Referencia: ~/.claude/skills/_shared/openspec-convention.md
+
+schema: spec-driven
+
+context: |
+  Proyecto: Departamento de Software (uso personal aplicado a proyectos comerciales)
+  Cliente principal: Stallen (SaaS de control de despachos)
+  Stack típico: Python + Supabase (Postgres + RLS) + SvelteKit/React
+  Arquitectura: módulos con boundaries explícitos, RPCs SECURITY DEFINER, RLS habilitada
+  Testing: pytest + Hypothesis para adversariales, smoke tests post-deploy
+  Style: Conventional Commits, español o inglés consistente, ruff + mypy estrictos
+  Constitución: CLAUDE.md (7 principios rectores)
+  Reglas globales: PROTOCOLO-CONSTRUCCION-CODIGO.md (R-0 a R-6)
+  Calidad: DEPARTAMENTO-DE-SOFTWARE.md sección 8 (10 dimensiones)
+  Nivel comercial apuntado: Nivel 2 en 12 semanas (ver decisions/ADR-004)
+
+# Rules por phase del workflow SDD
+# Cada rule está alineada con uno o más principios rectores
+rules:
+  exploration:
+    - "Auditoría empírica del código vivo precede a la estimación (6° principio: descubrir antes de ejecutar)"
+    - "Documentar dominio del negocio capturado, no asumido (3° principio: dominio-first)"
+    - "Si el patrón se parece a uno ya en catálogo meta-patrones, referenciarlo (5° principio)"
+
+  proposal:
+    - "Toda proposal debe incluir referencia al meta-patrón de origen si aplica (5° principio: polinización cruzada)"
+    - "Toda proposal debe incluir rollback plan explícito"
+    - "Toda proposal debe incluir criterio de éxito empírico medible (no aspiracional)"
+    - "Toda proposal debe identificar las 3 capas afectadas: preventiva / verificable / correctiva (2° principio)"
+    - "Toda proposal debe responder: ¿qué Python genera vs qué LLM ejecuta? (1° principio)"
+
+  specs:
+    - "Use Given/When/Then para todos los scenarios"
+    - "Use RFC 2119 keywords obligatorios: MUST, SHALL, SHOULD, MAY"
+    - "Toda spec debe referenciar el dominio capturado en exploration o proposal (3° principio)"
+    - "Spec debe especificar invariantes del dominio (no solo happy path)"
+    - "Toda spec debe enumerar edge cases: inputs vacíos, malformados, race conditions, network failures"
+
+  design:
+    - "Incluir sequence diagrams en Mermaid para flows complejos (>3 actors o >5 steps)"
+    - "Documentar architecture decisions con rationale (ADR-style en design.md)"
+    - "Identificar capas: preventiva (compile-time) / verificable (runtime) / correctiva (auto-fix) (2° principio)"
+    - "Identificar reversibilidad de cada operación destructiva (R-5)"
+    - "Identificar timezone handling: UTC en storage, conversión solo en presentation (R-6)"
+    - "Si auto-fix es determinístico, NO devolver al LLM para que adivine (4° principio: auto-fix > finding)"
+
+  tasks:
+    - "Tasks deben ser verificables empíricamente (no 'lo hice', sino 'comando X retorna Y')"
+    - "Cada task debe especificar criterio de done concreto"
+    - "Ordenar tasks por dependencia (DAG explícito, no orden arbitrario)"
+    - "Tasks de infraestructura (CI/CD, observabilidad) deben preceder tasks de feature (Tier 1 primero)"
+
+  apply:
+    - "Cada task completada debe pasar GGA review antes de marcar [x]"
+    - "Si task requiere migration SQL, verificar idempotencia con dry-run antes de marcar [x]"
+    - "Si task toca dominio del negocio, validar contra dominio capturado (3° principio)"
+
+  verify:
+    - "Verify-report debe incluir evidencia empírica (output de tests, screenshots, mediciones)"
+    - "Cualquier desviación de specs debe documentarse con razón estructural"
+    - "Verify-report debe responder: ¿se aplicaron las 3 capas? ¿con qué evidencia?"
+    - "Si hay regresiones detectadas, documentar como meta-patrón candidato (5° principio)"
+
+  archive:
+    - "Al archivar, evaluar polinización a otros subsistemas (5° principio: radar paso 7.5)"
+    - "Si la change generó deuda, capturarla en DEUDA-TECNICA.md (no archivar con deuda silenciosa)"
+    - "Si la change validó una hipótesis técnica, capturarla en Engram (mem_save type: decision)"
+    - "Toda spec aprobada se mergea a openspec/specs/{domain}/spec.md (source of truth)"
+
+# Configuración del artifact store
+# Posibles valores: engram | openspec | hybrid | none
+# hybrid: persiste en Engram (single concatenated artifact) Y en filesystem (per-domain files)
+artifact_store: hybrid
+
+# Configuración de domains
+# Cada domain representa un capability del sistema
+# Para el Departamento de Software, los domains iniciales son:
+domains:
+  - departamento-core: "Constitución, protocolos, sistema de trabajo"
+  - mcp-servers: "Validadores, patcher, capturar-adn, close-session-validator"
+  - skills-sigma: "Skills propias del Departamento (capture-domain, adversarial-tests, etc.)"
+  - integration: "Integración con Stallen y futuros proyectos"
+  - observability: "Logging estructurado, métricas, health checks"
+  - quality-gates: "CI/CD, staging, release process"
+
+# Referencias cruzadas
+references:
+  constitution: ../CLAUDE.md
+  protocol: ../PROTOCOLO-CONSTRUCCION-CODIGO.md
+  architecture: ../DEPARTAMENTO-DE-SOFTWARE.md
+  worksystem: ../SISTEMA-DE-TRABAJO.md
+  agents_rules: ../AGENTS.md
+  decisions_dir: ../decisions/
+  memory_doc: ../docs/MEMORIA-INTELIGENTE-Y-CIERRE.md
