@@ -10,3 +10,7 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Cache de Gentle AI / Claude Code skill-registry (auto-generado, paths absolutos no portables)
+workspace/.atl/
+.atl/
