@@ -128,6 +128,40 @@ Este sistema es vivo. Evoluciona con evidencia empírica.
 
 ---
 
+## DIRECCIÓN ESTRATÉGICA: HACIA UN FRAMEWORK
+
+Este sistema está diseñado para eventualmente convertirse en **framework público** (en la categoría de BMAD Method, OpenSpec, Gentle AI) cuando esté validado empíricamente sobre proyecto productivo real (Stallen).
+
+**Tipo de framework objetivo**: Híbrido (metodología + tools instalables).
+**Posicionamiento tentativo**: Especialización backend disciplinado con enforcement determinístico — complemento al ecosistema, no competidor frontal.
+**Licencia tentativa**: Open core (gratis básico + premium pago para validadores específicos y soporte).
+
+### Roadmap de transición a framework
+
+| Fase | Duración | Output |
+|---|---|---|
+| Pre-framework | Hoy | 3 docs fundacionales + commit local (este estado) |
+| Sprint 1-5 | 9 semanas | Stack instalado + IP único migrado + Tier 1 validado sobre Stallen |
+| Sprint 6-8 | 6 semanas | Tier 2: durabilidad (stories, PRDs, ADRs, métricas) |
+| Pre-launch | 4 semanas | Packaging v0.1: naming definitivo, estructura repo, docs públicas, ejemplos |
+| Launch privado | 2 semanas | Repo público early-access + 3-5 beta testers |
+| Launch público | Variable | Anuncio público + comunidad + contenido |
+
+**Total horizonte: ~6 meses hasta framework v0.1 lanzado.**
+
+### Decisiones estratégicas a definir antes de Sprint 9
+
+- **Naming definitivo** del framework (tentativos: sigma-protocol, departamento, disciplined-ai)
+- **Posicionamiento final** vs ecosistema (complemento especializado vs alternativa)
+- **Licencia** elegida (MIT / Apache 2.0 / Open core / Comercial cerrado)
+- **Estructura del repo público** y modelo de distribución (npm, pip, GitHub releases)
+
+### Principio rector hasta Sprint 8
+
+**Validación primero, packaging después.** Hasta tener Tier 1 + Tier 2 completos con evidencia empírica sobre Stallen, el foco NO es framework público. Anti-patrón a evitar: empaquetar antes de validar (causa muerte por falta de tracción, ver casos similares).
+
+---
+
 ## NEXT STEPS
 
 Si estás empezando ahora:
