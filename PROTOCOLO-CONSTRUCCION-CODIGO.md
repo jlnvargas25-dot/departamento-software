@@ -53,6 +53,27 @@ Sin estos 4 elementos, la excepción no se acepta.
 
 Todo cierre de feature/sesión incluye radar de polinización (paso 7.5 del protocolo de cierre): ¿este dolor descubierto puede propagarse a otro subsistema?
 
+### Regla R-5: Reversibilidad por defecto
+
+Toda operación destructiva debe ser reversible o explícitamente marcada como no-reversible con ADR.
+
+Reglas duras:
+- Hard delete prohibido en datos de negocio. Usar soft delete (`deleted_at`).
+- Migrations idempotentes (DROP IF EXISTS antes de CREATE).
+- Deploys con rollback automático si smoke tests fallan.
+- Operaciones críticas con Idempotency-Key.
+- Features nuevas detrás de feature flag durante período de validación.
+
+Referencia detalle en `DEPARTAMENTO-DE-SOFTWARE.md` sección 8.1 (Tier 1).
+
+### Regla R-6: Tiempo siempre en UTC
+
+Todo timestamp almacenado en base de datos debe estar en UTC con tipo `TIMESTAMPTZ` (Postgres) o equivalente con timezone explícito.
+
+Conversiones a timezone del usuario solo en capa de presentación. Nunca confiar en `now()` del cliente.
+
+Referencia detalle en `DEPARTAMENTO-DE-SOFTWARE.md` sección 8.1 punto 4.
+
 ---
 
 ## PASOS DEL PROTOCOLO

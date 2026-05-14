@@ -663,6 +663,100 @@ El agente NO necesita leer todo el ecosistema cada vez. El sistema de skills hac
 4. Investigar root cause antes de cualquier fix
 5. Post-mortem documentado en `decisions/`
 
+### Plan de respuesta a incidentes (formal)
+
+Clasificación por severidad:
+
+| Nivel | Descripción | Tiempo de respuesta | Acción |
+|---|---|---|---|
+| **P0** | Sistema caído o pérdida de datos | Inmediato (< 15 min) | Rollback + war room + comunicación |
+| **P1** | Feature crítica afectada (auth, pagos) | < 1 hora | Fix o rollback parcial + monitoreo |
+| **P2** | Degradación menor, workaround disponible | < 24 horas | Fix planificado + workaround comunicado |
+| **P3** | Cosmético o nice-to-have | Próximo sprint | Backlog priorizado |
+
+Procedimiento por incidente (cualquier severidad ≥ P2):
+
+1. **Detección**: alerta automática (Sentry, health check, monitoring) o reporte de usuario
+2. **Triage** (máximo 5 min): clasificar severidad, asignar responsable (si solo vos, vos sos)
+3. **Comunicación inicial**: si afecta usuarios, notificar (incluso si es "investigando")
+4. **Mitigación**: detener el sangrado antes de fix definitivo (rollback, feature flag off, throttling)
+5. **Root cause analysis**: encontrar la causa real, no solo el síntoma
+6. **Fix verificado**: aplicar fix + tests adversariales que prevengan recurrencia
+7. **Postmortem** (obligatorio para P0/P1): doc en `decisions/POSTMORTEM-YYYY-MM-DD-titulo.md`
+8. **Acciones preventivas**: agregar deuda técnica o regla nueva al catálogo de meta-patrones
+
+Template de postmortem (formato mínimo):
+
+```markdown
+# Postmortem: [título descriptivo]
+
+Fecha: YYYY-MM-DD
+Severidad: P0 / P1
+Duración: HH:MM (desde detección hasta resolución)
+Impacto: [usuarios/datos/funcionalidad afectada]
+
+## Timeline
+- HH:MM detección del problema
+- HH:MM acción de mitigación X
+- HH:MM ...
+- HH:MM resolución confirmada
+
+## Root cause
+[Causa real, no síntoma]
+
+## Lo que funcionó
+- [Detección rápida por X]
+- [Rollback funcionó sin issues]
+
+## Lo que NO funcionó
+- [Tardamos N min en detectar porque Y]
+- [Faltaba alerta sobre Z]
+
+## Acciones preventivas
+- [ ] Tarea concreta 1
+- [ ] Tarea concreta 2
+```
+
+Lectura adicional: `DEPARTAMENTO-DE-SOFTWARE.md` sección 8.3 punto 10.
+
+### Workflow: verificación trimestral de backups
+
+Cada 3 meses, ejecutar el siguiente ritual (1-2 horas):
+
+1. Levantar ambiente de staging temporal o aislado
+2. Tomar el último backup completo de prod
+3. Restaurar en el ambiente aislado
+4. Verificar:
+   - [ ] Restore completa sin errores
+   - [ ] Datos críticos presentes y consistentes
+   - [ ] App funciona conectada al restore
+   - [ ] Tiempo total de restore (RTO) dentro del objetivo
+   - [ ] Pérdida máxima de datos (RPO) calculada
+5. Documentar resultado en `decisions/RESTORE-TEST-YYYY-MM-DD.md`
+6. Si hubo issues → deuda técnica nueva en `DEUDA-TECNICA.md`
+
+Referencia: `DEPARTAMENTO-DE-SOFTWARE.md` sección 8.1 punto 3.
+
+### Manejo de costos de APIs externas (Claude API, Supabase, etc.)
+
+Monitoreo permanente:
+
+- Budget alert configurado al 50% / 75% / 90% del presupuesto mensual
+- Rate limiting interno en endpoints que llaman APIs externas
+- Circuit breaker para servicios externos críticos
+- Cache agresivo de respuestas costosas
+- Timeouts explícitos en TODO request (default 30s, ajustar según caso)
+- Graceful degradation si servicio externo cae
+
+Si gasto mensual supera proyección en ≥ 30%:
+
+1. Audit inmediato de uso (qué endpoints generaron picos)
+2. Identificar causa: feature nueva, bug, abuso, escalamiento natural
+3. Decisión: optimizar / rate limit más estricto / aumentar presupuesto / pausar feature
+4. Documentar en `decisions/COST-INCIDENT-YYYY-MM-DD.md`
+
+Referencia: `DEPARTAMENTO-DE-SOFTWARE.md` sección 8.2 punto 7.
+
 ---
 
 ## REFERENCIAS

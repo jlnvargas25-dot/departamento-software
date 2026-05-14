@@ -395,9 +395,152 @@ Lo que es necesario para que algo sea considerado "production grade":
 
 ---
 
-## 8. ESTADO ACTUAL VS VISIÓN COMPLETA
+## 8. DIMENSIONES ADICIONALES DE CALIDAD
 
-### 8.1 Lo que ya está implementado (en SigmaControl Python original)
+Las 7 dimensiones del departamento (sección 1) son el core, pero hay 10 prácticas adicionales que distinguen código "que funciona" de código de calidad profesional real. Están priorizadas por tier para incorporación gradual.
+
+### 8.1 — Tier 1 (crítico para producción)
+
+**1. Reversibilidad por defecto**
+
+Toda operación destructiva debe ser reversible o explícitamente marcada como no-reversible.
+
+Patrones obligatorios:
+- Soft delete sobre hard delete (campo `deleted_at` en vez de DELETE)
+- Versionado de datos críticos: tabla de auditoría que guarda cambios
+- Rollback automático en deploys: si smoke tests fallan post-deploy → rollback sin intervención
+- Snapshots periódicos de bases de datos (no solo backups, snapshots para experimentos)
+- Feature flags para activar/desactivar features sin redeploy
+
+**2. Idempotencia en operaciones críticas**
+
+Mismo request ejecutado 2-3 veces debe producir mismo resultado.
+
+Aplica a:
+- API endpoints: aceptar `Idempotency-Key` en POST/PUT críticos
+- Webhooks: procesamiento idempotente
+- Background jobs: tareas async deben poder reintentarse sin efectos duplicados
+- Migrations: DROP IF EXISTS antes de CREATE, re-ejecución segura validada
+- Triggers de DB: evitar cascadas que multipliquen efectos
+
+**3. Backups verificados con restore probado**
+
+Un backup que no probaste no es backup, es esperanza.
+
+Práctica:
+- Backup automático de BD: diario completo + incremental cada hora
+- Backups en otra región (no solo el mismo servidor)
+- Retención escalonada: últimos 7 días diarios, últimas 4 semanas semanales, últimos 12 meses mensuales
+- **Restore test trimestral**: cada 3 meses, restore real a ambiente separado, verificar que funciona
+- Documentar RTO (Recovery Time Objective) y RPO (Recovery Point Objective)
+
+**4. Manejo explícito de tiempo y zonas horarias**
+
+Causa de incontables bugs en software real, casi nunca cubierto.
+
+Reglas:
+- Almacenar SIEMPRE en UTC en base de datos
+- Convertir a timezone del usuario solo en presentación
+- Usar tipos con timezone explícito (`TIMESTAMPTZ` en Postgres, NO `TIMESTAMP`)
+- Nunca confiar en `now()` del cliente, siempre server-side
+- Tests con timezones distintas para detectar bugs (UTC vs Lima vs Bogotá)
+- Considerar daylight saving time en cálculos de duración
+
+### 8.2 — Tier 2 (importante para profesionalismo)
+
+**5. Observabilidad (logs, traces, métricas)**
+
+No alcanza con que el código funcione — necesitás saber qué pasa en runtime.
+
+Componentes:
+- Logging estructurado: JSON logs con campos consistentes (timestamp, level, request_id, user_id)
+- Distributed tracing: OpenTelemetry si hay múltiples servicios
+- Métricas de negocio: "transacciones/min", "errores por feature", "latencia p95 por endpoint" (no solo CPU/RAM)
+- Health checks: endpoints `/health` y `/ready` que reportan estado real
+- Error tracking: Sentry o equivalente para capturar excepciones con stack traces
+
+**6. Separación de ambientes con paridad estricta**
+
+Departamento real opera con al menos 3 ambientes.
+
+Estructura:
+- **Development** (local): donde escribís código
+- **Staging** (réplica de prod): donde probás antes de prod, datos sintéticos o anonimizados
+- **Production**: lo real
+
+Reglas duras:
+- Mismo stack tecnológico en los 3 (no SQLite en dev y Postgres en prod)
+- Configs distintas via env vars, NUNCA hardcoded
+- Migrations corren primero en staging, después en prod
+- Acceso a prod restringido
+- Datos de prod nunca van a dev (privacy + seguridad)
+
+**7. Gestión de costos y rate limiting defensivo**
+
+Especialmente crítico con APIs externas (Claude API, Supabase, etc.).
+
+Patrones:
+- Rate limiting interno: máximo N requests/segundo a APIs externas
+- Circuit breakers: si API externa falla repetidamente, dejar de llamarla X minutos
+- Caching agresivo de respuestas costosas
+- Budget alerts: notificación si gasto mensual va camino de superar presupuesto
+- Graceful degradation: si servicio externo cae, la app sigue funcionando con funcionalidad reducida
+- Timeouts explícitos: ningún request sin timeout (default 30s, ajustar según caso)
+
+### 8.3 — Tier 3 (mejora continua)
+
+**8. Convenciones explícitas de naming y código**
+
+Mucho se asume y poco se documenta. Vivirá en `docs/CONVENCIONES.md`.
+
+Qué documentar:
+- Naming de variables, tablas, funciones, archivos
+- Estructura de commits: Conventional Commits (`feat:`, `fix:`, `chore:`)
+- Branching: trunk-based, GitHub Flow, etc.
+- Comentarios: cuándo agregar, cuándo evitar
+
+**9. Documentación técnica viva (no documentos muertos)**
+
+Distinto a los 3 documentos del Departamento — esto es documentación del código mismo.
+
+Tipos:
+- README por módulo importante
+- ADRs ya formalizados en `decisions/`
+- Diagramas de arquitectura en Mermaid (en markdown, no Visio)
+- API documentation auto-generada (OpenAPI/Swagger)
+- Changelog visible (`CHANGELOG.md`)
+- Runbooks: "¿qué hacer si X falla?"
+
+Regla: si la documentación no se actualiza cuando cambia el código, no sirve. Idealmente auto-generada o forzada por CI.
+
+**10. Plan de respuesta a incidentes**
+
+Detalle operativo en `SISTEMA-DE-TRABAJO.md` sección Situaciones Especiales.
+
+Componentes:
+- Incident severity levels: P0 (sistema caído) / P1 (feature crítica afectada) / P2 (degradación menor) / P3 (cosmético)
+- Runbook por incidente común
+- Postmortem template (cada incidente serio genera doc con root cause + acciones preventivas)
+- War room procedure (cómo coordinás, incluso solo, durante incidente en curso)
+
+### 8.4 — Tabla de incorporación al roadmap
+
+| Sprint | Tier 1 a agregar | Tier 2 a agregar | Tier 3 a agregar |
+|---|---|---|---|
+| 2 | Reversibilidad (soft delete, feature flags) | — | — |
+| 3 | Idempotencia (API + migrations) | — | — |
+| 3-4 | Timezones (UTC en BD, audit Stallen) | Observabilidad (logs estructurados, Sentry) | — |
+| 4 | Backups + restore test inicial | Ambientes con paridad (staging Stallen) | — |
+| 5 | — | Costos + rate limiting (especialmente Claude API) | — |
+| Post-Sprint 5 | — | — | Convenciones, docs viva, plan incidentes |
+
+No agregar todo de una vez. Esfuerzo escalonado, validación empírica de cada dimensión antes de la siguiente.
+
+---
+
+## 9. ESTADO ACTUAL VS VISIÓN COMPLETA
+
+### 9.1 Lo que ya está implementado (en SigmaControl Python original)
 
 - 7 principios rectores documentados
 - R01-R15 validadores de plan
@@ -413,7 +556,7 @@ Lo que es necesario para que algo sea considerado "production grade":
 - Protocolo de cierre disciplinado (9 pasos)
 - Protocolo de revisión periódica
 
-### 8.2 Lo que falta construir o migrar
+### 9.2 Lo que falta construir o migrar
 
 **Migración al ecosistema (semana 1-4)**:
 - Setup Claude Code / Codex como cliente principal
@@ -440,7 +583,7 @@ Lo que es necesario para que algo sea considerado "production grade":
 - Documentación pública (G4)
 - Banco proyectos sintéticos completo (G5)
 
-### 8.3 Roadmap por tiers
+### 9.3 Roadmap por tiers
 
 | Sprint | Duración | Tier objetivo | Entregable |
 |---|---|---|---|
