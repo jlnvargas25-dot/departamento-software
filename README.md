@@ -2,7 +2,31 @@
 
 **Sistema determinístico de protocolos para construir código con IA del ecosistema cumpliendo estándar comercial robusto y duradero.**
 
-Versión 1.0 — 2026-05-13
+Versión 1.1 — 2026-05-15 (post ADR-006: niveles de reglas + SOLID + reorganización architecture/)
+
+---
+
+## ESTRUCTURA DEL REPOSITORIO
+
+```
+C:\DEPARTAMENTO-SOFTWARE\
+├── CLAUDE.md, AGENTS.md, README.md, *.md       ← Nivel 1: principios + entry points
+├── architecture/                                ← Nivel 2: arquitectura universal ⭐ NUEVO
+│   ├── PRINCIPIOS-SOLID.md
+│   ├── PRINCIPIOS-ARQUITECTURA.md  (10 reglas A1-A10)
+│   ├── PATRONES-CARPETAS.md        (6 reglas C1-C6)
+│   └── ANTI-PATRONES.md            (anti-patterns con evidencia)
+├── .claude/skills/                              ← Nivel 3: skills markdown reusables
+├── mcp-servers/                                 ← Nivel 3: validators automatizados ⭐ NUEVO
+├── domain-captures/                             ← Nivel 4: dominio específico (Stallen)
+├── decisions/                                   ← Nivel 5: ADRs proyecto-momento
+├── docs/                                        ← Documentación adicional
+├── openspec/                                    ← Changes específicos
+└── workspace/                                   ← Código del proyecto activo
+```
+
+Ver `architecture/README.md` para explicación de los 5 niveles de reglas
+y cómo navegar la estructura.
 
 ---
 
@@ -58,6 +82,24 @@ Define **el DÍA-A-DÍA** del departamento.
 
 ---
 
+## LOS 5 NIVELES DE REGLAS
+
+El Departamento separa explícitamente 5 niveles de reglas para no mezclar
+preocupaciones de distinto alcance (formalizado en ADR-006):
+
+| Nivel | Lugar | Cambia | Aplica a |
+|---|---|---|---|
+| 1 — Principios filosóficos | CLAUDE.md, AGENTS.md | Casi nunca | Todos los proyectos, stacks |
+| 2 — Arquitectura universal | `architecture/` | Raramente | Cualquier SaaS multi-tenant |
+| 3 — Reglas técnicas universales | `.claude/skills/`, `mcp-servers/` | Con cambios de stack | Mismo stack (Supabase) |
+| 4 — Dominio específico | `domain-captures/` | Por cliente nuevo | Cliente específico |
+| 5 — Decisiones proyecto/momento | `decisions/` (ADRs) | Por decisión | Proyecto/momento |
+
+**Beneficio clave**: tomar un cliente nuevo NO requiere modificar Niveles 1-3.
+Solo agregás Nivel 4 (domain-capture) y Nivel 5 (ADRs específicos).
+
+---
+
 ## ESTADO ACTUAL (Mayo 2026)
 
 ### Lo que ya está implementado (en SigmaControl Python legacy)
@@ -71,13 +113,24 @@ Define **el DÍA-A-DÍA** del departamento.
 - Tests adversariales con 4 dominios sintéticos
 - Protocolo de cierre disciplinado (9 pasos)
 
+### Lo que está completado (Sprint 1)
+
+- ✅ Stack ecosistema instalado y validado (Claude Code 2.1.141, Gentle AI 1.28.3, GGA, Engram 1.15.11, Go)
+- ✅ CLAUDE.md + AGENTS.md v1.1 (32 reglas)
+- ✅ 14 commits con disciplina Conventional Commits
+- ✅ OpenSpec inicializado con rules alineadas a 7 principios
+- ✅ Validación empírica E2E del workflow SDD
+- ✅ Skill sigma-capture-domain v1.0
+- ✅ ADRs 001-005 + ADR-006 (niveles de reglas + SOLID)
+- ✅ Estructura de carpetas según ADR-006 (`architecture/`, `mcp-servers/`)
+
 ### Lo que falta construir (Roadmap)
 
 | Sprint | Duración | Objetivo |
 |---|---|---|
-| 1 | 2 semanas | Stack ecosistema instalado |
-| 2 | 2 semanas | MCP servers + skills migrados |
-| 3-4 | 4 semanas | Tier 1 completo (SOLID + zero-trust + CI/CD + tests adversariales) |
+| 1 | 2 semanas | ✅ Stack ecosistema + fundamentos |
+| 2 | 2 semanas | MCP servers (sigma-validators-r + sigma-close-session-validator) + 10 skills nuevas |
+| 3-4 | 4 semanas | CI/CD + staging + tests adversariales + observability (alineados Tier 1) |
 | 5 | 1 semana | Validación empírica sobre Stallen feature real |
 | 6-8 | 6 semanas | Tier 2 (durabilidad: stories, PRDs, ADRs, métricas) |
 | 9-12 | 8-12 semanas | Tier 3 (empaquetamiento como producto vendible) |
@@ -118,6 +171,30 @@ Define **el DÍA-A-DÍA** del departamento.
 
 ---
 
+## NAVEGAR EL REPOSITORIO
+
+**Para entender la visión completa**:
+1. `CLAUDE.md` — principios filosóficos
+2. `architecture/README.md` — niveles de reglas
+3. `DEPARTAMENTO-DE-SOFTWARE.md` — arquitectura general
+
+**Para entender cómo trabajar día-a-día**:
+1. `SISTEMA-DE-TRABAJO.md` — manual operativo
+2. `PROTOCOLO-CONSTRUCCION-CODIGO.md` — protocolo de construcción
+3. `architecture/PRINCIPIOS-SOLID.md` — SOLID adaptado
+4. `architecture/ANTI-PATRONES.md` — qué NO hacer
+
+**Para entender decisiones específicas**:
+- `decisions/` — ADRs por orden cronológico
+- ADR-006 — niveles de reglas y SOLID (más reciente y estructurante)
+
+**Para empezar Sprint 2**:
+- `decisions/ADR-005-cierre-sprint-1.md` — plan original Sprint 2
+- `decisions/ADR-006-NIVELES-DE-REGLAS-Y-SOLID.md` — refinamiento del plan
+- `mcp-servers/README.md` — guía para crear los MCP servers nuevos
+
+---
+
 ## CONTACTO Y EVOLUCIÓN
 
 Este sistema es vivo. Evoluciona con evidencia empírica.
@@ -125,6 +202,7 @@ Este sistema es vivo. Evoluciona con evidencia empírica.
 - Cambios al protocolo → ADR formal en `decisions/`
 - Patrones de dolor nuevos → catálogo meta-patrones
 - Métricas de calidad → dashboard continuo
+- Cambios a `architecture/` (Nivel 2) → requieren ADR con evidencia empírica 2+ proyectos
 
 ---
 
@@ -180,4 +258,5 @@ Si ya tenés SigmaControl Python legacy funcionando:
 ---
 
 *Versión 1.0 fundacional — 2026-05-13*
-*Próxima revisión: tras Sprint 1 validado empíricamente*
+*Versión 1.1 — 2026-05-15 (post ADR-006: niveles de reglas + SOLID)*
+*Próxima revisión: tras Sprint 2 validado empíricamente*
