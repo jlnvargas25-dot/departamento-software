@@ -2,7 +2,7 @@
 
 **Sistema determinístico de protocolos para construir código con IA del ecosistema cumpliendo estándar comercial robusto y duradero.**
 
-Versión 1.1 — 2026-05-15 (post ADR-006: niveles de reglas + SOLID + reorganización architecture/)
+Versión 1.2 — 2026-05-15 (post ADR-007: separación Framework vs Proyectos)
 
 ---
 
@@ -10,23 +10,40 @@ Versión 1.1 — 2026-05-15 (post ADR-006: niveles de reglas + SOLID + reorganiz
 
 ```
 C:\DEPARTAMENTO-SOFTWARE\
-├── CLAUDE.md, AGENTS.md, README.md, *.md       ← Nivel 1: principios + entry points
-├── architecture/                                ← Nivel 2: arquitectura universal ⭐ NUEVO
-│   ├── PRINCIPIOS-SOLID.md
-│   ├── PRINCIPIOS-ARQUITECTURA.md  (10 reglas A1-A10)
-│   ├── PATRONES-CARPETAS.md        (6 reglas C1-C6)
-│   └── ANTI-PATRONES.md            (anti-patterns con evidencia)
-├── .claude/skills/                              ← Nivel 3: skills markdown reusables
-├── mcp-servers/                                 ← Nivel 3: validators automatizados ⭐ NUEVO
-├── domain-captures/                             ← Nivel 4: dominio específico (Stallen)
-├── decisions/                                   ← Nivel 5: ADRs proyecto-momento
-├── docs/                                        ← Documentación adicional
-├── openspec/                                    ← Changes específicos
-└── workspace/                                   ← Código del proyecto activo
+│
+├── FRAMEWORK universal (raíz del repo)
+│   ├── CLAUDE.md, AGENTS.md, README.md, *.md       ← Nivel 1: principios
+│   ├── architecture/                                ← Nivel 2: A1-A15 + 24 anti-patterns + SOLID + C1-C6
+│   │   ├── PRINCIPIOS-SOLID.md
+│   │   ├── PRINCIPIOS-ARQUITECTURA.md  (15 reglas A1-A15)
+│   │   ├── PATRONES-CARPETAS.md        (6 reglas C1-C6)
+│   │   └── ANTI-PATRONES.md            (24 anti-patterns con evidencia)
+│   ├── .claude/skills/                              ← Nivel 3: skills universales
+│   ├── mcp-servers/                                 ← Nivel 3: validators universales
+│   ├── decisions/                                   ← Nivel 5: ADRs DEL FRAMEWORK mismo
+│   ├── auditoria/                                   ← Memoria del Framework
+│   ├── templates/                                   ← Templates para nuevos proyectos
+│   │   └── project-skeleton/
+│   ├── PROTOCOLO-*.md                               ← Protocolos universales
+│   └── (otros archivos universales)
+│
+└── projects/                                        ← Cada proyecto en su carpeta ⭐ NUEVO (ADR-007)
+    ├── stallen/                                     ← Proyecto principal (Tier 1)
+    │   ├── NORTE.md, HORIZONTE.md, DEUDA-TECNICA.md, CUADERNO-BITACORA.md
+    │   ├── SIGUIENTE-SESION.md, README.md
+    │   ├── domain-captures/                         ← Nivel 4: dominio Stallen
+    │   ├── features/                                ← Cada feature en su carpeta
+    │   ├── decisions/                               ← Nivel 5: ADRs específicos Stallen
+    │   ├── workspace/                               ← Código real Stallen
+    │   ├── auditoria/                               ← Memoria Stallen
+    │   └── .claude/skills/, .claude/agents/         ← Stallen-specific
+    │
+    └── (futuros proyectos: sandbox-spec-kit, otros clientes...)
 ```
 
-Ver `architecture/README.md` para explicación de los 5 niveles de reglas
-y cómo navegar la estructura.
+Ver `architecture/README.md` para los 5 niveles de reglas.
+Ver `decisions/ADR-007-separacion-framework-vs-proyectos.md` para la convención multi-proyecto.
+Ver `templates/project-skeleton/README.md` para crear proyecto nuevo.
 
 ---
 
