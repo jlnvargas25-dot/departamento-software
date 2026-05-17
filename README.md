@@ -2,7 +2,9 @@
 
 **Sistema determinístico de protocolos para construir código con IA del ecosistema cumpliendo estándar comercial robusto y duradero.**
 
-Versión 1.2 — 2026-05-15 (post ADR-007: separación Framework vs Proyectos)
+**Framework agent-agnostic** (ADR-008): funciona con cualquier agente IA (Claude Code, Cursor, Codex CLI, Gemini CLI, Antigravity, GPT, etc.). Ver `docs/AGENT-INTEGRATION.md`.
+
+Versión 1.3 — 2026-05-15 (post ADR-008: framework cross-LLM)
 
 ---
 

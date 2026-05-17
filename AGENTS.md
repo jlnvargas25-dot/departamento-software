@@ -1,8 +1,13 @@
 # AGENTS.md — Reglas de Código del Departamento de Software
 
-**Versión**: 1.1 (2026-05-14)
-**Consumido por**: Gentleman Guardian Angel (GGA) en pre-commit hooks
-**Referencia constitucional**: `CLAUDE.md`, `PROTOCOLO-CONSTRUCCION-CODIGO.md`, `DEPARTAMENTO-DE-SOFTWARE.md` § 8
+**Versión**: 1.2 (2026-05-15, post ADR-008)
+**Consumido por**: cualquier agente IA (Claude Code, Cursor, Codex CLI, Gemini CLI, etc.) + Gentleman Guardian Angel (GGA) en pre-commit hooks
+**Referencia constitucional**: `CLAUDE.md` (helper específico Claude), `PROTOCOLO-CONSTRUCCION-CODIGO.md`, `DEPARTAMENTO-DE-SOFTWARE.md` § 8
+
+> **Nota cross-LLM (ADR-008)**: Este archivo es el **contrato universal**
+> que cualquier agente IA debe respetar al trabajar en el repo. Las reglas
+> son agnostic del LLM específico que las consume. Ver
+> `docs/AGENT-INTEGRATION.md` para cómo integrar con cada agente.
 
 ---
 
@@ -290,6 +295,7 @@ Código que maneja fechas DEBE tener tests con:
 
 - **v1.0** (2026-05-13): Reglas mínimas para arrancar Sprint 2 (3 secciones).
 - **v1.1** (2026-05-14): Versión completa para arrancar código real. Estructura por bloques (G/P/S/TS/C/T/D/A) con códigos para referencia en commits.
+- **v1.2** (2026-05-15, post ADR-008): Aclaración de rol cross-LLM. AGENTS.md es contrato universal, no Claude-specific.
 - **Próximas versiones**: agregar reglas cuando aparezcan patrones repetidos.
 
 Toda regla nueva DEBE:
@@ -319,9 +325,13 @@ Cada uso de `--no-verify` debe quedar registrado con razón en el commit. Audits
 
 ## REFERENCIAS
 
-- `CLAUDE.md` — Constitución de Claude (7 principios rectores)
+- `CLAUDE.md` — Helper específico para Claude Code (entry point cuando se usa Claude)
+- `docs/AGENT-INTEGRATION.md` — Cómo integrar el Departamento con diferentes agentes IA
+- `decisions/ADR-008-framework-cross-llm.md` — Decisión de cross-LLM
 - `PROTOCOLO-CONSTRUCCION-CODIGO.md` — 12 pasos + 6 reglas globales (R-0 a R-6)
 - `DEPARTAMENTO-DE-SOFTWARE.md` § 8 — 10 dimensiones adicionales de calidad
 - `decisions/ADR-004-calibracion-nivel-comercial.md` — Nivel comercial apuntado
 - `decisions/ADR-005-cierre-sprint-1.md` — Cierre Sprint 1 + plan Sprint 2
-- `.gga` — Configuración del code reviewer
+- `decisions/ADR-006-NIVELES-DE-REGLAS-Y-SOLID.md` — 5 niveles de reglas
+- `decisions/ADR-007-separacion-framework-vs-proyectos.md` — Multi-proyecto
+- `.gga` — Configuración del code reviewer (provider configurable)
