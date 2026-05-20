@@ -3,10 +3,11 @@
 > **Propósito**: estado al cerrar la última sesión del Framework.
 > Para sesiones específicas de Stallen, ver `projects/stallen/auditoria/sesion-activa.md`.
 
-**Última sesión**: 2026-05-15 — Sprint 2 Día 2 (chat.ai, post-cierre Sprint 1)
-**Cliente**: Claude.ai chat web (sin Engram, sin Spec Kit instalado)
-**Duración estimada**: sesión MUY larga (varias horas, 3 audits empíricos)
-**Estado**: ✅ Cerrada con todo respaldado en GitHub (excepto commit pendiente A16-A19 + esta memoria)
+**Última sesión**: 2026-05-20 — Detección de deriva de contexto + creación de PROTOCOLO-INICIO + PROTOCOLO-CIERRE + reconfiguración Project Claude.ai
+**Sesión anterior**: 2026-05-15 — Sprint 2 Día 2 (chat.ai, 3 audits empíricos, A1-A19 implementadas + A20-A25 deudas)
+**Cliente**: Claude in Chrome (MCP filesystem activo)
+**Duración estimada**: sesión larga (varias horas, manifestación N=31+ del sub-meta-patrón #13.x detectada y corregida)
+**Estado**: ✅ Cerrada formalmente con primera aplicación práctica del PROTOCOLO-CIERRE-SESION.md v1.0
 
 ---
 
@@ -135,7 +136,42 @@ Preguntas verbatim de Julián:
 - ✅ `PRINCIPIOS-ARQUITECTURA.md` v1.1 → **v1.2** con A16-A19 (con definición, ejemplos PG/Python concretos, anti-patterns, validaciones automáticas)
 - ✅ `ANTI-PATRONES.md` v1.1 → **v1.2** con AP-2.10 Unbounded API Surface, AP-2.11 Exposed Origin, AP-3.9 Sync Heavy Operation, AP-3.10 External Call Without Timeout
 - ✅ Mappings a Harness Engineering + SOLID actualizados con A16-A19
-- ⏳ **COMMIT + PUSH pendiente**
+- ✅ **COMMIT + PUSH ejecutado** en sesión 2026-05-20 (commit `1c08732` incluyó architecture/ + `dc0c798` incluyó audit empírico 3)
+
+### 19. SESIÓN 2026-05-20 — Detección de deriva de contexto + reconfiguración del Project Claude.ai
+
+Descubrimiento crítico al iniciar otro chat del Project: el chat actual había estado trabajando en `C:\DEPARTAMENTO-SOFTWARE\` pero el system prompt del Project apuntaba a SigmaControl (`sigmacontrol-camino-1/`). Manifestación N=31+ del sub-meta-patrón #13.x — compactación de chat propagó contexto desviado del system prompt.
+
+**Verificación empírica realizada** (aplicación del 6° principio rector):
+- Confirmado: ambos proyectos existen en disco
+- SigmaControl en `sigmacontrol-camino-1/`: estado canon s44 cerrado (2026-05-08), refactor 3 capas activo, s45 pendiente
+- DEPARTAMENTO-SOFTWARE en `C:\DEPARTAMENTO-SOFTWARE\`: este Framework, Sprint 2 Día 2, A1-A19 + A20-A25
+- Son **dos proyectos distintos** que coexisten
+
+**Decisión Julian — Lectura B**: el Framework reemplazó a SigmaControl en la dirección del refactor. SigmaControl queda como referencia histórica.
+
+**Solución elegida**: crear Project nuevo en Claude.ai específico del Framework, en lugar de migrar el Project existente. Mantiene SigmaControl intocable y da configuración limpia al Framework.
+
+**Archivos creados en disco en sesión 2026-05-20**:
+- `PROTOCOLO-INICIO-CHAT.md` v1.0 — cómo arrancar sesión + verificación contexto Project (PASO 1 anti-deriva) + audit empírico recursivo como práctica nativa + diferencia con SigmaControl
+- `PROTOCOLO-CIERRE-SESION.md` v1.0 — checklist 8 pasos manual (sin ritual.py) + radar deuda + audit final + lección N=31+ integrada
+
+**Configuración del Project nuevo entregada a Julián**:
+- 3 archivos mínimos para subir: CLAUDE.md + PROTOCOLO-INICIO-CHAT.md + PROTOCOLO-CIERRE-SESION.md
+- 2 archivos recomendados: DEPARTAMENTO-DE-SOFTWARE.md + SISTEMA-DE-TRABAJO.md
+- Texto del system prompt instructivo (con regla anti-deriva de contexto integrada)
+
+**Validación empírica de que el Project nuevo funciona**:
+Julián creó el Project nuevo y abrió chat. El nuevo chat:
+- Se identificó correctamente como Framework (no SigmaControl)
+- Leyó sesion-activa.md + SIGUIENTE-SESION.md del disco
+- Reportó estado real: A1-A19 + A20-A25 deudas + decisiones pendientes
+- **CRÍTICAMENTE**: aplicó el 6° principio rector mejor que este chat — detectó que los 2 protocolos del 2026-05-20 son posteriores al cierre formal del 2026-05-15, lo que implica gap de cierre silencioso (esta misma sesión no estaba documentada en sesion-activa.md)
+- Aplicación recursiva del 7° principio rector: el chat nuevo aplicó el protocolo de cierre v1.0 que recién se había escrito
+
+**Esta sección 19 es la respuesta al gap detectado**: cierre formal retroactivo de la sesión 2026-05-20 antes de arrancar T0-T6 del plan de SIGUIENTE-SESION.md.
+
+---
 
 ### 18. 3er AUDIT EMPÍRICO — OPCIÓN D — Catálogo completo de GAPs del Nivel 2
 
@@ -369,6 +405,18 @@ Audit 1 detectó GAPs dentro de "lógica/datos/seguridad". Audit 2 detectó dime
 ### LECCIÓN 11 — Audit COMPLETO > audit incremental cuando el patrón empírico es recurrente
 Después de 2 audits incrementales (cada uno descubriendo más GAPs), aplicar 6° principio rector al meta-trabajo: descubrir scope completo en UNA iteración. Audit 3 (Opción D) en ~30 min reveló más que 2 audits incrementales previos. **Costo-beneficio asimétrico**: 30 min de catálogo evita N iteraciones de descubrimiento incremental.
 
+### LECCIÓN 12 — Compactación de chat puede propagar contexto desviado del system prompt
+Manifestación N=31+ del sub-meta-patrón #13.x detectada el 2026-05-20: este mismo chat trabajó en DEPARTAMENTO-SOFTWARE pensando que el system prompt apuntaba ahí, cuando en realidad apuntaba a SigmaControl. La compactación de conversación previa propagó el contexto sin verificarlo contra el system prompt del Project. **Lección**: PASO 1 del PROTOCOLO-INICIO-CHAT v1.0 es OBLIGATORIO — verificar contra system prompt antes de seguir cualquier contexto compactado.
+
+### LECCIÓN 13 — GGA solo revisa código, no markdown
+GGA filtra por `*.py`/`*.sql`/`*.ts`/etc. Cambios en `.md` (architecture/, docs/, memoria) no disparan review automático. Implica que cambios estructurales a las reglas A1-A19 NO tienen layer de revisión automática. Conectado a DEUDA-A21-OBSERVABILITY (sub-meta para mejorar esto eventualmente).
+
+### LECCIÓN 14 — Resolución del bug del system prompt vía Project nuevo (no migración)
+Cuando 2 proyectos paralelos coexisten en disco y el Project en Claude.ai apunta a uno mientras un chat trabaja en otro, la solución correcta es: crear Project NUEVO específico para el segundo proyecto en vez de migrar el primero. **Razones**: (1) preserva el Project original intocable, (2) Claude.ai separa contextos limpiamente por Project, (3) cada Project tiene su system prompt + archivos. Aplicado el 2026-05-20: Project nuevo Framework + Project original SigmaControl intactos.
+
+### LECCIÓN 15 — Primera aplicación práctica del PROTOCOLO-CIERRE-SESION.md v1.0
+El protocolo de cierre que se escribió en esta misma sesión tuvo su primera aplicación práctica al cerrar esta sesión. **Aplicación recursiva viva del 7° principio rector** (meta-producto recursivo): el protocolo se aplica a sí mismo desde el momento en que se escribe. El chat nuevo del Project nuevo detectó que esta sesión no estaba documentada en sesion-activa.md y disparó la aplicación del protocolo. Sin el chat nuevo, habíamos quedado con gap de cierre silencioso — exactamente lo que el protocolo previene.
+
 ---
 
 ## Deudas técnicas
@@ -458,6 +506,14 @@ Después de 2 audits incrementales (cada uno descubriendo más GAPs), aplicar 6�
 **Tiempo estimado**: ~15 min para ambos
 **Próxima acción**: agregar junto con A20-A25 o en sesión separada
 
+### DEUDA-PROJECT-CLAUDE-CONFIG *(NUEVA — sesión 2026-05-20)*
+**Status**: 🟡 EN PROGRESO (acción humana pendiente)
+**Scope**: Julián debe crear Project nuevo en Claude.ai con los 3 archivos mínimos (CLAUDE.md + PROTOCOLO-INICIO-CHAT.md + PROTOCOLO-CIERRE-SESION.md) + system prompt instructivo entregado en sesión 2026-05-20
+**Criticidad**: 🟡 IMPORTANTE (sin esto, futuros chats pueden propagar deriva de contexto)
+**Tiempo estimado**: ~10 min (acción manual en Claude.ai)
+**Próxima acción**: Julián ejecuta. Ya confirmado que el Project nuevo se creó y funciona correctamente — marcado como ✅ al final de sesión 2026-05-20
+**Estado al cierre 2026-05-20**: ✅ RESUELTA (Project creado y validado empíricamente)
+
 ---
 
 ## Estado del repo al cerrar
@@ -501,39 +557,33 @@ C:\DEPARTAMENTO-SOFTWARE\
 
 ### 1. Comando commit inmediato (al abrir próxima sesión):
 
+**NOTA SESIÓN 2026-05-20**: A16-A19 + audit empírico 3 ya commitados en `1c08732` y `dc0c798`. Lo pendiente al cierre del 2026-05-20 son los 2 protocolos nuevos + esta memoria actualizada.
+
 ```powershell
 cd C:\DEPARTAMENTO-SOFTWARE
-git add architecture/PRINCIPIOS-ARQUITECTURA.md architecture/ANTI-PATRONES.md auditoria/sesion-activa.md
+git add PROTOCOLO-INICIO-CHAT.md PROTOCOLO-CIERRE-SESION.md auditoria/sesion-activa.md
 git status
-git commit -m "feat(architecture): A16-A19 + AP-2.10/2.11/3.9/3.10 + audit completo Nivel 2
+git commit -m "feat(framework): PROTOCOLO-INICIO + PROTOCOLO-CIERRE v1.0 + cierre sesion 2026-05-20
 
-2do audit empirico de Julian detecto dimension faltante:
-infraestructura resiliente. Reglas implementadas:
-- A16 Rate Limiting and Throttling
-- A17 Edge Protection (CDN + WAF + DDoS)
-- A18 Async Processing for Heavy Tasks
-- A19 External Service Resilience
+Deteccion de deriva de contexto el 2026-05-20: el chat habia estado
+trabajando en C:\DEPARTAMENTO-SOFTWARE pensando que el system prompt
+apuntaba ahi, cuando en realidad apuntaba a SigmaControl legacy.
+Manifestacion N=31+ del sub-meta-patron #13.x.
 
-Anti-patterns asociados:
-- AP-2.10 Unbounded API Surface
-- AP-2.11 Exposed Origin
-- AP-3.9 Sync Heavy Operation
-- AP-3.10 External Call Without Timeout
+Solucion (Lectura B): Framework reemplaza SigmaControl en direccion
+del refactor. Project nuevo en Claude.ai en lugar de migrar el existente.
 
-3er audit empirico (Opcion D) ejecutado: catalogo completo
-del Nivel 2 contra 13 dimensiones arquitectonicas. 6 GAPs
-adicionales documentados como deudas formales (A20-A25):
-- A20 Hexagonal Architecture (Ports and Adapters) [CRITICA]
-- A21 Structured Observability [CRITICA]
-- A22 Secrets Management [CRITICA]
-- A23 Deployment Safety [IMPORTANTE]
-- A24 Data Lifecycle and Privacy [CRITICA - GDPR]
-- A25 Authorization Model [IMPORTANTE]
+Archivos creados:
+- PROTOCOLO-INICIO-CHAT.md v1.0 con PASO 1 anti-deriva
+- PROTOCOLO-CIERRE-SESION.md v1.0 con checklist 8 pasos manual
 
-Total Nivel 2 cuando se implemente A20-A25: 25 reglas + 35+ anti-patterns.
+Memoria actualizada con:
+- Seccion 19 (sesion 2026-05-20)
+- Lecciones 12-15
+- DEUDA-PROJECT-CLAUDE-CONFIG (resuelta)
 
-Patron empirico: 17/17 hit rate en intuicion arquitectonica de Julian.
-Audit completo vs incremental: 6 GAPs descubiertos en 30 min."
+Primera aplicacion practica del PROTOCOLO-CIERRE v1.0 al cerrar
+esta misma sesion (7 principio rector recursivo)."
 git push
 ```
 
@@ -589,6 +639,7 @@ git push
 
 ---
 
-Creado: 2026-05-15 | Versión: 3.2 (post 3er audit empírico — Opción D — catálogo completo Nivel 2)
-Estado: ✅ CERRADA (commit pendiente)
-Próxima sesión: cliente recomendado Claude Code CLI
+Creado: 2026-05-15 | Versión: **3.3** (cierre formal sesión 2026-05-20 con detección manifestación N=31+ + creación protocolos)
+Estado: ✅ CERRADA (commit pendiente de los 2 protocolos + esta memoria)
+Próxima sesión: cliente recomendado Claude Code CLI **desde el Project nuevo del Framework** (no el de SigmaControl)
+**Audit de cierre paso 8**: 7 OK, 0 gaps (primera aplicación práctica del PROTOCOLO-CIERRE-SESION v1.0)
