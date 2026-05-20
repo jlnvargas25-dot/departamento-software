@@ -1,7 +1,7 @@
 # PRINCIPIOS DE ARQUITECTURA UNIVERSAL
 
 > **Nivel 2: arquitectura universal** | Reglas para cualquier SaaS multi-tenant
-> Versión: 1.1 | Creado: 2026-05-15 | Última edición: 2026-05-15 (post audit empírico)
+> Versión: 1.2 | Creado: 2026-05-15 | Última edición: 2026-05-15 (post audit empírico 2)
 
 ---
 
@@ -1391,6 +1391,764 @@ reforzarlo en una skill futura `sigma-adversarial-testing`.
 
 ---
 
+## A16 — Rate Limiting & Throttling
+
+> **Todo endpoint público o caro DEBE tener rate limiting por tenant + usuario.
+> El sistema NUNCA confía en que el cliente se autorregule. Defensa contra
+> abuse, runaway costs, y noisy neighbors.**
+
+### Definición
+
+**Rate Limiting**: limitar la frecuencia de operaciones (requests/segundo, jobs/minuto).
+**Throttling**: limitar la concurrencia (operaciones simultáneas).
+**Quota**: límite total por período (de modelo de negocio, no de defensa).
+
+Las tres son distintas y se aplican en combinación:
+- Rate limit: 100 req/min por usuario, 1000 req/min por tenant
+- Throttling: máximo 10 jobs concurrentes por tenant
+- Quota: 100k requests/mes incluidos en plan Pro
+
+### Dimensiones de rate limiting
+
+```
+DIMENSIÓN          PROPÓSITO                       EJEMPLO
+─────────────────  ──────────────────────────────  ──────────────────
+por tenant         protege contra tenant abusivo   1000 req/min/company
+por usuario        protege contra usuario rogue    100 req/min/user
+por endpoint       protege endpoints costosos      10 req/min en /api/heavy
+por API key        protege integraciones externas  100 req/min/key
+por IP             protege contra DDoS básico      100 req/min/IP (en edge)
+```
+
+Aplicar **TODAS** las relevantes, no una sola.
+
+### Por qué importa
+
+Sin rate limiting:
+- **Un tenant en loop infinito** → DoS para los demás tenants (noisy neighbor)
+- **Usuario crea bot scraper** → costos cloud/DB explotan
+- **API key leaked en GitHub** → tu bill de Stripe/Twilio/Anthropic explota antes de detectarlo
+- **Endpoint costoso sin protección** → 1 atacante = DB CPU 100%
+- **Sin observabilidad** → imposible detectar abuse hasta que duele
+
+Para Tier 1 commercial robust, rate limiting es **infraestructura mínima**,
+equivalente arquitectónico a tener backup de DB.
+
+### Patrón correcto
+
+**Capa 1: Edge (CDN/WAF)** — defensa perimetral (ver A17):
+- Rate limit por IP (anti-DDoS volumétrico)
+- Bot detection / management
+- Geographic restrictions si aplica
+
+**Capa 2: API Gateway** — defensa de aplicación:
+- Rate limit por API key
+- Rate limit por IP (afinado)
+
+**Capa 3: Aplicación** — defensa de negocio:
+- Rate limit por tenant
+- Rate limit por usuario
+- Rate limit por endpoint costoso
+- Concurrency throttling
+
+**Implementación PostgreSQL/Supabase**:
+
+```sql
+-- Tabla de tracking (con TTL via partition o cleanup job)
+CREATE TABLE rate_limit_buckets (
+    bucket_key TEXT NOT NULL,        -- "tenant:UUID" o "user:UUID:endpoint:X"
+    window_start TIMESTAMPTZ NOT NULL,
+    count INTEGER NOT NULL DEFAULT 1,
+    PRIMARY KEY (bucket_key, window_start)
+);
+
+-- Cleanup automático de buckets viejos
+CREATE INDEX idx_rate_limit_cleanup ON rate_limit_buckets(window_start);
+
+-- Función con sliding window
+CREATE OR REPLACE FUNCTION check_rate_limit(
+    p_bucket_key TEXT,
+    p_max_per_minute INTEGER
+) RETURNS BOOLEAN
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+DECLARE
+    v_window_start TIMESTAMPTZ := date_trunc('minute', now());
+    v_current_count INTEGER;
+BEGIN
+    -- Incrementar contador (atomic con UPSERT)
+    INSERT INTO rate_limit_buckets (bucket_key, window_start, count)
+    VALUES (p_bucket_key, v_window_start, 1)
+    ON CONFLICT (bucket_key, window_start)
+    DO UPDATE SET count = rate_limit_buckets.count + 1
+    RETURNING count INTO v_current_count;
+
+    -- Verificar límite
+    IF v_current_count > p_max_per_minute THEN
+        -- ZT-5: audit log de rate limit hits para observabilidad
+        INSERT INTO rate_limit_events (bucket_key, count, limit_value, occurred_at)
+        VALUES (p_bucket_key, v_current_count, p_max_per_minute, now());
+        RETURN FALSE;  -- bloqueado
+    END IF;
+
+    RETURN TRUE;  -- permitido
+END;
+$BODY$;
+
+-- Uso en función crítica
+CREATE OR REPLACE FUNCTION enviar_email_masivo(p_destinatarios JSONB)
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+DECLARE
+    v_company_id UUID := get_my_sc_company_id();
+    v_user_id UUID := auth.uid();
+BEGIN
+    -- Rate limit por tenant (10 emails masivos/min por empresa)
+    IF NOT check_rate_limit('tenant:' || v_company_id || ':bulk_email', 10) THEN
+        RETURN jsonb_build_object(
+            'ok', false,
+            'error', 'rate limit exceeded for tenant',
+            'code', 'RATE_LIMITED',
+            'retry_after_seconds', 60
+        );
+    END IF;
+
+    -- Rate limit por usuario (5 por min)
+    IF NOT check_rate_limit('user:' || v_user_id || ':bulk_email', 5) THEN
+        RETURN jsonb_build_object(
+            'ok', false,
+            'error', 'rate limit exceeded for user',
+            'code', 'RATE_LIMITED',
+            'retry_after_seconds', 60
+        );
+    END IF;
+
+    -- ... operación real ...
+    RETURN jsonb_build_object('ok', true);
+END;
+$BODY$;
+```
+
+### Backpressure (qué hacer cuando se alcanza el límite)
+
+Opciones por orden de preferencia:
+
+1. **HTTP 429 Too Many Requests** con `Retry-After: <seconds>` header
+2. **Queue + procesamiento diferido** (si la operación tolera asincronía — ver A18)
+3. **Degraded mode** (servir resultado cacheado/parcial)
+4. **Cancelar request** (último recurso)
+
+NUNCA: bloquear silenciosamente sin informar al cliente.
+
+### Observabilidad obligatoria
+
+```
+Métricas mínimas a exponer:
+- rate_limit.requests_total (counter, por bucket dimension)
+- rate_limit.requests_blocked (counter, por bucket dimension)
+- rate_limit.utilization (gauge: current_count / max_count)
+- rate_limit.breach_rate (rate: breaches per minute)
+
+Alertas mínimas:
+- breach_rate > 100/min → atacante potencial
+- utilization > 80% sostenido → considerar ajustar límite
+- mismo bucket bloqueado >50 veces/min → escalation
+```
+
+### Por qué importa más para vibe coders
+
+Como harness engineer, NO vas a poder reaccionar rápido a un abuse en
+producción:
+- No vas a estar 24/7 mirando dashboards
+- Tu costo cloud puede triplicarse en una hora sin que lo notes
+- Un solo atacante puede arruinar tu día (y tu mes)
+
+Rate limiting como **default arquitectónico** es defensa pasiva: el sistema
+se protege solo, vos te enterás post-hoc por la métrica.
+
+### Anti-pattern conocido
+
+Ver **AP-2.10 Unbounded API Surface** en `ANTI-PATRONES.md`.
+
+### Cómo verificar
+
+Validaciones automáticas:
+```
+- Detectar: endpoint público sin check_rate_limit() → alert
+- Detectar: función costosa (con bucle, JOIN N tablas, llamada externa) sin rate limit → review
+- Detectar: API endpoint que no documenta su rate limit en OpenAPI → review
+- Métricas: alerta si rate_limit.breach_rate > 10/min sostenido
+```
+
+---
+
+## A17 — Edge Protection (CDN + WAF + DDoS Mitigation)
+
+> **Sistema público Tier 1 DEBE tener edge protection: CDN para cachear estático,
+> WAF para filtrar ataques conocidos, DDoS mitigation para sobrevivir floods.
+> NO es opcional para producción comercial.**
+
+### Definición
+
+**Edge Protection** = capa de defensa antes de que el tráfico llegue a tu
+aplicación. Tres componentes:
+
+1. **CDN (Content Delivery Network)**: cachea assets estáticos, sirve desde
+   edge cerca del usuario. Reduce latencia + carga del origin.
+
+2. **WAF (Web Application Firewall)**: filtra requests maliciosos en edge.
+   Detecta SQL injection, XSS, RCE, path traversal, etc. ANTES de que lleguen
+   a tu app.
+
+3. **DDoS Mitigation**: absorbe floods volumétricos (capa 3-4) y aplicativos
+   (capa 7). Sin esto, un script kiddie con $5 puede tirar tu app.
+
+### Por qué importa
+
+Sin edge protection:
+- **SQL injection en input no esperado** → BD comprometida (aunque tengas A12)
+- **XSS en frontend** → robo de sesiones
+- **DDoS de $5** → app inaccesible mientras dure el ataque
+- **Bots scrapean APIs** → costos + degradación
+- **Latencia alta global** → pierdes usuarios geográficamente distantes
+- **Origin sobrecargado** → cae fácilmente bajo cualquier spike
+
+Para Tier 1, edge protection es **infraestructura mínima**, como tener HTTPS.
+
+### Implementaciones válidas
+
+| Proveedor | Tipo | Notas |
+|---|---|---|
+| **Cloudflare** | CDN + WAF + DDoS + Bot mgmt | Free tier suficiente para arrancar. Muy popular. |
+| **AWS CloudFront + WAF + Shield** | CDN + WAF + DDoS | Integración con AWS. Shield Standard incluido. |
+| **Fastly** | CDN + WAF | Edge compute potente. Precio premium. |
+| **Bunny.net** | CDN + WAF | Económico. Más simple que los anteriores. |
+| **Akamai** | CDN + WAF + DDoS | Enterprise. Muy caro pero muy capaz. |
+| **Vercel** | CDN integrado + DDoS | Si ya usás Vercel para hosting, viene incluido. |
+
+La **decisión específica de proveedor va en ADR del proyecto**. La regla
+universal es: TENER edge protection, no qué proveedor.
+
+### Configuración mínima requerida
+
+**Para CDN**:
+```
+- Cachear assets estáticos (JS, CSS, imágenes) con max-age largo
+- Cachear responses API GET cuando aplique (con vary headers correctos)
+- TLS termination en edge (HTTPS obligatorio)
+- HTTP/2 o HTTP/3
+```
+
+**Para WAF**:
+```
+- Reglas OWASP Core Rule Set habilitadas (SQL injection, XSS, etc.)
+- Reglas custom para endpoints sensibles
+- Block + log de matches (no solo log)
+- Geographic restrictions si aplica (ej: bloquear países donde no operás)
+```
+
+**Para DDoS Mitigation**:
+```
+- Always-on (no on-demand)
+- Capa 3-4: protección volumétrica automática
+- Capa 7: rate limiting por IP en edge (complementa A16)
+- Challenge mode (CAPTCHA/JavaScript) para tráfico sospechoso
+```
+
+### Por qué importa más para vibe coders
+
+Como harness engineer en Tier 1:
+- NO podés diagnosticar/mitigar un ataque DDoS en producción
+- NO querés que tu primera lección de seguridad sea un incidente real
+- Cloudflare free tier (5 minutos de setup) te da el 80% de defensa
+
+Edge protection es la inversión con MEJOR ROI de seguridad:
+- Costo: $0 a $20/mes para arrancar
+- Beneficio: mitigación de 90%+ de ataques automatizados
+
+### Anti-pattern conocido
+
+Ver **AP-2.11 Exposed Origin** en `ANTI-PATRONES.md`.
+
+### Cómo verificar
+
+Validaciones (semi-manuales, infrastructure-as-code-friendly):
+```
+- ¿El dominio público resuelve a IP de CDN, no a tu origin directo?
+- ¿WAF tiene reglas OWASP CRS habilitadas?
+- ¿DDoS mitigation activa (no solo "available")?
+- ¿TLS termination en edge con TLS 1.3?
+- ¿Origin no es directamente accesible vía IP pública?
+- ¿Rate limit en edge por IP configurado?
+```
+
+Tooling como SecurityHeaders.com, SSL Labs, o Cloudflare Analytics permiten
+auto-verificación.
+
+---
+
+## A18 — Async Processing for Heavy Tasks
+
+> **Operaciones >2s o costosas DEBEN ejecutarse asíncronamente vía queue.
+> NUNCA bloquear request HTTP con tarea pesada. Job idempotente + retry +
+> observable + con DLQ.**
+
+### Definición
+
+**Tarea pesada** (criterios — cumple cualquiera):
+- Tiempo de ejecución > 2 segundos
+- Involucra llamadas a servicios externos lentos (envío email, generación PDF)
+- Procesamiento batch (>100 elementos)
+- Operación cara en CPU/memoria/IO
+- Operación con tolerancia a latencia (usuario no necesita respuesta inmediata)
+
+Estas tareas se **encolan**, NO se ejecutan síncronas en el handler HTTP.
+
+### Anatomía del sistema
+
+```
+Cliente              API (handler)          Queue              Worker
+─────                ────────────           ─────              ──────
+POST /reporte    →   crear job + persistir
+                 ←   202 Accepted + job_id
+                                            job en queue
+                                                          →   procesa job
+                                                              actualiza status
+GET /reporte/X   →   lee status
+                 ←   200 + status (pending/done/failed)
+                                                          →   notifica si done
+```
+
+**Componentes obligatorios**:
+
+1. **API endpoint** que enqueue el job y retorna `202 + job_id` inmediatamente
+2. **Tabla de jobs** persistente con status
+3. **Queue** (Redis Streams, Postgres LISTEN/NOTIFY, AWS SQS, etc.)
+4. **Worker** que consume y procesa
+5. **API endpoint** para consultar status del job
+6. **Dead Letter Queue (DLQ)** para jobs que fallan persistentemente
+7. **Métricas** (jobs encolados, procesados, fallados, tiempo de procesamiento)
+
+### Patrón correcto (Postgres-based queue)
+
+```sql
+-- Tabla de jobs (persistente)
+CREATE TABLE jobs_sc (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id      UUID NOT NULL,
+    created_by      UUID NOT NULL,
+    job_type        TEXT NOT NULL,           -- 'generate_pdf', 'send_email_bulk', etc.
+    idempotency_key UUID UNIQUE NOT NULL,    -- A8: idempotencia
+    payload         JSONB NOT NULL,
+    status          TEXT NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending','processing','done','failed','dead')),
+    retry_count     INTEGER NOT NULL DEFAULT 0,
+    max_retries     INTEGER NOT NULL DEFAULT 3,
+    result          JSONB,
+    error_message   TEXT,
+    enqueued_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    started_at      TIMESTAMPTZ,
+    completed_at    TIMESTAMPTZ,
+    next_retry_at   TIMESTAMPTZ
+);
+
+CREATE INDEX idx_jobs_pending ON jobs_sc(next_retry_at)
+    WHERE status IN ('pending');
+CREATE INDEX idx_jobs_company ON jobs_sc(company_id, created_by);
+
+-- API: enqueue job
+CREATE OR REPLACE FUNCTION enqueue_job(
+    p_job_type TEXT,
+    p_payload JSONB,
+    p_idempotency_key UUID
+) RETURNS UUID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+DECLARE
+    v_company_id UUID := get_my_sc_company_id();
+    v_user_id UUID := auth.uid();
+    v_job_id UUID;
+BEGIN
+    -- A8: idempotencia (mismo idempotency_key → mismo job)
+    SELECT id INTO v_job_id
+    FROM jobs_sc
+    WHERE idempotency_key = p_idempotency_key
+      AND company_id = v_company_id;
+
+    IF FOUND THEN
+        RETURN v_job_id;  -- ya existe, retornar
+    END IF;
+
+    -- A16: rate limit por tenant antes de encolar
+    IF NOT check_rate_limit('tenant:' || v_company_id || ':enqueue', 100) THEN
+        RAISE EXCEPTION 'rate limit exceeded';
+    END IF;
+
+    -- Crear job
+    INSERT INTO jobs_sc (
+        company_id, created_by, job_type,
+        idempotency_key, payload
+    ) VALUES (
+        v_company_id, v_user_id, p_job_type,
+        p_idempotency_key, p_payload
+    ) RETURNING id INTO v_job_id;
+
+    -- Notificar workers vía LISTEN/NOTIFY (o usar SKIP LOCKED en el worker)
+    PERFORM pg_notify('jobs_channel', v_job_id::text);
+
+    RETURN v_job_id;
+END;
+$BODY$;
+
+-- Worker: claim job (atomic con FOR UPDATE SKIP LOCKED)
+CREATE OR REPLACE FUNCTION claim_next_job()
+RETURNS TABLE (
+    id UUID,
+    company_id UUID,
+    job_type TEXT,
+    payload JSONB,
+    retry_count INTEGER
+)
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+BEGIN
+    RETURN QUERY
+    UPDATE jobs_sc
+    SET status = 'processing',
+        started_at = now()
+    WHERE id = (
+        SELECT j.id
+        FROM jobs_sc j
+        WHERE j.status = 'pending'
+          AND (j.next_retry_at IS NULL OR j.next_retry_at <= now())
+        ORDER BY j.enqueued_at
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED  -- A13: concurrency-safe
+    )
+    RETURNING jobs_sc.id, jobs_sc.company_id, jobs_sc.job_type,
+              jobs_sc.payload, jobs_sc.retry_count;
+END;
+$BODY$;
+
+-- Worker: completar job
+CREATE OR REPLACE FUNCTION complete_job(
+    p_job_id UUID,
+    p_result JSONB
+) RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+BEGIN
+    UPDATE jobs_sc
+    SET status = 'done',
+        result = p_result,
+        completed_at = now()
+    WHERE id = p_job_id;
+END;
+$BODY$;
+
+-- Worker: marcar fallo con retry o DLQ
+CREATE OR REPLACE FUNCTION fail_job(
+    p_job_id UUID,
+    p_error_message TEXT
+) RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+DECLARE
+    v_retry_count INTEGER;
+    v_max_retries INTEGER;
+BEGIN
+    SELECT retry_count, max_retries INTO v_retry_count, v_max_retries
+    FROM jobs_sc WHERE id = p_job_id;
+
+    IF v_retry_count + 1 >= v_max_retries THEN
+        -- DLQ: máximo de retries alcanzado
+        UPDATE jobs_sc
+        SET status = 'dead',
+            error_message = p_error_message,
+            completed_at = now()
+        WHERE id = p_job_id;
+    ELSE
+        -- Retry con backoff exponencial
+        UPDATE jobs_sc
+        SET status = 'pending',
+            retry_count = retry_count + 1,
+            error_message = p_error_message,
+            next_retry_at = now() + (interval '1 minute' * power(2, retry_count))
+        WHERE id = p_job_id;
+    END IF;
+END;
+$BODY$;
+```
+
+### Implementaciones válidas
+
+| Queue | Notas |
+|---|---|
+| **PostgreSQL + LISTEN/NOTIFY + SKIP LOCKED** | Si ya tenés Postgres. Simple, transaccional. Stallen-friendly. |
+| **Redis Streams / BullMQ** | Más performante. Requiere Redis adicional. |
+| **AWS SQS + Lambda** | Serverless. Buena para spikes. |
+| **Supabase Edge Functions + pg_cron** | Para Supabase stack. Limitado pero suficiente para arrancar. |
+| **Inngest / Trigger.dev** | Managed. Buena DX. Costo recurrente. |
+
+### Anti-pattern conocido
+
+Ver **AP-3.9 Sync Heavy Operation** en `ANTI-PATRONES.md`.
+
+### Cómo verificar
+
+Validaciones automáticas:
+```
+- Detectar: HTTP handler con duración media > 2s en métricas → review
+- Detectar: handler con bucle for > 100 iteraciones síncrono → review
+- Detectar: handler con llamada a SendGrid/Stripe/etc síncrona → review
+- Detectar: handler que toca > 5 tablas en una transacción → review
+```
+
+---
+
+## A19 — External Service Resilience
+
+> **Toda llamada a servicio externo (API, BD remota, email, payment, etc.)
+> DEBE tener: timeout explícito + retry con backoff + circuit breaker +
+> Result type. Una falla externa NUNCA cascadea a falla total del sistema.**
+
+### Definición
+
+Servicios externos típicos:
+- APIs HTTP (Stripe, Twilio, SendGrid, OpenAI, etc.)
+- Servicios de email (SMTP, SES, SendGrid)
+- DBs remotas (réplicas, sharding)
+- Servicios internos en otra zona/región
+- Webhooks salientes
+
+**Todos pueden fallar**: timeout, 5xx, 4xx, DNS error, connection refused,
+rate-limited, slow response, partial response.
+
+### Patrón obligatorio
+
+```
+TODA LLAMADA EXTERNA TIENE LAS 4 DEFENSAS:
+
+1. TIMEOUT EXPLÍCITO
+   - NO usar timeout default del cliente HTTP (suele ser muy alto)
+   - Timeout específico por servicio (Stripe: 10s, email: 30s, etc.)
+   - Connection timeout + read timeout separados
+
+2. RETRY CON BACKOFF EXPONENCIAL
+   - Max 3-5 retries
+   - Backoff: 1s, 2s, 4s, 8s, 16s (con jitter)
+   - SOLO retriar errores transitorios (5xx, timeout, conexión)
+   - NUNCA retriar errores 4xx (validation, auth) — son del cliente
+   - Idempotency key para POST/PUT (A8)
+
+3. CIRCUIT BREAKER
+   - Tracking de fallos consecutivos por servicio
+   - Si > N fallos en M segundos → circuit OPEN (no llamar por X tiempo)
+   - Después de X tiempo → circuit HALF-OPEN (probar con 1 request)
+   - Si OK → CLOSED. Si falla → OPEN otra vez.
+
+4. RESULT TYPE (no propagar excepción cruda)
+   - Retornar Ok(value) | Err(code, details)
+   - El caller decide si retry, fallback, degradación
+   - NO lanzar excepción que rompe handler
+```
+
+### Patrón correcto (Python)
+
+```python
+import httpx
+from typing import Generic, TypeVar, Union
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+import logging
+import random
+
+logger = logging.getLogger(__name__)
+T = TypeVar('T')
+
+@dataclass
+class Ok(Generic[T]):
+    value: T
+
+@dataclass
+class Err:
+    code: str
+    message: str
+    retryable: bool
+    details: dict = None
+
+# Circuit Breaker (simplified)
+class CircuitBreaker:
+    def __init__(self, name: str, threshold=5, timeout_seconds=60):
+        self.name = name
+        self.threshold = threshold
+        self.timeout = timeout_seconds
+        self.failures = 0
+        self.last_failure = None
+        self.state = "CLOSED"  # CLOSED, OPEN, HALF_OPEN
+
+    def can_attempt(self) -> bool:
+        if self.state == "CLOSED":
+            return True
+        if self.state == "OPEN":
+            if datetime.now() - self.last_failure > timedelta(seconds=self.timeout):
+                self.state = "HALF_OPEN"
+                return True
+            return False
+        # HALF_OPEN: permite 1 intento
+        return True
+
+    def record_success(self):
+        self.failures = 0
+        self.state = "CLOSED"
+
+    def record_failure(self):
+        self.failures += 1
+        self.last_failure = datetime.now()
+        if self.failures >= self.threshold:
+            self.state = "OPEN"
+            logger.warning(
+                f"Circuit breaker OPEN for {self.name}",
+                extra={"failures": self.failures}
+            )
+
+# Cliente externo con las 4 defensas
+class StripeClient:
+    def __init__(self):
+        self.timeout = httpx.Timeout(connect=5.0, read=10.0, write=5.0, pool=5.0)
+        self.breaker = CircuitBreaker("stripe", threshold=5, timeout_seconds=60)
+
+    def charge(self, amount: int, idempotency_key: str) -> Union[Ok[dict], Err]:
+        # Circuit breaker check
+        if not self.breaker.can_attempt():
+            return Err(
+                code="CIRCUIT_OPEN",
+                message="Stripe circuit breaker is open",
+                retryable=True  # eventualmente vuelve a estar disponible
+            )
+
+        # Retry con backoff exponencial
+        for attempt in range(5):
+            try:
+                with httpx.Client(timeout=self.timeout) as client:
+                    response = client.post(
+                        "https://api.stripe.com/v1/charges",
+                        headers={"Idempotency-Key": idempotency_key},
+                        data={"amount": amount}
+                    )
+
+                # 2xx = éxito
+                if 200 <= response.status_code < 300:
+                    self.breaker.record_success()
+                    return Ok(value=response.json())
+
+                # 4xx = error del cliente, NO retriar
+                if 400 <= response.status_code < 500:
+                    return Err(
+                        code=f"CLIENT_ERROR_{response.status_code}",
+                        message=response.json().get("error", {}).get("message"),
+                        retryable=False
+                    )
+
+                # 5xx = error servidor, retriar
+                if response.status_code >= 500:
+                    if attempt < 4:
+                        wait = (2 ** attempt) + random.uniform(0, 1)  # jitter
+                        time.sleep(wait)
+                        continue
+                    self.breaker.record_failure()
+                    return Err(
+                        code="SERVER_ERROR",
+                        message=f"Stripe returned {response.status_code}",
+                        retryable=True
+                    )
+
+            except httpx.TimeoutException:
+                if attempt < 4:
+                    wait = (2 ** attempt) + random.uniform(0, 1)
+                    time.sleep(wait)
+                    continue
+                self.breaker.record_failure()
+                return Err(
+                    code="TIMEOUT",
+                    message="Stripe API timeout",
+                    retryable=True
+                )
+
+            except httpx.RequestError as e:
+                self.breaker.record_failure()
+                return Err(
+                    code="CONNECTION_ERROR",
+                    message=str(e),
+                    retryable=True
+                )
+
+# CONSUMER:
+result = stripe.charge(amount=1000, idempotency_key=str(uuid4()))
+match result:
+    case Ok(value=charge):
+        # Procesar charge exitoso
+        save_charge_to_db(charge)
+    case Err(code="CLIENT_ERROR_400"):
+        # Error del usuario, mostrar al UI
+        return http_400("Invalid card")
+    case Err(code="CIRCUIT_OPEN" | "TIMEOUT" | "SERVER_ERROR", retryable=True):
+        # Encolar para retry (A18) o degradar
+        enqueue_retry_charge(amount, idempotency_key)
+        return http_202("Charge queued for retry")
+    case Err():
+        # Fallback genérico
+        return http_503("Payment service unavailable")
+```
+
+### Bibliotecas recomendadas
+
+| Lenguaje | Retry+Backoff | Circuit Breaker | HTTP con timeouts |
+|---|---|---|---|
+| Python | `tenacity` | `pybreaker` o custom | `httpx` |
+| TypeScript/Node | `p-retry` | `opossum` | `axios` con timeout |
+| Go | `cenkalti/backoff` | `sony/gobreaker` | std `net/http` |
+
+### Observabilidad obligatoria
+
+```
+Métricas por servicio externo:
+- external.requests_total (counter)
+- external.requests_failed (counter, por error code)
+- external.latency_seconds (histogram)
+- external.circuit_state (gauge: 0=closed, 1=half_open, 2=open)
+- external.retry_count (histogram)
+
+Alertas:
+- latency p99 > 5s sostenido → degradación
+- error rate > 5% sostenido → circuit cerca de abrirse
+- circuit OPEN > 5 min → escalation
+```
+
+### Anti-pattern conocido
+
+Ver **AP-3.10 External Call Without Timeout** en `ANTI-PATRONES.md`.
+
+### Cómo verificar
+
+Validaciones automáticas:
+```
+- Detectar: requests.get(url) sin timeout= → alert
+- Detectar: httpx.get(url) sin timeout= → alert
+- Detectar: llamada externa sin try/except → alert
+- Detectar: handler con > 3 llamadas externas síncronas → review (mover a job)
+- Métricas: alert si servicio externo tiene > 10% error rate
+```
+
+---
+
 ## Mapping a Harness Engineering Subsystems
 
 Estas reglas materializan las 5 subsystems del harness según la disciplina formal:
@@ -1409,6 +2167,10 @@ Estas reglas materializan las 5 subsystems del harness según la disciplina form
 | A13 | **Verification** (concurrency checks) |
 | A14 | **Verification** (explicit failure = check de retorno) |
 | A15 | **Verification** (adversarial testing) |
+| A16 | **Scope** (rate limiting = límite de uso) |
+| A17 | **Scope** (edge protection = perímetro defensivo) |
+| A18 | **Session Lifecycle** (jobs asíncronos = lifecycle separado) |
+| A19 | **Verification** + **Session Lifecycle** (external = lifecycle independiente) |
 
 ---
 
@@ -1431,6 +2193,10 @@ Estas reglas materializan las 5 subsystems del harness según la disciplina form
 | A13 Concurrency Safety | **SRP** (cada txn = una unidad atómica de responsabilidad) |
 | A14 Explicit Failure | **LSP** (contratos de error claros, substituibles) |
 | A15 Unhappy Path First | **OCP** (sistema preparado para casos futuros sin modificar) |
+| A16 Rate Limiting | **SRP** (defensa = responsabilidad separada del negocio) |
+| A17 Edge Protection | **SRP** + **DIP** (defensa perimetral abstrae infra específica) |
+| A18 Async Processing | **SRP** (handler ≠ worker, separación de responsabilidad) |
+| A19 External Resilience | **DIP** + **LSP** (abstracción de servicio, contrato sustituible) |
 
 ---
 
@@ -1472,9 +2238,13 @@ Si alguna es NO → re-evaluar si pertenece a otro nivel.
 - **1.1** (2026-05-15): Audit empírico de Julián detectó 5 GAPS (DAO/DTO, Zero Trust,
   Concurrency, Explicit Failure, Unhappy Path First). Agregadas reglas A11-A15
   + mapping actualizado a Harness Engineering y SOLID.
+- **1.2** (2026-05-15): 2do audit empírico de Julián detectó 4 GAPS adicionales
+  (Rate Limiting, Edge Protection, Async Processing, External Service Resilience).
+  Cubre **dimensión de infraestructura resiliente** que faltaba en A1-A15.
+  Agregadas reglas A16-A19 + mapping actualizado.
 
 ---
 
-Versión: 1.1 | Creado: 2026-05-15 | Última edición: 2026-05-15 (post audit empírico)
+Versión: 1.2 | Creado: 2026-05-15 | Última edición: 2026-05-15 (post audit empírico 2)
 Origen: destilado de legacy SigmaControl (`core/contratos.py`, `skill-contratos-modulos.md`, 170+ reglas SQL)
 Manifestaciones empíricas: 1 (Stallen via SigmaControl legacy)

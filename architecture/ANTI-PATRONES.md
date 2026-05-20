@@ -1,7 +1,7 @@
 # ANTI-PATRONES
 
 > **Nivel 2: arquitectura universal** | Lo que NO hacer (con evidencia empírica)
-> Versión: 1.1 | Creado: 2026-05-15 | Última edición: 2026-05-15
+> Versión: 1.2 | Creado: 2026-05-15 | Última edición: 2026-05-15 (post audit 2)
 
 ---
 
@@ -17,7 +17,7 @@ Cada anti-pattern documentado tiene:
 Si encontrás un anti-pattern nuevo con 2+ manifestaciones empíricas, documentalo
 acá. Si solo 1 manifestación, va al cuaderno (no acá hasta validar recurrencia).
 
-**Total actual: 24 anti-patterns** (versión 1.1).
+**Total actual: 28 anti-patterns** (versión 1.2).
 
 ---
 
@@ -466,6 +466,179 @@ Validar SIEMPRE en cada capa, no asumir:
 
 ---
 
+### AP-2.10 — Unbounded API Surface
+
+**Síntoma**: endpoint público o función costosa sin rate limiting. Cualquier
+usuario puede invocarlo arbitrariamente.
+
+**Ejemplos**:
+```
+INCORRECTO: endpoint público sin defensa
+
+  POST /api/enviar-email-masivo
+  → cuerpo: { destinatarios: [...] }
+  → NO valida frecuencia: usuario puede llamar 1000x/segundo
+
+INCORRECTO: función costosa sin rate limit
+
+  CREATE FUNCTION generar_reporte_anual(p_year INT) RETURNS BYTEA
+  AS ...
+      -- Procesa millones de filas, ~30s de cómputo
+      -- Sin rate limit: 10 usuarios = 300s de DB CPU bloqueado
+  ...
+```
+
+**Causa raíz**: enfoque solo en happy path. "Si funciona, listo".
+
+**Violaciones**:
+- **A16 Rate Limiting & Throttling** (Nivel 2 universal)
+- Indirecta: A12 Zero Trust (no confiar en que el cliente se autorregule)
+
+**Por qué importa**:
+- **Noisy neighbor**: un tenant en loop infinito → DoS para los demás
+- **Runaway costs**: API key leaked en GitHub → bill de servicio externo explota
+- **Resource exhaustion**: 1 atacante con $5 = DB CPU 100% por horas
+- **Bots scrapean APIs** → costos cloud + degradación
+- **Sin observabilidad** → imposible detectar abuse hasta que duele
+
+Manifestaciones típicas en producción:
+- Cliente en producción reporta "lentitud aleatoria" → era otro tenant abusivo
+- Bill de Stripe inesperadamente triplicado → API key leaked, atacante creando charges
+- DB caída a las 3am → bot scraper en bucle infinito
+
+**Corrección**: aplicar A16 en TODAS las dimensiones relevantes:
+```sql
+CREATE OR REPLACE FUNCTION enviar_email_masivo(p_destinatarios JSONB)
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+DECLARE
+    v_company_id UUID := get_my_sc_company_id();
+    v_user_id UUID := auth.uid();
+BEGIN
+    -- A16: Rate limit por tenant (10 emails masivos/min por empresa)
+    IF NOT check_rate_limit('tenant:' || v_company_id || ':bulk_email', 10) THEN
+        RETURN jsonb_build_object(
+            'ok', false,
+            'error', 'rate limit exceeded for tenant',
+            'code', 'RATE_LIMITED',
+            'retry_after_seconds', 60
+        );
+    END IF;
+
+    -- A16: Rate limit por usuario (5 por min)
+    IF NOT check_rate_limit('user:' || v_user_id || ':bulk_email', 5) THEN
+        RETURN jsonb_build_object(
+            'ok', false,
+            'error', 'rate limit exceeded for user',
+            'code', 'RATE_LIMITED',
+            'retry_after_seconds', 60
+        );
+    END IF;
+
+    -- ... operación real ...
+    RETURN jsonb_build_object('ok', true);
+END;
+$BODY$;
+```
+
+**Prevención**:
+- Validator detecta endpoints públicos sin `check_rate_limit()` → alert
+- Validator detecta funciones costosas (bucle, JOIN N tablas, llamada externa) sin rate limit → review
+- Documentación OpenAPI debe declarar rate limits por endpoint
+- Code review obligatorio sobre cualquier nuevo endpoint público
+
+---
+
+### AP-2.11 — Exposed Origin
+
+**Síntoma**: el origin server (donde corre tu app) es directamente accesible
+desde internet. El DNS público resuelve a la IP del origin, no a un CDN/edge.
+
+**Ejemplos**:
+```
+INCORRECTO:
+  app.stallen.com → A record → 198.51.100.42 (Vercel/AWS directo)
+
+  Resultado:
+  - Atacante hace dig app.stallen.com, obtiene IP, ataca directamente
+  - DDoS volumétrico → origin sobrecargado
+  - WAF (si existe) no intercepta porque tráfico no pasa por él
+  - SQL injection en endpoint no documentado → BD comprometida
+  - Latencia alta para usuarios geográficamente distantes
+```
+
+```
+CORRECTO:
+  app.stallen.com → A/CNAME → cdn.cloudflare.com → (proxy) → origin
+
+  Resultado:
+  - Atacante obtiene IP del CDN, no del origin
+  - DDoS volumétrico absorbido por CDN edge
+  - WAF intercepta requests maliciosos antes del origin
+  - TLS termination en edge (más rápido)
+  - Assets estáticos servidos desde edge cerca del usuario
+```
+
+**Causa raíz**: "no hay tiempo para configurar Cloudflare" o "es solo MVP".
+Las defensas perimetrales se posponen hasta que pasa algo grave.
+
+**Violaciones**:
+- **A17 Edge Protection (CDN + WAF + DDoS Mitigation)** (Nivel 2 universal)
+
+**Por qué importa**:
+- **DDoS de $5**: cualquier script kiddie con un booter puede tirar tu app
+- **SQL injection en input no esperado**: aunque tengas A12 Zero Trust, una
+  capa más de defensa ayuda
+- **Sin caching edge**: cada request va al origin, costos cloud altos
+- **Sin geographic restrictions**: si solo operás en LATAM, no tiene sentido
+  aceptar tráfico de Rusia/China
+- **Latencia alta global**: pierdes usuarios distantes
+
+Manifestaciones típicas en producción:
+- App caída por DDoS de $20 contratado por competencia
+- BD comprometida por SQL injection que el WAF habría bloqueado
+- Bill de AWS multiplicado x10 en un día por scraper bot
+- Usuarios en Asia se quejan de "muy lento"
+
+**Corrección**: configurar edge protection con cualquier proveedor válido:
+
+**Cloudflare (más popular, free tier suficiente)**:
+```
+1. Crear cuenta Cloudflare, agregar el dominio
+2. Cambiar nameservers del dominio a los de Cloudflare
+3. Activar "Proxy" (icono naranja) en records A/CNAME
+4. Habilitar WAF (Managed Rules → OWASP CRS)
+5. Habilitar Bot Fight Mode
+6. Configurar rate limit por IP (Security → WAF → Rate Limiting Rules)
+7. SSL/TLS mode: Full (strict) o Strict
+8. Verificar: dig +short app.dominio.com debe retornar IP de Cloudflare
+```
+
+**Vercel (si ya usás Vercel hosting)**:
+```
+- Edge Network ya viene por default
+- Activar Vercel WAF (Pro plan, $20/mes adicional)
+- Configurar Edge Config para rate limiting
+```
+
+**AWS CloudFront + WAF**:
+```
+1. Crear distribution CloudFront con tu origin
+2. Crear Web ACL en AWS WAF con OWASP CRS managed rule
+3. Asociar WAF al CloudFront
+4. AWS Shield Standard incluido (DDoS L3/L4)
+5. Cambiar DNS para apuntar a CloudFront
+```
+
+**Prevención**:
+- Pre-deploy check: `dig +short app.dominio.com` debe NO retornar IP del origin
+- CI/CD validation: verificar que origin no es directamente accesible
+- Monitoring: alert si tráfico inusual llega directo al origin (bypassing edge)
+
+---
+
 ## Categoría 3: Anti-patterns de Proceso
 
 ### AP-3.1 — Mixing Cleanup with Execution
@@ -616,6 +789,7 @@ anthropic._exceptions.OverloadedError: Error code: 529
 
 **Violaciones**:
 - **A9 Stop Conditions Explicit** (parcial: necesita retry como complemento)
+- **A19 External Service Resilience** (subset: este pattern es solo retry, A19 es completo)
 
 **Corrección**: retry exponencial obligatorio:
 ```python
@@ -630,7 +804,8 @@ def llamar_api_con_retry(payload, max_retries=5):
 ```
 
 **Prevención**: regla "ninguna llamada a API externa sin retry exponencial".
-Code review enforced.
+Code review enforced. Ver AP-3.10 para versión completa con timeout + circuit
+breaker + Result type.
 
 ---
 
@@ -856,6 +1031,302 @@ usar `ORDER BY id` (o columna comparable) antes de FOR UPDATE.
 
 ---
 
+### AP-3.9 — Sync Heavy Operation
+
+**Síntoma**: endpoint HTTP que ejecuta operación pesada (>2s, batch grande,
+llamada externa lenta) de forma síncrona. El cliente espera la respuesta
+durante todo el procesamiento.
+
+**Ejemplos**:
+```python
+# INCORRECTO: endpoint síncrono con operación pesada
+@app.post("/api/enviar-newsletter")
+def enviar_newsletter(body):
+    destinatarios = obtener_destinatarios()  # 10,000 emails
+
+    for email in destinatarios:
+        sendgrid.send(email)  # 0.5s cada uno = 5,000s total
+
+    return {"ok": True}
+    # Cliente espera ~83 minutos (HTTP timeout fallará primero)
+```
+
+```sql
+-- INCORRECTO en SQL: función pesada llamada síncrona desde frontend
+CREATE FUNCTION generar_reporte_anual_pdf(p_year INT)
+RETURNS BYTEA AS ...
+    -- Procesa 1 millón de filas, genera PDF de 50MB
+    -- Tarda 45 segundos
+    -- Cliente HTTP: timeout en 30s
+    -- Worker DB: bloqueado 45s atendiendo solo esta request
+...
+```
+
+**Resultado en producción**:
+- HTTP timeout (cliente recibe error después de esperar)
+- Pero la operación a veces SÍ completa (silenciosa)
+- Worker pool del servidor bloqueado durante la operación
+- Otros usuarios ven el sistema "lento" o caído
+- Sin retry: si falla a la mitad, no se reanuda
+- Sin observabilidad: imposible saber cuántos emails se enviaron
+- Sin idempotencia: cliente retry duplica trabajo
+
+**Causa raíz**: simplicidad aparente en MVP. "Lo arreglamos después con queue".
+
+**Violaciones**:
+- **A18 Async Processing for Heavy Tasks** (Nivel 2 universal)
+- **A19 External Service Resilience** (parcial: sin timeout/retry de los servicios externos)
+
+**Por qué importa**:
+- **UX rota**: usuarios ven errores aleatorios o timeouts
+- **Worker exhaustion**: pool de workers bloqueados → caída del sistema
+- **Sin retry**: fallas parciales son catastróficas (50% de emails enviados)
+- **Sin idempotencia**: cliente reintenta → trabajo duplicado
+- **Sin observabilidad**: imposible diagnosticar lo que pasó
+- **Sin priorización**: tarea pesada bloquea tareas rápidas
+
+Manifestaciones típicas:
+- Cliente reporta "el botón no hace nada" (en realidad timeout pero éxito parcial)
+- Sistema "se cae" durante envío masivo de emails → todo bloqueado
+- Reporte falla a la mitad → 50% de datos procesados, 50% perdidos
+
+**Corrección**: encolar el trabajo y retornar `202 Accepted` con job_id:
+
+```python
+# CORRECTO: enqueue + retornar inmediatamente
+@app.post("/api/enviar-newsletter")
+def enviar_newsletter(body):
+    # Validar input (rápido)
+    if not body.get("destinatarios"):
+        return http_400("destinatarios required")
+
+    # A8: idempotency key
+    idempotency_key = body.get("idempotency_key") or str(uuid4())
+
+    # Encolar el job (A18)
+    job_id = enqueue_job(
+        job_type="send_newsletter",
+        payload={"destinatarios": body["destinatarios"]},
+        idempotency_key=idempotency_key
+    )
+
+    return {
+        "ok": True,
+        "job_id": job_id,
+        "status": "pending",
+        "status_url": f"/api/jobs/{job_id}"
+    }, 202  # Accepted
+
+# Endpoint para consultar status
+@app.get("/api/jobs/<job_id>")
+def get_job_status(job_id):
+    job = get_job(job_id)
+    return {
+        "id": job.id,
+        "status": job.status,  # pending/processing/done/failed
+        "result": job.result if job.status == "done" else None,
+        "error": job.error_message if job.status == "failed" else None
+    }
+
+# Worker (proceso separado)
+def worker_loop():
+    while True:
+        job = claim_next_job()  # FOR UPDATE SKIP LOCKED
+        if not job:
+            time.sleep(1)
+            continue
+
+        try:
+            if job.job_type == "send_newsletter":
+                # A19: con timeout + retry + circuit breaker (ver A19)
+                resultado = enviar_newsletter_batch(job.payload, job.id)
+                complete_job(job.id, resultado)
+        except Exception as e:
+            logger.exception(f"Job {job.id} failed")
+            fail_job(job.id, str(e))  # retry con backoff o DLQ
+```
+
+**Prevención**:
+- Validator detecta endpoints con duración media > 2s → review
+- Validator detecta handlers con bucles for > 100 iteraciones → review
+- Validator detecta handlers con llamadas a servicios externos lentos → alert
+- Métricas: alert si p99 latencia de endpoint > 5s
+
+---
+
+### AP-3.10 — External Call Without Timeout
+
+**Síntoma**: llamada a servicio externo (HTTP, BD remota, RPC) sin las 4
+defensas obligatorias: timeout, retry con backoff, circuit breaker, Result
+type. Un servicio externo lento o caído cascadea a falla total del sistema.
+
+**Ejemplos**:
+```python
+# INCORRECTO: sin timeout, sin retry, sin circuit breaker
+import requests
+
+@app.post("/api/procesar-pago")
+def procesar_pago(body):
+    # requests.post sin timeout = wait forever
+    response = requests.post(
+        "https://api.stripe.com/v1/charges",
+        data={"amount": body["amount"]}
+    )
+
+    if response.status_code == 200:  # asume que llegó
+        return {"ok": True}
+    return {"ok": False}, 500
+    # Si Stripe está caído: el handler queda esperando hasta que
+    # el cliente HTTP timeout (puede ser 60s+)
+    # Mientras tanto, este worker está bloqueado
+    # 100 requests simultáneos = todo el pool bloqueado
+```
+
+```typescript
+// INCORRECTO en frontend: fetch sin timeout
+const response = await fetch('/api/heavy');  // espera indefinida
+// Si el backend está lento, el usuario ve loader eterno
+```
+
+```sql
+-- INCORRECTO en SQL: dblink/foreign data wrapper sin timeout
+SELECT * FROM dblink('conn_string', 'SELECT ...') AS t(...);
+-- Si la BD remota está caída, la sesión local se cuelga
+```
+
+**Causa raíz**: usar API default del cliente HTTP (que NO tiene timeout
+explícito o tiene uno muy alto). Asumir que "el servicio externo siempre
+responde rápido". Optimismo no fundado.
+
+**Violaciones**:
+- **A19 External Service Resilience** (Nivel 2 universal)
+
+**Por qué importa**:
+- **Cascade failure**: un servicio externo caído → tu app entera cae
+- **Worker pool exhaustion**: requests acumulándose esperando externos
+- **No retry**: errores transitorios (5xx, network blip) son catastróficos
+- **No circuit breaker**: si Stripe está caído, seguís haciendo requests
+  que sabés que van a fallar (latency + costos)
+- **Excepciones crudas**: rompen el handler en vez de degradar elegantemente
+- **No observabilidad**: imposible saber qué servicios fallaron, cuándo, cuánto
+
+Manifestaciones típicas:
+- Stripe tiene incidente de 10 minutos → tu app cae por 10 minutos
+- API de email tarda 30s → todo el sistema "se siente lento"
+- Webhook saliente a cliente caído → workers bloqueados horas
+- Bill de Stripe inesperado: bug hizo retry sin idempotency_key
+
+**Corrección**: aplicar las 4 defensas de A19:
+
+```python
+import httpx
+from typing import Union, Generic, TypeVar
+from dataclasses import dataclass
+import logging
+import random
+import time
+
+logger = logging.getLogger(__name__)
+T = TypeVar('T')
+
+@dataclass
+class Ok(Generic[T]):
+    value: T
+
+@dataclass
+class Err:
+    code: str
+    message: str
+    retryable: bool
+
+class StripeClient:
+    def __init__(self):
+        # 1. TIMEOUT EXPLÍCITO
+        self.timeout = httpx.Timeout(
+            connect=5.0,   # max 5s para conectar
+            read=10.0,     # max 10s para leer respuesta
+            write=5.0,
+            pool=5.0
+        )
+        # 3. CIRCUIT BREAKER (ver A19 para implementación completa)
+        self.breaker = CircuitBreaker(name="stripe", threshold=5, timeout_seconds=60)
+
+    def charge(self, amount: int, idempotency_key: str) -> Union[Ok[dict], Err]:
+        # 3. CIRCUIT BREAKER: no llamar si está abierto
+        if not self.breaker.can_attempt():
+            return Err(code="CIRCUIT_OPEN", message="Stripe unavailable",
+                       retryable=True)
+
+        # 2. RETRY CON BACKOFF EXPONENCIAL
+        for attempt in range(5):
+            try:
+                with httpx.Client(timeout=self.timeout) as client:
+                    response = client.post(
+                        "https://api.stripe.com/v1/charges",
+                        headers={"Idempotency-Key": idempotency_key},  # A8
+                        data={"amount": amount}
+                    )
+
+                if 200 <= response.status_code < 300:
+                    self.breaker.record_success()
+                    return Ok(value=response.json())  # 4. RESULT TYPE
+
+                if 400 <= response.status_code < 500:
+                    # 4xx = error del cliente, NO retriar
+                    return Err(
+                        code=f"CLIENT_ERROR_{response.status_code}",
+                        message=response.json().get("error", {}).get("message"),
+                        retryable=False
+                    )
+
+                # 5xx = retriar con backoff
+                if attempt < 4:
+                    wait = (2 ** attempt) + random.uniform(0, 1)  # jitter
+                    time.sleep(wait)
+                    continue
+
+                self.breaker.record_failure()
+                return Err(code="SERVER_ERROR", message=f"Stripe 5xx",
+                           retryable=True)
+
+            except httpx.TimeoutException:
+                if attempt < 4:
+                    time.sleep((2 ** attempt) + random.uniform(0, 1))
+                    continue
+                self.breaker.record_failure()
+                return Err(code="TIMEOUT", message="Stripe timeout",
+                           retryable=True)
+
+            except httpx.RequestError as e:
+                self.breaker.record_failure()
+                return Err(code="CONNECTION_ERROR", message=str(e),
+                           retryable=True)
+
+# CONSUMER (handler HTTP):
+result = stripe.charge(amount=1000, idempotency_key=str(uuid4()))
+match result:
+    case Ok(value=charge):
+        return {"ok": True, "charge_id": charge["id"]}
+    case Err(code="CLIENT_ERROR_400"):
+        return http_400("Invalid payment data")
+    case Err(retryable=True):
+        # Encolar para retry (ver A18)
+        enqueue_charge_retry(amount, idempotency_key)
+        return {"ok": True, "status": "queued_for_retry"}, 202
+    case Err():
+        return http_503("Payment service unavailable")
+```
+
+**Prevención**:
+- Linter detecta `requests.get/post(...)` sin `timeout=` → alert
+- Linter detecta `httpx.get/post(...)` sin `timeout=` → alert
+- Linter detecta `fetch(url)` sin AbortSignal en JS/TS → alert
+- Validator detecta handler con > 3 llamadas externas síncronas → review (mover a job)
+- Métricas: alert si servicio externo tiene latency p99 > 5s sostenido
+- Métricas: alert si error rate de servicio externo > 10% sostenido
+
+---
+
 ## Categoría 4: Anti-patterns de Documentación
 
 ### AP-4.1 — Stale Documentation
@@ -935,8 +1406,10 @@ ARQUITECTÓNICOS:
   AP-2.5 Module Ownership Violation
   AP-2.6 Direct Table Access from Frontend
   AP-2.7 Cross-Tenant Function Parameter
-  AP-2.8 Raw Table Response                  ← nuevo v1.1 (A11)
-  AP-2.9 Trust Boundary Violation            ← nuevo v1.1 (A12)
+  AP-2.8 Raw Table Response                  ← v1.1 (A11)
+  AP-2.9 Trust Boundary Violation            ← v1.1 (A12)
+  AP-2.10 Unbounded API Surface              ← nuevo v1.2 (A16)
+  AP-2.11 Exposed Origin                     ← nuevo v1.2 (A17)
 
 PROCESO:
   AP-3.1 Mixing Cleanup with Execution
@@ -944,9 +1417,11 @@ PROCESO:
   AP-3.3 Infinite Retry without Stop Conditions
   AP-3.4 Aprendizajes Duplicados Acumulados
   AP-3.5 API Call Without Retry
-  AP-3.6 Silent Exception Swallow            ← nuevo v1.1 (A14)
-  AP-3.7 Happy Path Only Testing             ← nuevo v1.1 (A15)
-  AP-3.8 Inconsistent FOR UPDATE Order       ← nuevo v1.1 (A13)
+  AP-3.6 Silent Exception Swallow            ← v1.1 (A14)
+  AP-3.7 Happy Path Only Testing             ← v1.1 (A15)
+  AP-3.8 Inconsistent FOR UPDATE Order       ← v1.1 (A13)
+  AP-3.9 Sync Heavy Operation                ← nuevo v1.2 (A18)
+  AP-3.10 External Call Without Timeout      ← nuevo v1.2 (A19)
 
 DOCUMENTACIÓN:
   AP-4.1 Stale Documentation
@@ -987,7 +1462,17 @@ DOCUMENTACIÓN:
 
   Total: 24 anti-patterns.
 
+- **1.2** (2026-05-15): 2do audit empírico de Julián detectó 4 GAPS adicionales
+  (rate limiting, edge protection, async processing, external resilience).
+  Cubre **dimensión de infraestructura resiliente**. Agregados:
+  - AP-2.10 Unbounded API Surface (vinculado a A16 Rate Limiting)
+  - AP-2.11 Exposed Origin (vinculado a A17 Edge Protection)
+  - AP-3.9 Sync Heavy Operation (vinculado a A18 Async Processing)
+  - AP-3.10 External Call Without Timeout (vinculado a A19 External Resilience)
+
+  Total: 28 anti-patterns.
+
 ---
 
-Versión: 1.1 | Creado: 2026-05-15 | Última edición: 2026-05-15 (post audit empírico)
+Versión: 1.2 | Creado: 2026-05-15 | Última edición: 2026-05-15 (post audit 2)
 Origen: análisis legacy SigmaControl + síntesis de patrones SOLID/Harness Engineering
