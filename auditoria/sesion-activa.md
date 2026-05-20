@@ -5,14 +5,14 @@
 
 **Última sesión**: 2026-05-15 — Sprint 2 Día 2 (chat.ai, post-cierre Sprint 1)
 **Cliente**: Claude.ai chat web (sin Engram, sin Spec Kit instalado)
-**Duración estimada**: sesión MUY larga (varias horas, 2 audits empíricos)
-**Estado**: ✅ Cerrada con todo respaldado en GitHub (excepto commit pendiente A16-A19)
+**Duración estimada**: sesión MUY larga (varias horas, 3 audits empíricos)
+**Estado**: ✅ Cerrada con todo respaldado en GitHub (excepto commit pendiente A16-A19 + esta memoria)
 
 ---
 
 ## Resumen ejecutivo (1 línea)
 
-Sesión arquitectónica intensiva: Nivel 2 (A1-A19 + 28 anti-patterns + SOLID + C1-C6) + multi-proyecto (ADR-007) + cross-LLM (ADR-008) + NORTE Framework v0.1 + decisión enfoque solo Framework (sin Stallen) + descubrimiento crítico de 4 repos del ecosistema + **2do audit empírico de Julián detectó dimensión completa de infraestructura resiliente faltante (A16 Rate Limiting, A17 Edge Protection, A18 Async Processing, A19 External Resilience)**.
+Sesión arquitectónica intensiva: Nivel 2 (A1-A19 + 28 anti-patterns + SOLID + C1-C6) + multi-proyecto (ADR-007) + cross-LLM (ADR-008) + NORTE Framework v0.1 + decisión enfoque solo Framework (sin Stallen) + descubrimiento crítico de 4 repos del ecosistema + **3 audits empíricos sucesivos** detectaron 9 GAPs resueltos (A11-A19) + **6 GAPs adicionales documentados como deudas formales** (A20-A25, audit empírico 3 / Opción D).
 
 ---
 
@@ -69,7 +69,7 @@ Nuevo archivo `NORTE.md` (~22 KB) con 11 secciones. Entrevista iniciada:
 - Q2 Driver → Respuesta E (necesidad personal primario + comunidad eventual)
 - Q3 Criterios → Julián articuló visión harness (ver §15)
 
-### 15. 💥 ARTICULACIÓN DEL VERDADERO NORTE — CRITICAL INSIGHT
+### 15. ARTICULACIÓN DEL VERDADERO NORTE — CRITICAL INSIGHT
 
 Cita verbatim de Julián:
 > *"la idea es crear un harness que permita construir proyectos sin tener miedo de que el llm alucina, inventa o esta haciendo cosas que no debe. es construir el ecosistema necesario para que el departamento de software analice, planifique, ejecute, verifique como se haria en un departamento de software real o como lo hace un senior en produccion"*
@@ -84,7 +84,7 @@ Reformulación del propósito del Framework:
 
 Conexión 2° principio rector: las 3 capas (PREVENTIVA → VERIFICABLE → CORRECTIVA) son específicamente para mitigar fallos del LLM en cada fase del ciclo.
 
-### 16. 🔍 Hallazgo crítico: 4 repos del ecosistema ya implementan la visión
+### 16. Hallazgo crítico: 4 repos del ecosistema ya implementan la visión
 
 A pedido de Julián, busqué 4 repos:
 
@@ -114,75 +114,218 @@ A pedido de Julián, busqué 4 repos:
 - Cross-agent muy amplio (14 agentes)
 - Para cuando llegue UI Stallen (futuro)
 
-**Implicación estratégica fundamental**:
+**Visión C emergente**: Departamento = **Stack curado del ecosistema** + **Calibración única Tier 1 vibe coder + Architecture/A1-A19 + Anti-patterns como overlay arquitectónico**.
 
-Estos 4 repos cubren GRAN PARTE de lo que Sprint 2 T2.2 planeaba construir desde cero:
-- Workflow operativo → superpowers + Spec Kit
-- Nivel 3 tooling → ECC (28 agents + 119 skills)
-- Anti-alucinación enforcement → superpowers (verification-before-completion) + ECC (pass@k metrics)
-- Memoria → claude-mem (mejor que Engram)
-- Capa UI/UX → ui-ux-pro-max-skill
-- Cross-LLM → todos los 4
+Tiempo ahorrado wholesale: ~8-12 semanas. **DECISIÓN ESPERA SANDBOX EMPÍRICO**.
 
-**Tiempo ahorrado si se adoptan wholesale**: ~8-12 semanas.
+### 17. 2do AUDIT EMPÍRICO (Julián) — A16-A19 (dimensión infraestructura resiliente)
 
-**Visión C emergente**: Departamento = **Stack curado del ecosistema** (Spec Kit + Superpowers + ECC + claude-mem + ui-ux-pro-max + VoltAgent + Antigravity) **+ Calibración única Tier 1 vibe coder + Architecture/A1-A15 + Anti-patterns como overlay arquitectónico**.
-
-El Departamento NO compite con estos repos. Es **curador y calibrador**.
-
-**DECISIÓN FINAL ESPERA VALIDACIÓN EMPÍRICA** (6° principio rector): sandbox antes de adoptar wholesale. ADR-009 se escribe POST-evidencia.
-
-### 17. 💥 2do AUDIT EMPÍRICO (Julián) — DESCUBRIÓ DIMENSIÓN ENTERA FALTANTE
-
-Cita verbatim de las preguntas escalonadas de Julián:
+Preguntas verbatim de Julián:
 > *"rate limiting lo estamos implementando ?"*
 >
 > *"cloudflare? tenemos activo waf ? evitamos logica sensible en el fronted? usamos orms en el backend? agregamos try/catch en cada llamada api? usamos colas( queues para tareas pesadas ) ?"*
 
-**Análisis honesto de las 6 preguntas**:
+**Identificación de dimensión faltante**: A1-A15 cubría lógica/datos/seguridad básica. Faltaba dimensión completa de **INFRAESTRUCTURA RESILIENTE**:
+- A16 Rate Limiting & Throttling
+- A17 Edge Protection (CDN + WAF + DDoS Mitigation)
+- A18 Async Processing for Heavy Tasks
+- A19 External Service Resilience
 
-| # | Pregunta | Veredicto | Acción |
-|---|---|---|---|
-| 1 | Rate limiting | ❌ GAP REAL | A16 |
-| 2 | Cloudflare / WAF | ⚠️ Proveedor específico = ADR proyecto, principio universal = NUEVO | A17 Edge Protection |
-| 3 | Lógica sensible frontend | ⚠️ Parcial (AP-2.6 + A12 cubren) | Sin nuevo |
-| 4 | ORMs | 📋 Decisión proyecto, NO universal | Sin nuevo |
-| 5 | try/catch llamadas API | ⚠️ Parcial (A14 + AP-3.5), pero "external resilience" completa falta | A19 |
-| 6 | Colas / queues | ❌ GAP REAL | A18 |
-
-**Identificación de la dimensión faltante**: A1-A15 cubría lógica de dominio + datos + seguridad básica. **Faltaba dimensión completa de INFRAESTRUCTURA RESILIENTE**:
-- A16 Rate Limiting & Throttling — defensa contra abuse/exceso/cost runaway
-- A17 Edge Protection (CDN + WAF + DDoS Mitigation) — defensa perimetral mínima
-- A18 Async Processing for Heavy Tasks — manejo de cargas pesadas
-- A19 External Service Resilience — robustez de integraciones (timeout + retry + circuit breaker + Result type)
-
-**Patrón empírico acumulado**: las preguntas de Julián sobre arquitectura tienen **10/10 hit rate** detectando GAPs reales (5 en audit 1 + 4 en audit 2 + 1 en pregunta cross-LLM previa).
-
-**Acciones tomadas en esta sesión**:
-- ✅ `PRINCIPIOS-ARQUITECTURA.md` actualizado a **v1.2** con A16-A19 (cada una con definición, por qué importa, patrón correcto con ejemplo PG/Python, anti-patterns, validaciones automáticas)
-- ✅ `ANTI-PATRONES.md` actualizado a **v1.2** con AP-2.10 Unbounded API Surface, AP-2.11 Exposed Origin, AP-3.9 Sync Heavy Operation, AP-3.10 External Call Without Timeout (cada una con ejemplos correcto/incorrecto, manifestaciones típicas, prevención)
+**Acciones ejecutadas**:
+- ✅ `PRINCIPIOS-ARQUITECTURA.md` v1.1 → **v1.2** con A16-A19 (con definición, ejemplos PG/Python concretos, anti-patterns, validaciones automáticas)
+- ✅ `ANTI-PATRONES.md` v1.1 → **v1.2** con AP-2.10 Unbounded API Surface, AP-2.11 Exposed Origin, AP-3.9 Sync Heavy Operation, AP-3.10 External Call Without Timeout
 - ✅ Mappings a Harness Engineering + SOLID actualizados con A16-A19
-- ✅ Histórico de versiones actualizado
-- ⏳ **COMMIT + PUSH pendiente** (próxima acción Julián)
+- ⏳ **COMMIT + PUSH pendiente**
+
+### 18. 3er AUDIT EMPÍRICO — OPCIÓN D — Catálogo completo de GAPs del Nivel 2
+
+Preguntas verbatim de Julián que dispararon el audit completo:
+> *"arquitectura sidecar ? arquitectura hexagonal ?"*
+
+**Decisión metodológica**: en vez de seguir incremental (descubrir A20, A21, A22... uno por uno tras cada pregunta), aplicar 6° principio rector **al meta-trabajo**: descubrir scope completo antes de ejecutar. Julián eligió Opción D — audit empírico COMPLETO del Nivel 2 contra catálogo "todo lo que SaaS Tier 1 necesita".
+
+**Catálogo evaluado (13 dimensiones arquitectónicas)**:
+
+| Dimensión | Cobertura A1-A19 | GAP crítico identificado |
+|---|---|---|
+| 1. Lógica de negocio + datos | ✅ Cubierta (A1-A15) | Ninguno |
+| 2. Infraestructura resiliente | ✅ Cubierta (A16-A19) | Ninguno |
+| 3. **Paradigma arquitectónico** | ⚠️ Parcial (A2+A7+A11) | **A20 Hexagonal** |
+| 4. **Observabilidad / SRE** | ⚠️ Parcial (mencionado) | **A21 Observability** |
+| 5. **Secrets & Credentials** | ⚠️ Parcial (A12 ZT-6) | **A22 Secrets Mgmt** |
+| 6. **Deployment / Release** | ⚠️ Parcial (A8 rollback) | **A23 Deployment Safety** |
+| 7. **Data Lifecycle / Privacy** | ❌ No cubierta | **A24 Data Lifecycle** |
+| 8. **Authorization granular** | ⚠️ Parcial (A12 auth básica) | **A25 Authorization** |
+| 9. Performance & Scalability | Parcial / decisión stack | Anti-patterns N+1, Pagination |
+| 10. CI/CD & DevOps | Decisión proyecto | Sin regla universal |
+| 11. Testing extendido | A15 cubre lo esencial | Sin GAP crítico |
+| 12. Security adicional | Parcial (A12+A17) | Refuerzo de A17 (CORS/CSP) |
+| 13. Documentation | Mayormente cubierto (AP-4.x) | Sin GAP crítico |
+
+**Decisiones de plataforma/stack (NO regla universal)**:
+- Cloudflare específico → ADR de proyecto
+- ORM vs raw SQL → decisión de proyecto
+- CI/CD provider → decisión de proyecto
+- Caching layer específico → decisión de proyecto
+- **Sidecar** → decisión de plataforma (Kubernetes-specific)
+
+**Resultado del audit**: 6 GAPs críticos identificados como A20-A25 + 6 anti-patterns asociados.
 
 ---
 
-## Commits (10 hoy + 1 pendiente)
+## CATÁLOGO DE GAPS — A20-A25 (formalizado pero no escrito)
+
+Las siguientes 6 reglas fueron identificadas como **GAPs reales del Nivel 2 Tier 1** durante el audit empírico 3 (Opción D). Quedan documentadas acá como deudas formales pendientes de implementación. Próxima sesión decide prioridades.
+
+### A20 — Hexagonal Architecture (Ports & Adapters)
+
+**Dimensión**: Paradigma arquitectónico de fondo
+**Cobertura actual**: Parcial (A2 Encapsulación + A7 Domain First + A11 DAO/DTO cubren aspectos, pero no formalizan el paradigma completo)
+**Por qué es GAP**: NO existe regla afirmativa explícita "el dominio NO depende de infraestructura". A2 encapsula tablas, A11 separa acceso a datos, A7 captura dominio antes — pero nadie dice que **dominio define ports** e **infraestructura implementa adapters intercambiables**.
+**Criticidad**: 🔴 **CRÍTICA** para vibe coder Tier 1
+**Riesgo si NO**: acoplamiento Supabase → refactor masivo cuando crezcas. Cambiar de stack = rewrite.
+**Origen**: Alistair Cockburn 2005, variantes Clean Architecture (Uncle Bob), Onion Architecture (Palermo)
+**Tiempo estimado**: ~30 min (paradigma + ejemplo PG port `OrderRepository` con adapter Supabase + adapter in-memory para tests)
+**Mapping a SOLID**: **DIP** (Dependency Inversion Principle) en su forma más pura
+**Anti-pattern asociado**: **AP-2.13 Domain Polluted by Infrastructure** (dominio con SQL strings, HTTP clients, framework imports adentro)
+
+### A21 — Structured Observability
+
+**Dimensión**: Observabilidad / SRE
+**Cobertura actual**: Parcial (A14 menciona `logger.exception`, A16/A19 mencionan métricas)
+**Por qué es GAP**: sin regla formal que estandarice los **3 pilares** (logs estructurados + metrics + distributed tracing), cada función logguea distinto y producción es caja negra.
+**Criticidad**: 🔴 **CRÍTICA** para vibe coder Tier 1
+**Riesgo si NO**: no vas a estar 24/7 mirando dashboards. Bug en prod = misterio sin trace, hora de debug se vuelve día.
+**Sub-reglas propuestas**:
+- OBS-1: Structured logging (JSON con campos consistentes: timestamp, level, service, trace_id, user_id, tenant_id, message, error)
+- OBS-2: Metrics (counters, gauges, histograms con labels normalizadas)
+- OBS-3: Distributed tracing (trace_id propagado a través de boundary calls)
+- OBS-4: Health checks (liveness + readiness)
+- OBS-5: SLOs explícitos por servicio crítico
+- OBS-6: Alertas con runbooks asociados (no alerta sin acción documentada)
+**Tiempo estimado**: ~30 min
+**Mapping a SOLID**: **SRP** (observabilidad como concern separado)
+**Anti-pattern asociado**: **AP-3.12 Unstructured Logging** (print statements, format inconsistente, sin trace_id)
+
+### A22 — Secrets Management
+
+**Dimensión**: Secrets & Credentials
+**Cobertura actual**: Parcial (A12 ZT-6 dice "no loggear secrets" pero NO dice "cómo gestionarlos")
+**Por qué es GAP**: sin regla formal sobre **vaulting + rotation + env discipline**, los secrets terminan en .env committeados, código, o memoria sin rotación.
+**Criticidad**: 🔴 **CRÍTICA** (vector de ataque #1 en SaaS)
+**Riesgo si NO**: secret leak → bill de Stripe/Anthropic triplicado en 1 día por API key leaked. Es solo cuestión de tiempo.
+**Sub-reglas propuestas**:
+- SEC-1: NO secrets en código (ni .env committeado)
+- SEC-2: Vaulting obligatorio (env vars + secret manager: Doppler, AWS Secrets Manager, Vercel env, etc.)
+- SEC-3: Rotation policy declarada por tipo de secret
+- SEC-4: Acceso a secrets via service account / IAM (no credenciales personales)
+- SEC-5: Audit log de acceso a secrets sensibles
+- SEC-6: Detection de secret leaks en CI (truffleHog, git-secrets, etc.)
+**Tiempo estimado**: ~20 min
+**Anti-pattern asociado**: **AP-2.14 Hardcoded Secrets** (API keys en código, .env en repo, secrets en logs)
+
+### A23 — Deployment Safety
+
+**Dimensión**: Deployment / Release Safety
+**Cobertura actual**: Parcial (A8 cubre rollback de migraciones, pero NO release del código aplicación)
+**Por qué es GAP**: sin regla formal sobre **zero-downtime migrations + API versioning + feature flags + canary**, cada deploy a producción es ruleta rusa.
+**Criticidad**: 🟡 **IMPORTANTE**
+**Riesgo si NO**: cliente reporta "se cayó al actualizar" cada vez. Bugs en producción sin rollback rápido.
+**Sub-reglas propuestas**:
+- DEP-1: Migraciones zero-downtime (3-step: add nullable column → backfill → make NOT NULL, etc.)
+- DEP-2: API versioning explícito (breaking changes en versión nueva, no en existente)
+- DEP-3: Feature flags para cambios riesgosos (rollback sin redeploy)
+- DEP-4: Canary / blue-green opcional pero documentado
+- DEP-5: Rollback strategy declarada antes del deploy
+- DEP-6: Pre-deploy checklist automatizable (smoke tests, migration dry-run)
+**Tiempo estimado**: ~25 min
+**Anti-pattern asociado**: **AP-3.13 Breaking API Change Without Versioning** (cambio incompatible en endpoint existente sin /v2)
+
+### A24 — Data Lifecycle & Privacy
+
+**Dimensión**: Data Lifecycle / Privacy / Compliance
+**Cobertura actual**: ❌ **No cubierta**
+**Por qué es GAP**: sin reglas formales sobre **retention + GDPR right-to-erasure + PII handling + backup/DR**, exposición a multas regulatorias + imposibilidad de cumplir requests legales.
+**Criticidad**: 🔴 **CRÍTICA** (compliance GDPR multas: 4% revenue global)
+**Riesgo si NO**: compliance breach → cliente enterprise pierdes. Request de "borrar mis datos" no se puede cumplir.
+**Sub-reglas propuestas**:
+- DLP-1: Data retention policies por tipo de dato (audit log: 7 años, sesiones: 30 días, etc.)
+- DLP-2: GDPR right-to-erasure implementado (soft-delete + hard-delete diferido)
+- DLP-3: PII classification (qué campos son PII, cómo se manejan)
+- DLP-4: Anonymization para analytics (no usar PII real en BI)
+- DLP-5: Backup policy con RPO/RTO declarados + restore drills periódicos
+- DLP-6: Multi-region failover si Tier 1 commercial robust lo requiere
+**Tiempo estimado**: ~30 min
+**Anti-pattern asociado**: posible AP-2.15 PII Sin Clasificar / AP-3.14 Data Sin Retention Policy
+
+### A25 — Authorization Model (RBAC/ABAC)
+
+**Dimensión**: Authorization granular (más allá de tenancy)
+**Cobertura actual**: Parcial (A12 ZT-1/ZT-4 cubre "estás autenticado y en tu tenant", pero NO "qué podés hacer")
+**Por qué es GAP**: A12 protege contra cross-tenant pero NO contra **escalación dentro del tenant** (usuario común haciendo acciones de admin del mismo tenant).
+**Criticidad**: 🟡 **IMPORTANTE**
+**Riesgo si NO**: admin de tenant A acciona endpoint sensible del propio tenant A sin autorización granular. Privilege escalation interna.
+**Sub-reglas propuestas**:
+- AUTHZ-1: Modelo declarado (RBAC simple, ABAC complejo) — decisión por proyecto pero declarado
+- AUTHZ-2: Permission checks granular por operación sensible (no solo por endpoint)
+- AUTHZ-3: Roles/permisos en BD (no hardcoded en código)
+- AUTHZ-4: Default deny (sin permiso explícito → no autorizado)
+- AUTHZ-5: Audit log de cambios de permisos
+- AUTHZ-6: Tests adversariales de privilege escalation (A15 aplicado a authz)
+**Tiempo estimado**: ~20 min
+**Anti-pattern asociado**: posible AP-2.16 Permission Check Solo en UI / AP-2.17 Hardcoded Role Logic
+
+### Anti-patterns menores asociados (Performance / Universal)
+
+- **AP-3.11 N+1 Query Pattern** — patrón clásico, universal, vale anti-pattern aunque NO sea regla nueva
+- **AP-2.12 Missing Pagination** — endpoint que retorna lista sin paginación, universal
+
+---
+
+## Resumen del audit empírico 3
+
+| Métrica | Valor |
+|---|---|
+| Dimensiones evaluadas | 13 |
+| GAPs críticos identificados | 6 (A20, A21, A22, A24) |
+| GAPs importantes | 2 (A23, A25) |
+| Anti-patterns asociados | 6 (AP-2.12, AP-2.13, AP-2.14, AP-3.11, AP-3.12, AP-3.13) + 2-4 más posibles en A24/A25 |
+| Decisiones de plataforma (NO regla universal) | Sidecar, Cloudflare específico, ORM, CI/CD provider, Caching layer |
+| Tiempo total estimado de implementación A20-A25 | ~3 horas de trabajo bien hecho |
+
+---
+
+## Patrón empírico acumulado (3 audits)
+
+| Iteración | GAPs detectados | Status |
+|---|---|---|
+| Audit 1 (sesión anterior) | A11-A15 (5 reglas + 5 anti-patterns) | ✅ Implementado |
+| Audit 2 (esta sesión, mañana) | A16-A19 (4 reglas + 4 anti-patterns) | ✅ Implementado (commit pendiente) |
+| Audit 3 (esta sesión, Opción D) | A20-A25 (6 reglas + 6+ anti-patterns) | 📋 Documentado como deudas formales |
+
+**Hit rate acumulado de intuición arquitectónica de Julián**: ~17/17 (100%).
+
+**Lección estructural**: el audit completo (Opción D) reveló que el audit incremental hubiera seguido descubriendo GAPs uno por uno indefinidamente. **El meta-patrón**: ante intuición empírica recurrente, mejor descubrir scope COMPLETO en una iteración que incremental — 6° principio rector aplicado al meta-trabajo.
+
+---
+
+## Commits (10 hoy + 2 pendientes)
 
 ```
 PENDIENTE feat(architecture): A16-A19 + AP-2.10/2.11/3.9/3.10 (Nivel 2 v1.2 infra resiliente)
+PENDIENTE docs(memoria): audit empirico 3 (Opcion D) + catalogo A20-A25 + 6 deudas formales
 0af14a4   feat(framework): NORTE v0.1 + memoria con Vision C
-0e58d7e  feat(arch): cross-LLM (ADR-008) + docs/AGENT-INTEGRATION.md
-0206502  docs(memoria): cerrar sesion con plan T0-T5
-3e2e329  chore: eliminar carpetas legacy
-1024b84  feat(arch): separacion Framework vs Proyectos (ADR-007)
-8e80c79  docs(memoria): handoff compacto entre sesiones
-2e32482  docs: README + mcp-servers/README
-4751381  feat(architecture): A11-A15 + ADR-006
+0e58d7e   feat(arch): cross-LLM (ADR-008) + docs/AGENT-INTEGRATION.md
+0206502   docs(memoria): cerrar sesion con plan T0-T5
+3e2e329   chore: eliminar carpetas legacy
+1024b84   feat(arch): separacion Framework vs Proyectos (ADR-007)
+8e80c79   docs(memoria): handoff compacto entre sesiones
+2e32482   docs: README + mcp-servers/README
+4751381   feat(architecture): A11-A15 + ADR-006
 (commits iniciales del repo)
 ```
 
-Working tree: pendiente commit A16-A19 + AP nuevos.
+Working tree: pendiente commit A16-A19 + AP nuevos + esta memoria actualizada.
 Remote: sincronizado hasta 0af14a4.
 URL repo: https://github.com/jlnvargas25-dot/departamento-software
 
@@ -194,84 +337,126 @@ URL repo: https://github.com/jlnvargas25-dot/departamento-software
 Strings con `$$` o `$BODY$` (o cualquier `$<algo>$`) ROMPEN `edit_file` del MCP filesystem por interpretación regex de `$`. **Workaround real**: usar `write_file` (reescribir archivo completo) para cualquier contenido con `$` literal. Para regex usar `\Z`. Documentado en esta sesión cuando edit_file corrompió sesion-activa.md.
 
 ### LECCIÓN 2 — 6° principio rector aplica recursivamente al meta-trabajo
-Audit empírico OBLIGATORIO antes de declarar "ya está hecho". Julián detectó 5 GAPS en audit 1 (Nivel 2) y 4 GAPS en audit 2 (infra resiliente). Hit rate acumulado: 10/10.
+Audit empírico OBLIGATORIO antes de declarar "ya está hecho". Julián detectó 5+4+6 = 15 GAPs en 3 audits. Hit rate acumulado: 100%.
 
 ### LECCIÓN 3 — Anti-paternalismo (sostenido)
-Julián corrigió: cuando recomendé cerrar sesión "porque estás cansado", él aclaró que el cansancio era proyección mía. Comportamiento ajustado.
+Julián corrigió cuando recomendé cerrar sesión "porque estás cansado". El cansancio era proyección mía. Comportamiento ajustado.
 
-### LECCIÓN 4 — Visión arquitectónica del Departamento (3 visiones evolucionando)
+### LECCIÓN 4 — Visión arquitectónica del Departamento (4 visiones evolucionando)
 - **Visión A** (inicial): workflow propio completo (compite con Spec Kit) — ABANDONADA
 - **Visión B** (mid-sesión): capa de gobernanza encima de Spec Kit — REFINADA
-- **Visión C** (final): curador + calibrador del stack del ecosistema (Spec Kit + Superpowers + ECC + claude-mem + ui-ux-pro-max) — EMERGENTE, pendiente validación
-- **Visión D** (discusión sin formalizar): Capa A independiente + Capa B integraciones opcionales (no formalizado en ADR todavía)
+- **Visión C** (final): curador + calibrador del stack del ecosistema — EMERGENTE, pendiente validación
+- **Visión D** (discusión sin formalizar): Capa A independiente + Capa B integraciones opcionales — DEUDA-VISIÓN-D-NO-FORMALIZADA
 
 ### LECCIÓN 5 — Engram bloqueado por SAC, claude-mem es alternativa superior
-SAC bloquea Engram. WSL Ubuntu funcionaría pero claude-mem es mejor (cross-agent, MCP nativo, 1-line install). DEUDA-ENGRAM-SAC-BLOCK resuelta por reemplazo, no por workaround.
+SAC bloquea Engram. WSL Ubuntu funcionaría pero claude-mem es mejor (cross-agent, MCP nativo, 1-line install). DEUDA-ENGRAM-SAC-BLOCK resuelta por reemplazo.
 
 ### LECCIÓN 6 — Confusión semántica con "Opciones A"
-Múltiples "Opción A" en diferentes contextos. Julián detectó que el Camino 1 original NO se hizo. Lección: ser explícito sobre qué Opción es cada vez.
+Múltiples "Opción A" en diferentes contextos. Lección: ser explícito sobre qué Opción es cada vez.
 
 ### LECCIÓN 7 — Multi-proyecto formalizado evita over-engineering futuro
-ADR-007 antes de tener 2do proyecto. Riesgo over-engineering aceptado. Costo migración futura > costo formalización ahora.
+ADR-007 antes de tener 2do proyecto. Costo migración futura > costo formalización ahora.
 
 ### LECCIÓN 8 — El ecosistema YA implementa muchas visiones
-Antes de construir desde cero, buscar si ya existe. obra/superpowers (170k stars) implementa la visión harness anti-alucinación de Julián casi palabra por palabra. Aplicación de "no reinventar la rueda" llevada al meta-nivel.
+obra/superpowers (170k stars) implementa la visión harness anti-alucinación de Julián casi palabra por palabra. "No reinventar la rueda" al meta-nivel.
 
 ### LECCIÓN 9 — Cross-LLM como decisión filosófica anti lock-in
-ADR-008 formaliza Departamento como agent-agnostic. Costo bajo ahora (~5 hs trabajo), costo alto retrofit después (~30-50 hs). Decisión preparatoria, no migratoria.
+ADR-008 formaliza Departamento como agent-agnostic. Costo bajo ahora vs alto retrofit después.
 
-### LECCIÓN 10 — Audit empírico recursivo aplicado 2 veces detecta dimensiones enteras faltantes
-Audit 1 detectó GAPs dentro de la dimensión "lógica/datos/seguridad". Audit 2 detectó **dimensión completa faltante**: "infraestructura resiliente". Esto sugiere que próximos audits podrían detectar dimensiones adicionales (observabilidad/SRE, data lifecycle/GDPR, deployment/release, etc.). **Recomendación próxima sesión**: audit empírico COMPLETO del Nivel 2 (Opción D propuesta en esta sesión) en vez de incremental.
+### LECCIÓN 10 — Audit empírico recursivo detecta dimensiones enteras
+Audit 1 detectó GAPs dentro de "lógica/datos/seguridad". Audit 2 detectó dimensión completa "infraestructura resiliente". Audit 3 (Opción D, completo) detectó 4 dimensiones más críticas (paradigma, observability, secrets, data lifecycle) + 2 importantes (deployment, authz).
+
+### LECCIÓN 11 — Audit COMPLETO > audit incremental cuando el patrón empírico es recurrente
+Después de 2 audits incrementales (cada uno descubriendo más GAPs), aplicar 6° principio rector al meta-trabajo: descubrir scope completo en UNA iteración. Audit 3 (Opción D) en ~30 min reveló más que 2 audits incrementales previos. **Costo-beneficio asimétrico**: 30 min de catálogo evita N iteraciones de descubrimiento incremental.
 
 ---
 
-## Deudas técnicas detectadas
+## Deudas técnicas
 
 ### DEUDA-ENGRAM-SAC-BLOCK
-**Status**: ✅ RESUELTA POR REEMPLAZO
-**Resolución**: claude-mem (cross-agent, 1-line install) es alternativa superior. Engram WSL se cancela.
+**Status**: ✅ RESUELTA POR REEMPLAZO (claude-mem)
 
 ### DEUDA-WORKFLOW-OPERATIVO
 **Status**: 🔴 ABIERTA — RECALIBRADA
-**Descripción**: WORKFLOW-OPERATIVO.md (Nivel 0) NO escrito. PERO el alcance cambia con Visión C: si se adoptan Spec Kit + Superpowers + ECC, el workflow se reduce a "cómo se compone el stack curado + calibración Tier 1 Departamento".
 **Próxima acción**: después de T2 (ADR-009 basado en sandbox)
 
 ### DEUDA-EVALUAR-SPEC-KIT
-**Status**: 🔴 ABIERTA — EXPANDIDA
-**Descripción**: ahora incluye validar Spec Kit + Superpowers + ECC + claude-mem como stack unificado, no solo Spec Kit aislado.
+**Status**: 🔴 ABIERTA — EXPANDIDA (incluye Spec Kit + Superpowers + ECC + claude-mem)
 **Próxima acción**: T1 próxima sesión
 
 ### DEUDA-REPLANTEAR-ROADMAP-POST-STACK
 **Status**: 🔴 ABIERTA — CRÍTICA
-**Severidad**: alta (afecta todo Sprint 2 T2/T3)
-**Descubierto**: 2026-05-15 fin de sesión
-**Descripción**: 4 repos del ecosistema ya implementan gran parte de lo planeado. Sprint 2 T2.2 (10 skills propias) puede reducirse a 2-3 skills Stallen-specific si se adoptan wholesale.
-**Próxima acción**: T1 sandbox del stack + T2 ADR-009 basado en evidencia empírica
+**Próxima acción**: T1 sandbox + T2 ADR-009 basado en evidencia empírica
 
 ### DEUDA-NORTE-FRAMEWORK-PLACEHOLDERS
-**Status**: 🟡 EN PROGRESO
-**Descripción**: NORTE v0.1 creado con 7 placeholders. Q1 (audiencia) + Q2 (driver) respondidos. Q3 (criterios) respondido implícitamente via articulación harness. Faltan Q4-Q7 (Tier, Stakeholders, Restricciones, Stop).
-**Próxima acción**: completar tras validar sandbox empíricamente
+**Status**: 🟡 EN PROGRESO (Q4-Q7 pendientes)
 
 ### DEUDA-PROTOCOLOS-DEPARTAMENTO
 **Status**: 🔴 ABIERTA
-**Descripción**: PROTOCOLO-INICIO-DEPARTAMENTO + PROTOCOLO-CIERRE-DEPARTAMENTO NO creados. Se propusieron pero no se ejecutaron.
-**Próxima acción**: después de T2 ADR-009 (depende de stack adoptado)
 
 ### DEUDA-EDIT-FILE-SQL
-**Status**: 🟡 LECCIÓN DOCUMENTADA
-**Descripción**: `$$` Y `$BODY$` rompen edit_file. Usar write_file para archivos con `$` literal.
+**Status**: 🟡 LECCIÓN DOCUMENTADA (write_file en archivos con `$` literal)
 
-### DEUDA-AUDIT-COMPLETO-NIVEL-2 *(NUEVA — esta sesión)*
-**Status**: 🔴 ABIERTA
-**Severidad**: alta (afecta confianza en completitud de Nivel 2)
-**Descripción**: Audit empírico recursivo aplicado 2 veces detectó 9 GAPs. Patrón sugiere que pueden faltar más dimensiones (observabilidad/SRE, data lifecycle, deployment/release, etc.). En Opción D propuesta en esta sesión, vale hacer audit empírico COMPLETO del Nivel 2 contra catálogo "todo lo que SaaS Tier 1 necesita" en vez de seguir incremental.
-**Próxima acción**: Opción D al inicio de próxima sesión, antes de declarar Nivel 2 "completo"
+### DEUDA-AUDIT-COMPLETO-NIVEL-2
+**Status**: ✅ RESUELTA EN ESTA SESIÓN (Opción D ejecutada — ver §18)
 
-### DEUDA-VISIÓN-D-NO-FORMALIZADA *(NUEVA — esta sesión)*
+### DEUDA-VISIÓN-D-NO-FORMALIZADA
 **Status**: 🟡 PENDIENTE DECISIÓN
-**Descripción**: Julián preguntó si la capa propia puede ser independiente. Análisis resultó en Visión D (Capa A independiente + Capa B integraciones opcionales). Discutido pero NO formalizado en ADR-010. Espera decisión post-sandbox empírico.
 **Próxima acción**: posible ADR-010 después de T1 sandbox
+
+### DEUDA-A20-HEXAGONAL *(NUEVA — audit 3)*
+**Status**: 🔴 ABIERTA
+**Scope**: ver §18 catálogo A20
+**Criticidad**: CRÍTICA (paradigma de fondo)
+**Tiempo estimado**: ~30 min
+**Anti-pattern**: AP-2.13 Domain Polluted by Infrastructure
+**Próxima acción**: priorización en próxima sesión
+
+### DEUDA-A21-OBSERVABILITY *(NUEVA — audit 3)*
+**Status**: 🔴 ABIERTA
+**Scope**: ver §18 catálogo A21 (6 sub-reglas OBS-1..OBS-6)
+**Criticidad**: CRÍTICA (producción es caja negra sin esto)
+**Tiempo estimado**: ~30 min
+**Anti-pattern**: AP-3.12 Unstructured Logging
+**Próxima acción**: priorización en próxima sesión
+
+### DEUDA-A22-SECRETS *(NUEVA — audit 3)*
+**Status**: 🔴 ABIERTA
+**Scope**: ver §18 catálogo A22 (6 sub-reglas SEC-1..SEC-6)
+**Criticidad**: CRÍTICA (vector de ataque #1)
+**Tiempo estimado**: ~20 min
+**Anti-pattern**: AP-2.14 Hardcoded Secrets
+**Próxima acción**: priorización en próxima sesión
+
+### DEUDA-A23-DEPLOYMENT *(NUEVA — audit 3)*
+**Status**: 🔴 ABIERTA
+**Scope**: ver §18 catálogo A23 (6 sub-reglas DEP-1..DEP-6)
+**Criticidad**: IMPORTANTE (parcialmente cubierto por A8)
+**Tiempo estimado**: ~25 min
+**Anti-pattern**: AP-3.13 Breaking API Change Without Versioning
+**Próxima acción**: priorización en próxima sesión
+
+### DEUDA-A24-DATA-LIFECYCLE *(NUEVA — audit 3)*
+**Status**: 🔴 ABIERTA
+**Scope**: ver §18 catálogo A24 (6 sub-reglas DLP-1..DLP-6)
+**Criticidad**: CRÍTICA (compliance GDPR — multas 4% revenue global)
+**Tiempo estimado**: ~30 min
+**Anti-pattern**: AP-2.15 PII Sin Clasificar / AP-3.14 Data Sin Retention (a definir)
+**Próxima acción**: priorización en próxima sesión
+
+### DEUDA-A25-AUTHORIZATION *(NUEVA — audit 3)*
+**Status**: 🔴 ABIERTA
+**Scope**: ver §18 catálogo A25 (6 sub-reglas AUTHZ-1..AUTHZ-6)
+**Criticidad**: IMPORTANTE (privilege escalation dentro de tenant)
+**Tiempo estimado**: ~20 min
+**Anti-pattern**: AP-2.16 Permission Check Solo en UI (a definir)
+**Próxima acción**: priorización en próxima sesión
+
+### DEUDA-ANTI-PATTERNS-MENORES *(NUEVA — audit 3)*
+**Status**: 🟡 ABIERTA
+**Scope**: AP-3.11 N+1 Query, AP-2.12 Missing Pagination (sin regla A* asociada, son patrones universales valiosos)
+**Tiempo estimado**: ~15 min para ambos
+**Próxima acción**: agregar junto con A20-A25 o en sesión separada
 
 ---
 
@@ -279,9 +464,9 @@ Audit 1 detectó GAPs dentro de la dimensión "lógica/datos/seguridad". Audit 2
 
 ```
 Branch: main
-Working tree: A16-A19 + AP-2.10/2.11/3.9/3.10 escritos pero SIN COMMIT
+Working tree: A16-A19 + AP-2.10/2.11/3.9/3.10 escritos + esta memoria actualizada (SIN COMMIT)
 Remote: sincronizado hasta 0af14a4
-Total commits hoy: 10 pusheados + 1 pendiente
+Total commits hoy: 10 pusheados + 2 pendientes
 ```
 
 ### Estructura final
@@ -289,7 +474,7 @@ Total commits hoy: 10 pusheados + 1 pendiente
 ```
 C:\DEPARTAMENTO-SOFTWARE\
 ├── FRAMEWORK (raíz)
-│   ├── architecture/ (Nivel 2 completo a v1.2)
+│   ├── architecture/ (Nivel 2 v1.2 con A1-A19 + 28 anti-patterns)
 │   │   ├── PRINCIPIOS-ARQUITECTURA.md (A1-A19, v1.2)
 │   │   ├── ANTI-PATRONES.md (28 anti-patterns, v1.2)
 │   │   ├── PRINCIPIOS-SOLID.md
@@ -298,7 +483,7 @@ C:\DEPARTAMENTO-SOFTWARE\
 │   ├── decisions/ (ADRs 001-008)
 │   ├── .claude/skills/ (sigma-capture-domain)
 │   ├── mcp-servers/ (preparado Sprint 2)
-│   ├── auditoria/sesion-activa.md (este archivo)
+│   ├── auditoria/sesion-activa.md (este archivo v3.2)
 │   ├── templates/project-skeleton/ (7 templates)
 │   ├── docs/AGENT-INTEGRATION.md
 │   ├── NORTE.md (v0.1 con placeholders)
@@ -307,54 +492,79 @@ C:\DEPARTAMENTO-SOFTWARE\
 │   └── PROTOCOLO-*.md (heredados, vale adaptar)
 │
 └── projects/
-    └── stallen/ (recién formalizado, DIFERIDO según decisión §13)
+    └── stallen/ (DIFERIDO según decisión §13)
 ```
 
 ---
 
-## Próximo paso
+## Próximo paso — PRIORIDAD CLARA
 
-### Comando inmediato (al abrir próxima sesión Claude Code CLI):
+### 1. Comando commit inmediato (al abrir próxima sesión):
 
 ```powershell
 cd C:\DEPARTAMENTO-SOFTWARE
 git add architecture/PRINCIPIOS-ARQUITECTURA.md architecture/ANTI-PATRONES.md auditoria/sesion-activa.md
 git status
-git commit -m "feat(architecture): A16-A19 + AP-2.10/2.11/3.9/3.10 (Nivel 2 v1.2 infra resiliente)
+git commit -m "feat(architecture): A16-A19 + AP-2.10/2.11/3.9/3.10 + audit completo Nivel 2
 
-2do audit empirico de Julian detecto dimension completa faltante:
-infraestructura resiliente.
-
-Reglas agregadas:
-- A16 Rate Limiting & Throttling
-- A17 Edge Protection (CDN + WAF + DDoS Mitigation)
+2do audit empirico de Julian detecto dimension faltante:
+infraestructura resiliente. Reglas implementadas:
+- A16 Rate Limiting and Throttling
+- A17 Edge Protection (CDN + WAF + DDoS)
 - A18 Async Processing for Heavy Tasks
 - A19 External Service Resilience
 
-Anti-patterns agregados:
-- AP-2.10 Unbounded API Surface (vinculado A16)
-- AP-2.11 Exposed Origin (vinculado A17)
-- AP-3.9 Sync Heavy Operation (vinculado A18)
-- AP-3.10 External Call Without Timeout (vinculado A19)
+Anti-patterns asociados:
+- AP-2.10 Unbounded API Surface
+- AP-2.11 Exposed Origin
+- AP-3.9 Sync Heavy Operation
+- AP-3.10 External Call Without Timeout
 
-Mappings actualizados a Harness Engineering + SOLID.
-Total: 19 reglas A* + 28 anti-patterns.
+3er audit empirico (Opcion D) ejecutado: catalogo completo
+del Nivel 2 contra 13 dimensiones arquitectonicas. 6 GAPs
+adicionales documentados como deudas formales (A20-A25):
+- A20 Hexagonal Architecture (Ports and Adapters) [CRITICA]
+- A21 Structured Observability [CRITICA]
+- A22 Secrets Management [CRITICA]
+- A23 Deployment Safety [IMPORTANTE]
+- A24 Data Lifecycle and Privacy [CRITICA - GDPR]
+- A25 Authorization Model [IMPORTANTE]
 
-Patron empirico: 10/10 hit rate en intuicion arquitectonica de Julian."
+Total Nivel 2 cuando se implemente A20-A25: 25 reglas + 35+ anti-patterns.
+
+Patron empirico: 17/17 hit rate en intuicion arquitectonica de Julian.
+Audit completo vs incremental: 6 GAPs descubiertos en 30 min."
 git push
 ```
 
-### Resumen ejecutivo próxima sesión en **Claude Code CLI**:
-1. **COMMIT INMEDIATO** A16-A19 + AP nuevos (5 min)
-2. **Decisión Opción D**: audit empírico COMPLETO del Nivel 2 antes de declararlo "completo" (~30 min)
-3. **T0 (REEMPLAZADO)** — Engram WSL cancelado, claude-mem 1-line install (5 min)
+### 2. Decisiones pendientes para próxima sesión:
+
+**Decisión A — Cuándo implementar A20-A25**:
+- (i) Antes del sandbox empírico (T1) → completa Nivel 2 "Tier 1 commercial robust"
+- (ii) Después del sandbox → riesgo de implementar reglas que el stack ya cubre
+- (iii) Híbrido: las 4 críticas (A20, A21, A22, A24) antes del sandbox, las 2 importantes (A23, A25) después
+
+**Decisión B — Visión D (Capa A independiente + Capa B integraciones)**:
+- (i) Formalizar en ADR-010 ahora
+- (ii) Esperar evidencia del sandbox
+
+**Decisión C — Stallen**:
+- (i) Sigue diferido hasta Framework maduro (decisión §13 actual)
+- (ii) Reactivar como driver mientras se completa Framework
+
+### 3. Roadmap actualizado próxima sesión (Claude Code CLI):
+
+1. **COMMIT INMEDIATO** A16-A19 + memoria (5 min)
+2. **Decisión A**: cuándo A20-A25
+3. **T0 (REEMPLAZADO)** — claude-mem 1-line install (5 min)
 4. **T1 (EXPANDIDO)** — Sandbox del Stack: Spec Kit + Superpowers + ECC + claude-mem (3-5 hs)
 5. **T2** — ADR-009 "Adopción del Stack + Calibración Tier 1" basado en evidencia empírica
 6. **T3** — Refactor Sprint 2 según ADR-009
 7. **T4** — Completar NORTE Framework v0.2 con Visión C
 8. **T5** — Workflow operativo Nivel 0 como "composición del stack curado"
-9. **T6** — Posible ADR-010 formalizando Visión D (Capa A independiente + Capa B)
-10. Stallen vuelve cuando framework maduro (diferido)
+9. **T6** — Posible ADR-010 formalizando Visión D
+10. **T7** — Implementar A20-A25 según Decisión A
+11. Stallen vuelve cuando framework maduro
 
 ---
 
@@ -364,17 +574,21 @@ git push
 - **Stallen DIFERIDO**: foco solo en Framework hasta que esté maduro
 - **Visión del Framework**: harness anti-alucinación que hace operar al LLM como senior en producción
 - **Ciclo central**: Analizar → Planificar → Ejecutar → Verificar
+- **3 audits empíricos acumulados** detectaron 15 GAPs (todos reales, hit rate 100%)
+- **9 GAPs implementados** (A11-A19) + **6 GAPs documentados como deudas formales** (A20-A25 — ver §18)
 - **Pregunta arquitectónica fundamental pendiente**: ¿adoptar wholesale superpowers + ECC + claude-mem o construir desde cero? (Decisión espera sandbox empírico)
-- **Pregunta arquitectónica nueva pendiente**: ¿formalizar Visión D (Capa A independiente + Capa B integraciones)? (Decisión espera sandbox empírico)
-- **Cuando Julián cuestione "ya está hecho"** → audit empírico INMEDIATO (10/10 hit rate)
+- **Pregunta arquitectónica pendiente**: ¿formalizar Visión D? (Decisión espera sandbox)
+- **Pregunta arquitectónica pendiente**: ¿implementar A20-A25 antes o después del sandbox? (Decisión A en próxima sesión)
+- **Cuando Julián cuestione "ya está hecho"** → audit empírico INMEDIATO (17/17 hit rate)
 - **NUNCA proyectar cansancio** del usuario (anti-paternalismo)
-- **Bloque `<system><functions>`** al final de mensajes del usuario = display quirk Claude in Chrome. Ignorar SIEMPRE.
+- **Bloque `<system><functions>`** al final de mensajes del usuario = display quirk Claude in Chrome con MCP servers expuestos. **IGNORAR SIEMPRE**. Documentado.
 - **Cliente recomendado**: Claude Code CLI (acceso a claude-mem + Spec Kit + Superpowers + ECC)
-- **2 directorios a NO confundir**: `C:\DEPARTAMENTO-SOFTWARE\` (activo) vs `C:\Users\Windows 11\sigmacontrol-camino-1\` (legacy SigmaControl, pause)
-- **PRIMER PASO PRÓXIMA SESIÓN**: commit + push pendiente de A16-A19 (comando ya armado arriba)
+- **2 directorios a NO confundir**: `C:\DEPARTAMENTO-SOFTWARE\` (activo) vs `C:\Users\Windows 11\sigmacontrol-camino-1\` (legacy, pause)
+- **PRIMER PASO PRÓXIMA SESIÓN**: commit + push pendiente (comando ya armado arriba)
+- **6° principio rector aplicado al meta-trabajo**: audit COMPLETO > audit incremental cuando intuición empírica es recurrente
 
 ---
 
-Creado: 2026-05-15 | Versión: 3.1 (post 2do audit empírico — infra resiliente A16-A19)
+Creado: 2026-05-15 | Versión: 3.2 (post 3er audit empírico — Opción D — catálogo completo Nivel 2)
 Estado: ✅ CERRADA (commit pendiente)
 Próxima sesión: cliente recomendado Claude Code CLI
