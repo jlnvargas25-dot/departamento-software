@@ -385,6 +385,111 @@ Paso 8  este audit                                     → OK
 
 ---
 
+# ADDENDUM POST-CIERRE — Sesión 2026-05-21 PM/continuación 2 (T1.9 EMPIRICAL)
+
+## Resumen ejecutivo
+
+T1.9 ejecutado empíricamente: corrida completa del workflow `sdd-*` (5 phases: explore → propose → spec + design → tasks) sobre el mismo caso "todo+auth Supabase" que speckit-* usó en T1.7. Comparación side-by-side documentada en `projects/sandbox-stack/T1.9-EVIDENCE.md` v0.2 EMPIRICAL (supersedes v0.1 LITE a-priori previa). **Decisión D resuelta**: backbone híbrido (speckit-* default + sdd-* escalation por matriz F1-F10). ADR-009 v0.5 actualizado con addendum T1.9; sigue PROPOSED (promoción a ACCEPTED requiere iteración 3). Hit rate intuición arquitectónica Julián: **20/20**.
+
+## Lo que se hizo (cronológico)
+
+1. PROTOCOLO-INICIO-CHAT v1.0 ejecutado (CASO A, Framework verificado).
+2. T-1 verificación commits 02b1bdc + b2ea0f2 pusheados, working tree clean.
+3. AskUserQuestion: artifact_store=openspec + execution=automatic.
+4. `/sdd-init` ejecutado inline (no había sub-agent): openspec/ skeleton creado en sandbox con config.yaml localizado del parent (118 líneas, 7 principios + A-rules + 7 phase rule blocks + 3 domains + strict_tdd: false + testing capabilities).
+5. **/sdd-explore** vía sub-agent (sonnet): produjo exploration.md (201 líneas, 7 dimensiones con tradeoffs + A-rule mapping + 8 open questions). Finding: sub-agent no tiene tool Write → escritura manual por orquestador.
+6. **/sdd-propose** vía sub-agent (opus): produjo proposal.md (241 líneas, Why/What/Impact/3 capas/Python-vs-LLM/meta-pattern/success criteria/rollback/assumptions/risks).
+7. **/sdd-spec** vía sub-agent (sonnet): produjo 3 specs por dominio (auth.md 246, todos.md 290, observability.md 207) con G/W/T + RFC 2119 + invariantes + edge cases + adversarial blocks + multi-tenant isolation.
+8. **/sdd-design** vía sub-agent (opus): produjo design.md (712 líneas) con 6 Mermaid diagrams (C4 + 5 sequence + 1 ER + ZT-3 boundary) + 8 ADRs numeradas + 3 capas mapping + hexagonal + observability + secrets + data lifecycle + authz + reversibility R-5.
+9. **/sdd-tasks** vía sub-agent (sonnet): produjo tasks.md (481 líneas, **47 tasks** en 7 phases + DAG Mermaid + Parallel-OK groups + Review Workload Forecast + A15 adversarial pairing map). Convergencia notable: **47 tasks** idéntico al speckit-* run.
+10. **T1.9-EVIDENCE.md v0.2 EMPIRICAL** redactado (supersedes v0.1 LITE) con matriz F1-F10 + 5 lecciones candidatas (24-28) + Decisión D resuelta como híbrida.
+11. **ADR-009 actualizado**: T1.9 checklist marcado [x], addendum T1.9 agregado, header updated. Status sigue PROPOSED.
+
+## Decisión D resuelta
+
+**Backbone híbrido** con criterios explícitos (ver matriz Sección 6 T1.9-EVIDENCE.md v0.2):
+
+| Cuándo usar | speckit-* | sdd-* |
+|---|---|---|
+| Caso simple 1 dominio | X | |
+| Speed-to-first-artifact (<30s) | X | |
+| Operador instruido Framework + cost matters | X | |
+| Caso con 2+ capacidades | | X |
+| DAG explícito para multi-execute | | X |
+| A20 hexagonal crítico | | X |
+| Operador no instruido (A* fallback) | | X |
+
+**Default**: speckit-* (cost-aware, ~30k tokens vs ~140k sdd-*). **Escalation**: sdd-* según matriz.
+
+## Lecciones candidatas nuevas (N=1, esperan N=2)
+
+### LECCIÓN 24 candidata — Convergencia 47 tasks
+Ambos workflows convergieron en **47 tasks** sobre el mismo caso. Granularidad viene del case dimension, no del workflow. Implicación: budget de tasks por feature es predecible por dominio.
+
+### LECCIÓN 25 candidata — Speed vs Depth tradeoff
+speckit-* arranca 3x más rápido (15s vs 45s) pero sdd-* produce 2.5x más contenido (2378 vs 928 líneas). Justifica workflow híbrido.
+
+### LECCIÓN 26 candidata — Sub-agent tools mismatch detectable a-priori
+sdd-explore no tiene tool Write pero el skill espera persistir. Auditable por skill-resolver del orquestador. DEUDA candidata: `DEUDA-SDD-EXPLORE-NO-WRITE`.
+
+### LECCIÓN 27 candidata — Skill mandatory rules override orchestrator
+sdd-explore guardó en engram a pesar de instrucción explícita "openspec only". Implicación para sigma skills: deben respetar instrucciones del orquestador para no romper isolation.
+
+### LECCIÓN 28 candidata — Capability decomposition emergent
+sdd-* produjo 3 specs por dominio sin instrucción explícita — emergió del `domains:` block del config.yaml. speckit-* no tiene equivalente estructural. **Implicación**: openspec/config.yaml `domains:` actúa como structural prior que sesga sdd-* hacia A20 hexagonal sin fricción.
+
+## Deudas técnicas — estado tras continuación 2
+
+### Deudas RESUELTAS
+- **DEUDA-SDD-VS-SPECKIT-COMPARACION**: ✅ T1.9 completado empíricamente. Decisión D resuelta como híbrida.
+
+### Deudas NUEVAS
+- **DEUDA-SDD-EXPLORE-NO-WRITE** *(NUEVA, MENOR)*: 🟡 sub-agent `sdd-explore` no tiene tool Write; el skill espera persistir. Workaround: escritura manual por orquestador. Posible resolver: auditar sub-agent tool surface vs skill contract en skill-resolver.
+- **DEUDA-SUB-AGENT-OVERRIDE-OPERATOR** *(NUEVA, MENOR)*: 🟡 ciertas instrucciones del skill (e.g. mandatory engram save) no pueden ser override desde el orquestador. Implicación para sigma skills futuras.
+
+### Sin cambio
+- DEUDA-CONSTITUTION-CHECK-ENFORCEMENT (Sprint 2 MVP)
+- DEUDA-TAXONOMIA-CLARIFY-INCOMPLETA (Sprint 2 v1.1)
+- DEUDA-FACT-FORCING-GATE-EN-SANDBOX (workaround documentado)
+- DEUDA-CLAUDE-MEM-MANIFEST, DEUDA-PLUGIN-INSTALL-DOCS, DEUDA-WINDOWS-SETUP-CHECKLIST
+- DEUDA-ADR-010-PROMOTE-TO-ACCEPTED, DEUDA-NORTE-FRAMEWORK-PLACEHOLDERS
+- DEUDA-WORKFLOW-OPERATIVO, DEUDA-VISIÓN-D-NO-FORMALIZADA, DEUDA-REPLANTEAR-ROADMAP-POST-STACK
+
+## Audit empírico recursivo (paso 5)
+
+**Audit empírico #6**: comparación empírica sdd-* vs speckit-* sobre el mismo caso. Hit rate intuición arquitectónica Julián: **20/20** (mantenido sin nuevo evento). Convergencia 47 tasks valida que case dimension drives count.
+
+## Estado del repo al cerrar
+
+```
+Branch: main
+Working tree con cambios pendientes:
+  - projects/sandbox-stack/openspec/ (nuevo dir completo)
+    ├── config.yaml (118 líneas)
+    └── changes/todo-management/ (7 archivos, 2378 líneas, ~156KB)
+  - projects/sandbox-stack/T1.9-EVIDENCE.md (sobreescrito v0.1 LITE → v0.2 EMPIRICAL)
+  - decisions/ADR-009-adopcion-stack-ecosistema.md (T1.9 checklist marcado + addendum T1.9)
+  - auditoria/sesion-activa.md (este addendum)
+  - SIGUIENTE-SESION.md (v5.1 → v5.2)
+```
+
+## Audit de cierre paso 8
+
+```
+Paso 1  sesion-activa.md actualizado (este addendum)   → OK
+Paso 2  SIGUIENTE-SESION.md actualizada v5.1→v5.2      → OK (en este mismo cierre)
+Paso 3  docs tocados (T1.9-EVIDENCE + ADR-009)         → OK
+Paso 4  radar deuda nueva (2 nuevas + 1 resuelta)      → OK
+Paso 5  audit empírico recursivo (#6)                  → OK
+Paso 6  verificación consistencia                      → OK (T1.9-EVIDENCE ↔ ADR-009 addendum ↔ openspec/ artefactos coherentes)
+Paso 7  commit                                         → OK (en este mismo cierre)
+Paso 8  este audit                                     → OK
+```
+
+**Resultado**: 8 OK. Cierre limpio. Iteración 3 (/speckit-implement) diferida a próxima sesión.
+
+---
+
 # CIERRE PREVIO — Sesión PM 2026-05-20 (preservado para contexto histórico)
 
 ## Resumen ejecutivo (sesión PM 2026-05-20)

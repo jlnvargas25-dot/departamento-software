@@ -1,0 +1,136 @@
+# OpenSpec Configuration — sandbox-stack (T1.9 sdd-* comparison)
+# Sandbox del Framework Departamento de Software
+# Mirroring parent ../../openspec/config.yaml localizado al caso real
+
+schema: spec-driven
+
+context: |
+  Proyecto: sandbox-stack (workspace de validacion del stack ecosistema del Framework)
+  Caso bajo prueba: Personal Todo Management con autenticacion (Supabase + Vercel + Next.js)
+  Stack tipico: Next.js 15 App Router + TypeScript + Supabase (Postgres + RLS + Auth) + Vercel
+  Arquitectura: Hexagonal/clean (A20), boundaries explicitos, RPCs SECURITY DEFINER, RLS habilitada (A5)
+  Testing: Vitest (unit) + Playwright (E2E) + tests adversariales obligatorios (A15)
+  Style: Conventional Commits, TypeScript strict, prettier + eslint, server actions con Result<T>
+  Constitucion: ../../CLAUDE.md (7 principios rectores) + .specify/memory/constitution.md (A1-A25)
+  Reglas globales: PROTOCOLO-CONSTRUCCION-CODIGO.md (R-0 a R-6)
+  Nivel de calidad apuntado: Nivel 2 sandbox (validacion empirica del stack pre-framework v0.1)
+  Proposito del run: comparacion empirica sdd-* vs speckit-* sobre el mismo caso para Decision D de ADR-009
+
+# Strict TDD: false en este sandbox porque aun no hay test runner instalado
+# (el sandbox es planning-phase only). Cuando se ejecute /sdd-apply o iteracion 3,
+# Vitest + Playwright se instalarian por la propia task de Foundational phase.
+strict_tdd: false
+
+testing:
+  test_runner:
+    command: ""
+    framework: ""
+    note: "No instalado todavia. Recomendacion del plan speckit-* paralelo: Vitest 2.x + Playwright 1.x"
+  layers:
+    unit:
+      available: false
+      tool: ""
+      planned: "Vitest"
+    integration:
+      available: false
+      tool: ""
+      planned: "Vitest + Supabase test client"
+    e2e:
+      available: false
+      tool: ""
+      planned: "Playwright"
+  coverage:
+    available: false
+    command: ""
+  quality:
+    linter:
+      available: false
+      command: ""
+      planned: "eslint (Next.js preset)"
+    type_checker:
+      available: false
+      command: ""
+      planned: "tsc --noEmit"
+    formatter:
+      available: false
+      command: ""
+      planned: "prettier"
+
+# Rules por phase del workflow SDD
+# Cada rule alineada con uno o mas principios rectores del Framework
+rules:
+  exploration:
+    - "Auditoria empirica del codigo vivo precede a la estimacion (6 principio: descubrir antes de ejecutar)"
+    - "Documentar dominio del negocio capturado, no asumido (3 principio: dominio-first)"
+    - "Si el patron se parece a uno ya en catalogo de A1-A25 o anti-patterns, referenciarlo (5 principio)"
+
+  proposal:
+    - "Toda proposal debe incluir referencia al meta-patron de origen si aplica (5 principio)"
+    - "Toda proposal debe incluir rollback plan explicito"
+    - "Toda proposal debe incluir criterio de exito empirico medible (no aspiracional)"
+    - "Toda proposal debe identificar las 3 capas afectadas: preventiva / verificable / correctiva (2 principio)"
+    - "Toda proposal debe responder: que Python genera vs que LLM ejecuta (1 principio)"
+
+  specs:
+    - "Use Given/When/Then para todos los scenarios"
+    - "Use RFC 2119 keywords obligatorios: MUST, SHALL, SHOULD, MAY"
+    - "Toda spec debe referenciar el dominio capturado en exploration o proposal (3 principio)"
+    - "Spec debe especificar invariantes del dominio (no solo happy path)"
+    - "Toda spec debe enumerar edge cases: inputs vacios, malformados, race conditions, network failures"
+    - "Multi-tenant strict isolation (A5): si la spec toca datos compartidos, MUST documentar RLS + ownership check"
+
+  design:
+    - "Incluir sequence diagrams en Mermaid para flows complejos (>3 actors o >5 steps)"
+    - "Documentar architecture decisions con rationale (ADR-style en design.md)"
+    - "Identificar capas: preventiva (compile-time) / verificable (runtime) / correctiva (auto-fix) (2 principio)"
+    - "Identificar reversibilidad de cada operacion destructiva (R-5)"
+    - "Identificar timezone handling: UTC en storage, conversion solo en presentation (R-6)"
+    - "Si auto-fix es deterministico, NO devolver al LLM para que adivine (4 principio: auto-fix > finding)"
+    - "Hexagonal Architecture (A20): identificar puertos/adaptadores y direccion de dependencias"
+    - "Structured Observability (A21): identificar trace boundaries por feature"
+    - "Secrets Management (A22): identificar todos los secrets y donde se inyectan"
+    - "Data Lifecycle (A24): identificar retention/soft-delete/audit-trail por tabla"
+
+  tasks:
+    - "Tasks deben ser verificables empiricamente (no 'lo hice', sino 'comando X retorna Y')"
+    - "Cada task debe especificar criterio de done concreto"
+    - "Ordenar tasks por dependencia (DAG explicito, no orden arbitrario)"
+    - "Tasks de infraestructura (CI/CD, observabilidad) deben preceder tasks de feature (Tier 1 primero)"
+    - "Tests adversariales obligatorios (A15): cada task de feature debe tener task pair de adversarial test"
+
+  apply:
+    - "Cada task completada debe pasar review antes de marcar [x]"
+    - "Si task requiere migration SQL, verificar idempotencia con dry-run antes de marcar [x]"
+    - "Si task toca dominio del negocio, validar contra dominio capturado (3 principio)"
+
+  verify:
+    - "Verify-report debe incluir evidencia empirica (output de tests, screenshots, mediciones)"
+    - "Cualquier desviacion de specs debe documentarse con razon estructural"
+    - "Verify-report debe responder: se aplicaron las 3 capas con que evidencia"
+    - "Si hay regresiones detectadas, documentar como meta-patron candidato (5 principio)"
+
+  archive:
+    - "Al archivar, evaluar polinizacion a otros subsistemas (5 principio: radar paso 7.5)"
+    - "Si la change genero deuda, capturarla en DEUDA-TECNICA.md o sesion-activa.md"
+    - "Si la change valido una hipotesis tecnica, capturarla como ADR o leccion"
+    - "Toda spec aprobada se mergea a openspec/specs/{domain}/spec.md (source of truth)"
+
+# Artifact store: openspec puro para esta corrida (decision de Julian via AskUserQuestion)
+artifact_store: openspec
+
+# Domains tentativos del caso bajo prueba
+domains:
+  - auth: "Email/password auth + sesiones Supabase (US2 prioridad P1)"
+  - todos: "CRUD personal de items + soft-delete (US1 prioridad P1)"
+  - observability: "Structured logs + audit trail (A21 + A24)"
+
+# Referencias cruzadas (paths relativos al sandbox)
+references:
+  constitution_framework: ../../CLAUDE.md
+  constitution_sandbox: .specify/memory/constitution.md
+  speckit_run: specs/001-todo-management/
+  evaluation: EVALUATION.md
+  adr_009: ../../decisions/ADR-009-adopcion-stack-ecosistema.md
+  protocol: ../../PROTOCOLO-CONSTRUCCION-CODIGO.md
+  architecture: ../../architecture/PRINCIPIOS-ARQUITECTURA.md
+  anti_patterns: ../../architecture/ANTI-PATRONES.md

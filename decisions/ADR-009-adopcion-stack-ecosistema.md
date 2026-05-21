@@ -142,13 +142,29 @@ Basado en la evidencia de T1.7, se identifican **8 candidatos** (de los cuales 4
 
 Para promover este ADR de PROPOSED v0.5 a ACCEPTED v1.0:
 
-- [ ] **T1.9**: ejecutar el mismo caso (todo+auth Supabase) con `sdd-*` y comparar lado a lado vs `speckit-*`. Resolver Decisión D (SDD backbone).
+- [x] **T1.9**: ejecutar el mismo caso (todo+auth Supabase) con `sdd-*` y comparar lado a lado vs `speckit-*`. ✅ COMPLETADO 2026-05-21 PM continuación 2. **Decisión D resuelta**: backbone híbrido (speckit-* default + sdd-* escalation). Evidencia: `projects/sandbox-stack/T1.9-EVIDENCE.md` v0.2 EMPIRICAL.
 - [ ] **Iteración 3**: ejecutar `/speckit-implement` o `/ecc:multi-execute` sobre `tasks.md` y medir cobertura ejecutable real de las 11 reglas Direct.
 - [ ] **Build de 4 skills sigma MVP** y validar que cierran los gaps identificados (H1, H2, A4, A5).
 - [ ] **Reescribir EVALUATION.md v0.5 → v1.0** con evidencia de implementación real.
 - [ ] **Re-medir cobertura A* post-implementation** y comparar con la cobertura post-planning de v0.5.
 
 **Si cualquier validation falla** → este ADR baja a REJECTED + redacción de ADR-009-bis con la decisión refinada.
+
+### Addendum T1.9 (2026-05-21 PM continuación 2)
+
+**Decisión D — Backbone SDD resuelto como híbrido**:
+- **Default**: speckit-* (velocidad, cost-aware ~30k tokens vs ~140k de sdd-*)
+- **Escalation**: sdd-* cuando aplica matriz F1-F10 de T1.9-EVIDENCE.md (multi-domain, DAG explícito, A20 hexagonal crítico, operador no instruido del Framework)
+- **Refinamiento**: las 4 sigma MVP (`enforce-constitution-check` en particular) cierran el gap principal de speckit-* (Constitution Check manual), llevando speckit-* a paridad de cobertura A* a fracción del costo
+
+**Nuevas evidencias empíricas (N=1 c/u — 5 lecciones candidatas 24-28)**:
+- Convergencia 47 tasks en ambos workflows sobre el mismo caso → case dimension drives task count
+- sdd-* genera 2.5x más contenido (2378 vs 928 líneas) pero arranca 3x más lento (45s vs 15s)
+- sdd-* tiene capability decomposition emergent vía `domains:` block del config.yaml (sesgo estructural hacia A20)
+- Sub-agent `sdd-explore` no tiene tool Write — DEUDA candidata `DEUDA-SDD-EXPLORE-NO-WRITE`
+- Skill mandatory rules pueden override instrucciones del orquestador — DEUDA candidata para isolation en sandboxes
+
+**Status**: sigue PROPOSED. Promoción a ACCEPTED requiere iteración 3.
 
 ---
 
@@ -187,4 +203,4 @@ Para promover este ADR de PROPOSED v0.5 a ACCEPTED v1.0:
 
 ---
 
-**Versión 0.5 PRELIMINAR — 2026-05-21**. Última actualización tras T1.7 (5 skills speckit-* planning ejecutadas) + T1.8 (EVALUATION.md v0.5 refinada).
+**Versión 0.5 PRELIMINAR — 2026-05-21**. Última actualización tras T1.7 (5 skills speckit-* planning ejecutadas) + T1.8 (EVALUATION.md v0.5 refinada) + **T1.9 (2026-05-21 PM continuación 2: comparación empírica sdd-* vs speckit-* completa, Decisión D resuelta como híbrida, anexo T1.9 addendum agregado)**.

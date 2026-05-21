@@ -3,73 +3,77 @@
 > **Propósito**: handoff táctico post-T1.6→T2 ejecutados (planning-phase only).
 > Stallen DIFERIDO hasta que el Framework esté maduro.
 
-**Última actualización**: 2026-05-21 PM continuación — post T1.6→T2 (5 speckit-* planning skills + EVALUATION v0.5 + ADR-009 v0.5 PROPOSED)
+**Última actualización**: 2026-05-21 PM continuación 2 — post T1.9 EMPIRICAL (workflow sdd-* completo + comparación side-by-side + Decisión D resuelta + ADR-009 actualizado)
 **Cliente recomendado próxima sesión**: **Claude Code CLI** dentro de `projects/sandbox-stack/` (skills speckit-* + ecc:* + claude-mem:* + sdd-* + superpowers:* todos cargados)
-**Versión**: 5.1 (post planning-phase del workflow real)
+**Versión**: 5.2 (post T1.9 EMPIRICAL + Decisión D resuelta híbrida)
 
 ---
 
 ## CONTEXTO RÁPIDO — leer EN ORDEN al arrancar
 
 1. `CLAUDE.md` (constitución global del Framework, ~5 min)
-2. `auditoria/sesion-activa.md` — addendum 2026-05-21 PM/continuación (T1.6→T2 ejecutados, ~10 min)
-3. Este archivo — plan T1.9 + iteración 3 actualizado (~5 min)
-4. `projects/sandbox-stack/EVALUATION.md` v0.5 — matriz refinada + 2 lecciones candidatas (~10 min)
-5. `projects/sandbox-stack/T1.7-EVIDENCE.md` — findings por skill speckit-* (~10 min)
-6. `decisions/ADR-009-adopcion-stack-ecosistema.md` v0.5 PROPOSED (~5 min)
-7. `projects/sandbox-stack/specs/001-todo-management/` (8 artefactos del caso real, opcional según foco)
-8. (Opcional) `NORTE.md` v0.1 — visión Framework
-9. (Opcional) `architecture/PRINCIPIOS-ARQUITECTURA.md` v1.3 — A1-A25
+2. `auditoria/sesion-activa.md` — addendum 2026-05-21 PM/continuación 2 (T1.9 EMPIRICAL, ~10 min)
+3. Este archivo — plan iteración 3 + decisiones pendientes actualizadas (~5 min)
+4. `projects/sandbox-stack/T1.9-EVIDENCE.md` v0.2 EMPIRICAL — matriz F1-F10 + 5 lecciones candidatas (~10 min)
+5. `projects/sandbox-stack/EVALUATION.md` v0.5 — matriz speckit-* + 2 lecciones candidatas T1.7 (~10 min, opcional)
+6. `projects/sandbox-stack/T1.7-EVIDENCE.md` — findings por skill speckit-* (~10 min, opcional)
+7. `decisions/ADR-009-adopcion-stack-ecosistema.md` v0.5 PROPOSED + addendum T1.9 (~5 min)
+8. `projects/sandbox-stack/openspec/changes/todo-management/` (7 artefactos sdd-*, opcional para foco arquitectónico)
+9. `projects/sandbox-stack/specs/001-todo-management/` (8 artefactos speckit-*, opcional)
+10. (Opcional) `NORTE.md` v0.1 — visión Framework
+11. (Opcional) `architecture/PRINCIPIOS-ARQUITECTURA.md` v1.3 — A1-A25
 
 ---
 
-## ESTADO ACTUAL (post 2026-05-21 PM/continuación)
+## ESTADO ACTUAL (post 2026-05-21 PM/continuación 2)
 
-### ✅ Planning-phase sandbox completo
+### ✅ Planning-phase sandbox completo + comparación empírica
 
 - T1.6 ✅ Superpowers 14/14 verificado post-restart (DEUDA-SUPERPOWERS-FETCH-RACE cerrada)
-- T1.7 ✅ 5 skills speckit-* planning ejecutadas sobre caso "todo+auth Supabase" (8 artefactos en `specs/001-todo-management/` + 47 tasks)
+- T1.7 ✅ 5 skills speckit-* planning ejecutadas (8 artefactos en `specs/001-todo-management/` + 47 tasks)
 - T1.8 ✅ `EVALUATION.md` v0.5 PRELIMINAR con matriz refinada (44%→76% Direct con caveat operator-dependent)
 - T2 ✅ `ADR-009-adopcion-stack-ecosistema.md` v0.5 PROPOSED
+- **T1.9 ✅ EMPIRICAL** workflow sdd-* completo sobre el mismo caso (7 artefactos en `openspec/changes/todo-management/` + 47 tasks). **Decisión D resuelta**: backbone híbrido. Convergencia 47 tasks. 5 lecciones candidatas (24-28).
 
 ### ⏸️ DIFERIDO a próxima sesión
 
-- **T1.9**: comparación `sdd-*` vs `speckit-*` sobre el mismo caso (Decisión D)
-- **Iteración 3**: `/speckit-implement` o `/ecc:multi-execute` sobre `tasks.md` (47 tareas)
+- **Iteración 3**: `/speckit-implement` o `/ecc:multi-execute` sobre `specs/001-todo-management/tasks.md` (47 tareas). **Backbone**: speckit-* (default híbrido por cost-aware, ver T1.9-EVIDENCE.md Sección 6)
 - **Build sigma MVP**: 4 skills (`operationalize-constitution`, `enforce-constitution-check`, `multi-tenant-isolation-checker`, `dependency-cycle-detector`)
-- **Promoción ADR-009 v0.5 → v1.0 ACCEPTED**: condicionada a T1.9 + iteración 3 + sigma MVP
+- **Promoción ADR-009 v0.5 → v1.0 ACCEPTED**: condicionada a iteración 3 + sigma MVP
+- **DEUDAS nuevas T1.9**: DEUDA-SDD-EXPLORE-NO-WRITE (menor), DEUDA-SUB-AGENT-OVERRIDE-OPERATOR (menor)
 
 ### Repo
 
-- Working tree: con cambios pendientes del cierre 2026-05-21 PM/continuación
+- Working tree: con cambios pendientes del cierre 2026-05-21 PM/continuación 2
 - Branch: main
 - Próximo commit pendiente: en este mismo cierre
 
 ---
 
-## DECISIONES TOMADAS EN SESIÓN 2026-05-21 PM/continuación
+## DECISIONES TOMADAS EN SESIÓN 2026-05-21 PM/continuación 2
 
-- **Scope T1.7→T2**: reducido a fase de planeación + ADR-009 preliminar (cost-aware)
-- **Fact-Forcing Gate**: desactivado para sandbox via `.claude/settings.local.json` (precedente operativo capturado)
-- **ADR-009 v0.5 PROPOSED**: ACCEPT PARCIAL del stack + 4 sigma MVP planeadas
-- **Tests en speckit-tasks**: siempre incluidos (Principio II + A15)
+- **T1.9 ejecutado empíricamente**: corrida completa sdd-* sobre el mismo caso que speckit-* en T1.7
+- **artifact_store=openspec + execution=automatic** elegido vía AskUserQuestion para T1.9
+- **Decisión D resuelta como híbrida**: speckit-* default (cost-aware) + sdd-* escalation por matriz F1-F10
+- **Iteración 3 diferida a próxima sesión**: cost-aware (~$25-45 gastado en T1.9). Backbone elegido: speckit-* (consistente con T1.7)
+- **ADR-009 sigue PROPOSED**: addendum T1.9 agregado, promoción a ACCEPTED requiere iteración 3
 
 ---
 
 ## DECISIONES PENDIENTES PARA PRÓXIMA SESIÓN
 
-### Decisión D — SDD backbone (`sdd-*` vs `speckit-*`)
-- (i) Spec Kit como backbone — validado parcialmente esta sesión (planning OK)
-- (ii) SDD alternativo (`sdd-*`) — sin comparar empíricamente todavía
-- (iii) Combinar según fase del workflow
+### Decisión D — SDD backbone (`sdd-*` vs `speckit-*`) — ✅ RESUELTA
 
-**Recomendación**: ejecutar T1.9 primero, decidir con evidencia ejecutable comparada.
+Backbone **híbrido** resuelto en T1.9 EMPIRICAL:
+- **Default**: speckit-* (velocidad ~15s, cost ~30k tokens)
+- **Escalation**: sdd-* cuando aplica matriz F1-F10 de T1.9-EVIDENCE.md (multi-domain, DAG explícito, A20 crítico, operador no instruido)
+- **Refinamiento futuro**: las 4 sigma MVP (especialmente `sigma:enforce-constitution-check`) llevan speckit-* a paridad de cobertura A* a fracción del costo
 
 ### Decisión B — Visión D (Capa A + Capa B)
 - (i) Formalizar ADR-010-bis o ADR-011 ahora
 - (ii) Esperar evidencia de iteración 3 + build sigma MVP
 
-**Recomendación**: (ii) — la evidencia preliminar de planning valida complementariedad pero no necesariamente separación A/B.
+**Recomendación**: (ii) — la evidencia preliminar de planning (incluyendo T1.9 EMPIRICAL) valida complementariedad pero no necesariamente separación A/B.
 
 ### Decisión C — Stallen
 Sigue diferido. Sin cambio.
@@ -78,57 +82,24 @@ Sigue diferido. Sin cambio.
 
 ## QUÉ HACER ESTA PRÓXIMA SESIÓN
 
-### PASO T-1 — Verificación commit del cierre 2026-05-21 PM/continuación
+### PASO T-1 — Verificación commit del cierre 2026-05-21 PM/continuación 2
 
 ```powershell
 cd C:\DEPARTAMENTO-SOFTWARE
 git log --oneline -5
-# Debería mostrar el commit del cierre PM/continuación 2026-05-21
+# Debería mostrar el commit del cierre PM/continuación 2 2026-05-21 (T1.9 EMPIRICAL)
 git status
 # Esperado: working tree clean
 git pull
 ```
 
-Si push fue exitoso → seguir T1.9. Si no → completar push.
+Si push fue exitoso → seguir directo a Iteración 3.
 
 ---
 
-### PASO T1.9 — Comparación `sdd-*` vs `speckit-*` (Decisión D)  — 60-90 min
+### PASO T1.9 — ✅ COMPLETADO 2026-05-21 PM continuación 2
 
-Ejecutar el mismo caso (todo+auth Supabase) con el SDD alternativo y comparar lado a lado.
-
-**Comando inicial**:
-```
-cd C:\DEPARTAMENTO-SOFTWARE\projects\sandbox-stack
-# Crear copia o nuevo dir para el caso sdd-*
-# Probable estructura: openspec/ o similar (depende del backend que sdd-init elija)
-```
-
-Workflow `sdd-*` esperado:
-```
-/sdd-init                       # detecta stack + bootstrap persistence
-/sdd-new todo-management        # crea proposal
-/sdd-explore                    # investigación (puede ser opcional si proposal ya tiene)
-/sdd-propose                    # proposal formal
-/sdd-spec                       # delta specs
-/sdd-design                     # design doc con arquitectura
-/sdd-tasks                      # task checklist
-/sdd-apply                      # implementación (puede diferirse a iteración 3)
-/sdd-verify                     # validación contra specs
-/sdd-archive                    # cierre del cambio
-```
-
-Comparar:
-- ¿Cuál arranca más rápido (artefactos generados antes de write manual)?
-- ¿Cuál genera artefactos más útiles para el operador?
-- ¿Cuál tiene mejor manejo de dependency graph?
-- ¿Cuál integra mejor con ECC + claude-mem?
-- ¿Cuál encaja con los 7 principios del Framework?
-- ¿Cuál tiene mejor enforcement del Constitution Check (vs delegación al operador)?
-
-**Output**: `projects/sandbox-stack/T1.9-EVIDENCE.md` con tabla comparativa side-by-side.
-
-**Decisión D resuelta**: elegir backbone o combinación.
+T1.9 ejecutado empíricamente. Decisión D resuelta como híbrida. Ver `projects/sandbox-stack/T1.9-EVIDENCE.md` v0.2 EMPIRICAL.
 
 ---
 
