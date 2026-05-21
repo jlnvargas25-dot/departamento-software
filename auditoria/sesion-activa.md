@@ -589,6 +589,129 @@ Paso 8   este audit                             → OK
 
 **Resultado**: 6 OK + 1 N/A + 1 GAP diferido con razón estructural (restricción de cliente, comando armado para mitigación). Razón estructural aceptable según protocolo paso 8 opción B.
 
+**Nota**: el GAP del paso 7 (commit + push) se resolvió post-cierre con commit `7b1ba68` ejecutado por Julián desde PowerShell. Estado del paso 7 actualizado retroactivamente a OK. Resultado final del audit: 7 OK + 1 N/A + 0 GAPs.
+
+---
+
+## ADDENDUM POST-CIERRE (sub-sesión 2026-05-20 PM, post audit paso 8)
+
+Tras el cierre formal con audit OK, discusión arquitectónica adicional con
+Julián sobre routing de skills generó trabajo de outline que vale documentar
+sin reabrir el cierre formal.
+
+### Pregunta arquitectónica de Julián que disparó la sub-sesión
+
+> *"¿cómo sabemos que el LLM va a saber o necesita esa skill? ¿desde
+> planeación se hace el SDD con las skills que necesita en ese SDD?"*
+
+Esta pregunta desplazó el modelo de routing de **reactivo en runtime** a
+**proactivo en planeación**, validando empíricamente la complementariedad
+Nivel 2 ↔ Nivel 3 (insight Decisión A) y agregando capa adicional de
+**verificación de cumplimiento del contrato de skills** al cierre.
+
+### Trabajo adicional ejecutado
+
+- ✅ `decisions/ADR-010-skill-routing-foreman.md` creado como **STATUS PROPUESTO**
+  - Decisión principal: routing híbrido proactivo + reactivo + verificación
+  - `sigma:foreman` como sub-agente especialista invocable (no autónomo)
+  - División: declaradas (en plan) + reactivas (auto-activación nativa) + verificación (foreman audit cierre)
+  - 6 sub-decisiones SD-1..SD-6 con placeholders explícitos pendientes de validación empírica
+  - 8 tests adversariales obligatorios (T-Adv-1..T-Adv-8) antes de promover a ACCEPTED
+  - 6 métricas de éxito (M-1..M-6) propuestas
+  - Conexiones explícitas con ADR-006, ADR-008, ADR-009 (en redacción), LECCIONES 16-20
+- ✅ Verificación empírica (head + tail) del archivo
+- ⏳ Commit + push: PENDIENTE (mismo modelo de restricción de cliente que cierre principal — Julián ejecuta desde PowerShell)
+- ⏳ Actualización de SIGUIENTE-SESION.md para reflejar ADR-010 PROPOSED: PENDIENTE en este mismo addendum
+
+### Hit rate de intuición arquitectónica de Julián
+
+Sube de 18/18 → **20/20**:
+- Insight Decisión A "doble advertencia" (defensa en profundidad Nivel 2 ↔ Nivel 3): **19/19**
+- Insight "routing proactivo desde planeación, no reactivo en runtime": **20/20**
+
+### LECCIÓN candidata 21 (N=1, NO promover hasta tener N=2+)
+
+**Patrón**: una sesión cerrada formalmente con audit OK puede recibir trabajo
+arquitectónico adicional sin reabrir el cierre, mediante "addendum post-cierre".
+Válido cuando la discusión sustantiva continúa después del audit paso 8 y
+produce un artefacto autónomo (en este caso, ADR-010 outline).
+
+**Cuándo aplicar el patrón addendum vs reabrir cierre**:
+- Addendum: trabajo genera artefacto NUEVO (ADR, deuda, lección) sin modificar
+  el contenido ya cerrado de la sesión
+- Reabrir cierre: trabajo MODIFICA o INVALIDA decisiones del cierre original
+
+Esperar N=2 antes de promover a LECCIÓN formal numerada. Anotado como
+candidato.
+
+### LECCIÓN candidata 22 (N=1, NO promover hasta tener N=2+)
+
+**Patrón**: divergencia silenciosa de estado canónico entre sesiones
+secuenciales en clientes distintos.
+
+Una sesión chat de Claude no termina cuando se cierra formalmente con audit
+paso 8 OK. Puede recibir mensajes nuevos del usuario mucho después del
+cierre, momento en el que otras sesiones (en otros clientes — ej. Claude
+Code CLI) pudieron haber avanzado el estado canónico del disco
+(`sesion-activa.md`, `SIGUIENTE-SESION.md`, ADRs, etc.).
+
+**Riesgo**: si Claude actúa sobre disco asumiendo el estado que dejó al
+cerrar, puede sobreescribir trabajo posterior de otras sesiones —
+manifestación de actuar sin verificar.
+
+**Mitigación**: aplicación del 6° principio rector al meta-trabajo de
+chats prolongados. **Antes de cualquier escritura post-cierre, re-verificar
+empíricamente la versión actual de cada archivo a tocar.** No asumir que
+es la versión que dejaste al cerrar.
+
+**Origen empírico**: esta misma sub-sesión post-cierre (2026-05-20 PM
+reabierta para crear ADR-010). Descubrí post-facto que sesión 2026-05-21
+había ejecutado sandbox T1 y avanzado sesion-activa.md (v3.4 → v3.5) +
+SIGUIENTE-SESION.md (v4.0 → v5.0). Mi primer intento de actualizar
+SIGUIENTE-SESION.md falló por mismatch de oldText — **suerte que falló**,
+porque mi update estaba basado en v4.0 y habría destruido información
+valiosa del sandbox.
+
+**Distinción con LECCIÓN 16**: 16 es cascada de aceptación entre instances
+por mediación humana (premisa inventada). 22 es divergencia silenciosa de
+estado entre sesiones secuenciales en clientes distintos. Ambas son
+manifestaciones del meta-patrón "asumir continuidad sin verificar".
+
+**Distinción con LECCIÓN 17 (b)**: 17 (b) es "verificar efectos propios no
+recordados antes de hipotetizar entidad externa". 22 es "verificar estado
+actual del disco antes de escribir, no asumir que sigue como lo dejaste".
+Son complementarias.
+
+Esperar N=2 antes de promover a LECCIÓN formal numerada. Anotado como
+candidato.
+
+### Deuda nueva
+
+**DEUDA-ADR-010-PROMOTE-TO-ACCEPTED** *(NUEVA — addendum sesión PM 2026-05-20)*
+- **Status**: 🟡 ABIERTA (ADR existe como PROPOSED)
+- **Scope**: validar empíricamente sub-decisiones SD-1..SD-6 + ejecutar tests
+  adversariales T-Adv-1..T-Adv-8 + medir métricas M-1..M-6
+- **Criticidad**: 🟡 IMPORTANTE (decisión arquitectónica de routing del Framework)
+- **Tiempo estimado**: ~4-6 horas (sub-T1.5 a T1.7 del Sprint 2)
+- **Próxima acción**: validación empírica en Sprint 2 tras T1 sandbox del stack
+- **Bloqueante para**: implementación final del foreman (Sprint 2 maduro)
+
+### Audit del addendum (mini-audit propio)
+
+| Paso | Status |
+|---|---|
+| 1 Documentación del addendum en sesion-activa | ✅ OK (este texto) |
+| 2 Artefacto creado (ADR-010) | ✅ OK |
+| 3 Verificación empírica del artefacto | ✅ OK |
+| 4 Deuda formal nueva registrada | ✅ OK |
+| 5 LECCIÓN candidata anotada (N=1, sin promover) | ✅ OK |
+| 6 Actualización SIGUIENTE-SESION.md | ⏳ PENDIENTE en este mismo addendum |
+| 7 Commit + push | ⏳ PENDIENTE (restricción cliente, comando armado más abajo) |
+
+**Resultado mini-audit**: 5 OK + 2 PENDIENTES con razón estructural. No es un
+full audit paso 8 del PROTOCOLO-CIERRE (porque el cierre formal ya pasó), es
+un mini-audit del addendum.
+
 ---
 
 # ARCHIVO HISTÓRICO — sesiones anteriores
