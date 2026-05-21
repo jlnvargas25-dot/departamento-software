@@ -34,9 +34,9 @@ NIVEL 5 — Decisiones proyecto/momento   → decisions/ (ADRs)
 | Archivo | Contenido |
 |---|---|
 | `PRINCIPIOS-SOLID.md` | SOLID adaptado al contexto del Departamento (no solo OOP) |
-| `PRINCIPIOS-ARQUITECTURA.md` | 15 reglas universales A1-A15 (ownership, contratos, zero trust, concurrency, explicit failure, unhappy path, ...) |
+| `PRINCIPIOS-ARQUITECTURA.md` | 25 reglas universales A1-A25 (ownership, contratos, zero trust, concurrency, explicit failure, unhappy path, rate limiting, edge protection, async, external resilience, hexagonal, observability, secrets, deployment, data lifecycle, authorization) |
 | `PATRONES-CARPETAS.md` | Estructura de directorios + 6 reglas C1-C6 |
-| `ANTI-PATRONES.md` | 24 anti-patterns identificados con evidencia empírica |
+| `ANTI-PATRONES.md` | 36 anti-patterns identificados con evidencia empírica |
 
 ## Cómo usar esta carpeta
 
@@ -87,17 +87,31 @@ Cambios típicos INVÁLIDOS (NO modificar Nivel 2 por estas razones):
 
 ## Relación con Harness Engineering
 
-Esta carpeta materializa la subsystem **Instructions** del harness según
-la disciplina formal (ver `decisions/ADR-006`). Las otras subsystems:
+Esta carpeta materializa principalmente la subsystem **Instructions** del
+harness según la disciplina formal (ver `decisions/ADR-006`), aunque varias
+reglas tocan también **Scope**, **Verification** y **Session Lifecycle**.
+Mapping detallado de cada regla A* a subsystem en `PRINCIPIOS-ARQUITECTURA.md`
+sección "Mapping a Harness Engineering Subsystems".
 
-- **State** → `openspec/`, Engram, git
-- **Verification** → `mcp-servers/`, GGA, tests
-- **Scope** → `.claude/skills/sigma-capture-domain/`, openspec changes
-- **Session Lifecycle** → `PROTOCOLO-CONSTRUCCION-CODIGO.md`, futura `sigma-close-session-validator`
+Las otras subsystems materializadas en otras carpetas del Departamento:
+
+- **State** → `openspec/`, claude-mem (futuro), git
+- **Verification** → `mcp-servers/`, GGA, tests adversariales
+- **Scope** → `.claude/skills/sigma-capture-domain/`, openspec changes, A12+A16+A17+A22
+- **Session Lifecycle** → `PROTOCOLO-CONSTRUCCION-CODIGO.md`, A18+A23+A24, futura `sigma-close-session-validator`
 
 ---
 
-Versión: 1.1 | Creado: 2026-05-15 | Última edición: 2026-05-15
-Cambios v1.1: ampliado de 10 a 15 reglas A* (DAO/DTO, Zero Trust, Concurrency,
-Explicit Failure, Unhappy Path First) y de 19 a 24 anti-patterns tras audit
-empírico.
+Versión: 1.2 | Creado: 2026-05-15 | Última edición: 2026-05-20
+Cambios v1.2 (2026-05-20): ampliado de 19 a 25 reglas A* tras 3er audit
+empírico (Opción D — catálogo completo Nivel 2). Nuevas reglas A20-A25
+cubren dimensiones de paradigma arquitectónico (Hexagonal), observabilidad
+estructurada, secrets management, deployment safety, data lifecycle &
+privacy, y authorization model. Y de 28 a 36 anti-patterns. Mapping
+actualizado a SOLID y Harness Engineering Subsystems.
+
+Cambios v1.1 (2026-05-15): ampliado de 10 a 15 reglas A* (DAO/DTO, Zero
+Trust, Concurrency, Explicit Failure, Unhappy Path First) + de 19 a 24
+anti-patterns. v1.2 inicial: de 15 a 19 reglas A* (Rate Limiting, Edge
+Protection, Async Processing, External Resilience) + de 24 a 28 anti-patterns.
+Ambos hitos consolidados acá en v1.2 final del README.

@@ -1,7 +1,7 @@
 # PRINCIPIOS DE ARQUITECTURA UNIVERSAL
 
 > **Nivel 2: arquitectura universal** | Reglas para cualquier SaaS multi-tenant
-> Versión: 1.2 | Creado: 2026-05-15 | Última edición: 2026-05-15 (post audit empírico 2)
+> Versión: 1.3 | Creado: 2026-05-15 | Última edición: 2026-05-20 (post audit empírico 3 / Opción D)
 
 ---
 
@@ -2149,6 +2149,1372 @@ Validaciones automáticas:
 
 ---
 
+## A20 — Hexagonal Architecture (Ports & Adapters)
+
+> **El dominio NO depende de infraestructura. El dominio define interfaces
+> (ports) que la infraestructura implementa (adapters). Cambiar de stack
+> requiere reemplazar adapters, NO reescribir el dominio.**
+
+### Definición
+
+Patrón formalizado por **Alistair Cockburn (2005)**, también conocido como
+**Ports & Adapters**. Variantes posteriores: **Clean Architecture** (Uncle
+Bob), **Onion Architecture** (Jeffrey Palermo).
+
+Tres capas con dependencia unidireccional:
+
+```
+                ┌────────────────────────────────────┐
+                │  ADAPTERS (infraestructura)        │
+                │  - Supabase repository             │
+                │  - HTTP controllers                │
+                │  - SendGrid email client           │
+                │  - Stripe payment client           │
+                └────────────┬───────────────────────┘
+                             │ implementa
+                             ▼
+                ┌────────────────────────────────────┐
+                │  PORTS (interfaces del dominio)    │
+                │  - OrderRepository                 │
+                │  - EmailSender                     │
+                │  - PaymentGateway                  │
+                └────────────┬───────────────────────┘
+                             │ consume
+                             ▼
+                ┌────────────────────────────────────┐
+                │  DOMINIO (lógica de negocio pura)  │
+                │  - Order (entity)                  │
+                │  - PlaceOrder (use case)           │
+                │  - Money (value object)            │
+                │  → NO imports de infra             │
+                └────────────────────────────────────┘
+```
+
+**Reglas estructurales**:
+- El dominio NO importa frameworks (no Supabase client, no FastAPI, no Next.js)
+- El dominio NO importa librerías de infra (no httpx, no boto3, no nodemailer)
+- El dominio importa SOLO: stdlib del lenguaje + tipos de dominio + ports
+- Los adapters implementan los ports; el dominio solo conoce los ports
+- Los tests del dominio usan adapters in-memory/mock; nunca BD real
+
+### Por qué importa
+
+Sin Hexagonal:
+- **Acoplamiento a Supabase total**: cambiar de stack = rewrite
+- **Tests requieren BD real**: lentos, frágiles, dependen de fixtures
+- **Lógica de negocio mezclada con SQL**: imposible razonar aisladamente
+- **Imposible probar edge cases**: no podés simular fácilmente "BD caída"
+- **Cambios de infra cascadean**: nuevo proveedor de email → tocar 30 archivos
+- **Negocio atrapado**: tu app no puede migrar a otra plataforma sin reescribir
+
+Para Tier 1 commercial robust, Hexagonal es **la decisión arquitectónica de
+fondo** que determina si tu sistema puede evolucionar o se vuelve legacy.
+
+### Patrón correcto
+
+**Dominio (puro, sin infra)**:
+
+```python
+# domain/order.py — NO imports de infra
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Protocol
+from uuid import UUID
+
+# Value object (inmutable)
+@dataclass(frozen=True)
+class Money:
+    amount: int  # centavos
+    currency: str  # ISO 4217
+
+# Entity (con identidad)
+@dataclass
+class Order:
+    id: UUID
+    customer_id: UUID
+    total: Money
+    items: list
+    status: str  # 'pending', 'paid', 'cancelled'
+    created_at: datetime
+
+    def cancel(self) -> 'Order':
+        # Lógica de negocio pura, sin BD
+        if self.status == 'paid':
+            raise ValueError("Cannot cancel paid order")
+        return Order(
+            id=self.id,
+            customer_id=self.customer_id,
+            total=self.total,
+            items=self.items,
+            status='cancelled',
+            created_at=self.created_at
+        )
+
+# PORT (interface) — el dominio define qué necesita
+class OrderRepository(Protocol):
+    def get(self, order_id: UUID) -> Order | None: ...
+    def save(self, order: Order) -> None: ...
+    def find_by_customer(self, customer_id: UUID) -> list[Order]: ...
+
+class PaymentGateway(Protocol):
+    def charge(self, amount: Money, idempotency_key: str) -> dict: ...
+```
+
+**Use case (orquesta dominio, usa ports)**:
+
+```python
+# domain/use_cases/cancel_order.py
+from domain.order import Order, OrderRepository
+
+class CancelOrderUseCase:
+    def __init__(self, order_repo: OrderRepository):
+        # Solo conoce el PORT, no la implementación
+        self.order_repo = order_repo
+
+    def execute(self, order_id: UUID) -> Order:
+        order = self.order_repo.get(order_id)
+        if not order:
+            raise ValueError(f"Order {order_id} not found")
+
+        cancelled = order.cancel()  # lógica pura
+        self.order_repo.save(cancelled)
+        return cancelled
+```
+
+**Adapter Supabase (implementa el port)**:
+
+```python
+# infrastructure/supabase/order_repository.py
+from domain.order import Order, OrderRepository, Money
+from supabase import Client
+
+class SupabaseOrderRepository(OrderRepository):
+    def __init__(self, client: Client):
+        self.client = client
+
+    def get(self, order_id: UUID) -> Order | None:
+        response = self.client.rpc('get_order_by_id', {'p_id': str(order_id)}).execute()
+        if not response.data:
+            return None
+        row = response.data[0]
+        return Order(
+            id=UUID(row['id']),
+            customer_id=UUID(row['customer_id']),
+            total=Money(amount=row['total_cents'], currency=row['currency']),
+            items=row['items'],
+            status=row['status'],
+            created_at=row['created_at']
+        )
+
+    def save(self, order: Order) -> None:
+        self.client.rpc('upsert_order', {
+            'p_id': str(order.id),
+            'p_status': order.status,
+            # ...
+        }).execute()
+```
+
+**Adapter in-memory (para tests)**:
+
+```python
+# tests/fakes/in_memory_order_repository.py
+from domain.order import Order, OrderRepository
+
+class InMemoryOrderRepository(OrderRepository):
+    def __init__(self):
+        self.orders: dict[UUID, Order] = {}
+
+    def get(self, order_id):
+        return self.orders.get(order_id)
+
+    def save(self, order):
+        self.orders[order.id] = order
+
+    def find_by_customer(self, customer_id):
+        return [o for o in self.orders.values() if o.customer_id == customer_id]
+```
+
+**Test del dominio (rápido, sin BD)**:
+
+```python
+# tests/test_cancel_order.py
+def test_cancel_pending_order():
+    # Setup con adapter in-memory (sin BD real)
+    repo = InMemoryOrderRepository()
+    order = Order(id=uuid4(), customer_id=uuid4(), total=Money(1000, 'USD'),
+                  items=[], status='pending', created_at=datetime.now())
+    repo.save(order)
+
+    # Use case con port abstracto
+    use_case = CancelOrderUseCase(repo)
+    cancelled = use_case.execute(order.id)
+
+    assert cancelled.status == 'cancelled'
+
+def test_cannot_cancel_paid_order():
+    repo = InMemoryOrderRepository()
+    order = Order(id=uuid4(), customer_id=uuid4(), total=Money(1000, 'USD'),
+                  items=[], status='paid', created_at=datetime.now())
+    repo.save(order)
+
+    use_case = CancelOrderUseCase(repo)
+    with pytest.raises(ValueError, match="Cannot cancel paid"):
+        use_case.execute(order.id)
+```
+
+### Estructura de carpetas Hexagonal
+
+```
+src/
+├── domain/                  ← núcleo, sin imports de infra
+│   ├── entities/
+│   │   ├── order.py
+│   │   └── customer.py
+│   ├── value_objects/
+│   │   ├── money.py
+│   │   └── email.py
+│   ├── ports/               ← interfaces que el dominio define
+│   │   ├── order_repository.py
+│   │   ├── payment_gateway.py
+│   │   └── email_sender.py
+│   └── use_cases/
+│       ├── place_order.py
+│       └── cancel_order.py
+│
+├── infrastructure/          ← adapters (implementan ports)
+│   ├── supabase/
+│   │   └── order_repository.py     ← implementa OrderRepository
+│   ├── stripe/
+│   │   └── payment_gateway.py      ← implementa PaymentGateway
+│   └── sendgrid/
+│       └── email_sender.py         ← implementa EmailSender
+│
+├── presentation/            ← controllers HTTP, CLI, etc.
+│   └── http/
+│       └── order_controller.py
+│
+└── composition_root.py      ← arma todo (DI manual)
+```
+
+### Por qué importa más para vibe coders
+
+Como harness engineer:
+- Vos NO sabés si Supabase va a seguir siendo tu stack en 2 años
+- Si tu lógica de negocio está atada a la BD, migrar = rewrite (semanas)
+- Si está separada vía ports, migrar = swap de adapters (días)
+- Cambio de proveedor de email/pago/storage es **inevitable** en el largo plazo
+- Tests rápidos (sin BD) te permiten iterar más rápido con confianza
+
+Hexagonal es el principio que **te protege de tus propias decisiones técnicas
+del año 1** cuando madurás en el año 3.
+
+### Anti-pattern conocido
+
+Ver **AP-2.13 Domain Polluted by Infrastructure** en `ANTI-PATRONES.md`.
+
+### Cómo verificar
+
+Validaciones automáticas:
+```
+- Detectar: archivo en domain/ que importa supabase, httpx, boto3, etc. → alert
+- Detectar: archivo en domain/ con SQL string literal → alert
+- Detectar: use case que recibe Client de Supabase como parámetro → alert
+- Detectar: tests del dominio que requieren BD real → review
+- Linter rule: domain/* solo puede importar de stdlib + domain/*
+```
+
+---
+
+## A21 — Structured Observability
+
+> **Producción TIENE que ser inspectable: logs estructurados (JSON), métricas
+> (Prometheus-style), tracing distribuido. Sin esto, debuggear producción es
+> imposible. Cada operación crítica deja traza.**
+
+### Definición
+
+**Observabilidad** = capacidad de inferir el estado interno de un sistema
+desde sus salidas externas. Materializada en **3 pilares**:
+
+1. **Logs estructurados**: registros de eventos individuales (JSON con campos
+   normalizados), no strings sueltos.
+2. **Métricas**: agregaciones numéricas en el tiempo (counters, gauges,
+   histograms).
+3. **Tracing distribuido**: trazas que siguen un request a través de múltiples
+   servicios (trace_id propagado).
+
+A esto se le suman **health checks**, **SLOs** y **alertas con runbooks**.
+
+### Sub-reglas obligatorias
+
+```
+OBS-1: Structured Logging
+  - JSON (no prose) con campos consistentes:
+    timestamp, level, service, trace_id, user_id, tenant_id,
+    operation, duration_ms, message, error (si aplica)
+  - NUNCA print() en producción
+  - Niveles: DEBUG/INFO/WARN/ERROR/FATAL usados correctamente
+  - PII sanitizada antes de loggear (A22: secrets, ZT-6)
+
+OBS-2: Metrics
+  - Counter: contador monotónico (requests_total, errors_total)
+  - Gauge: valor que sube/baja (active_connections, queue_size)
+  - Histogram: distribución de valores (request_duration_seconds)
+  - Labels normalizadas (no high-cardinality como user_id)
+  - 4 golden signals mínimo: latency, traffic, errors, saturation
+
+OBS-3: Distributed Tracing
+  - trace_id generado en edge (CDN/API gateway)
+  - Propagado en headers HTTP (W3C Trace Context: traceparent)
+  - Propagado en mensajes async (queue payload)
+  - Cada span tiene: trace_id, span_id, parent_span_id, name, duration
+
+OBS-4: Health Checks
+  - /health/liveness: ¿el proceso está vivo? (rápido, sin deps)
+  - /health/readiness: ¿puede atender tráfico? (verifica deps críticas)
+  - Usados por k8s/load balancer para routing automático
+
+OBS-5: SLOs Explícitos
+  - SLI (indicator): métrica observable (% requests <500ms)
+  - SLO (objective): objetivo (99% requests <500ms en 30 días)
+  - Error budget: derivado del SLO (1% downtime tolerable)
+  - Por servicio crítico, no por endpoint individual
+
+OBS-6: Alertas con Runbooks
+  - Cada alerta tiene runbook asociado (qué hacer cuando dispara)
+  - Alert fatigue evitada (umbrales bien calibrados)
+  - Severities: P0 (down), P1 (degraded), P2 (warning)
+  - Alertas accionables (no "FYI")
+```
+
+### Patrón correcto (Python con structlog)
+
+```python
+# logging_config.py
+import structlog
+import logging
+import sys
+
+structlog.configure(
+    processors=[
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.dict_tracebacks,
+        structlog.processors.JSONRenderer(),  # ← salida JSON
+    ],
+    wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
+    context_class=dict,
+    logger_factory=structlog.PrintLoggerFactory(),
+    cache_logger_on_first_use=True,
+)
+
+logger = structlog.get_logger()
+
+# Uso en código de negocio
+from uuid import uuid4
+from contextvars import ContextVar
+
+trace_id_var: ContextVar[str] = ContextVar('trace_id', default='')
+user_id_var: ContextVar[str] = ContextVar('user_id', default='')
+
+def registrar_venta(items, customer_id):
+    # Bind context que aparece en TODOS los logs siguientes
+    log = logger.bind(
+        operation="registrar_venta",
+        trace_id=trace_id_var.get(),
+        user_id=user_id_var.get(),
+        customer_id=str(customer_id),
+        items_count=len(items)
+    )
+
+    log.info("venta_iniciada")
+
+    start = time.monotonic()
+    try:
+        venta_id = ejecutar_db(items, customer_id)
+        duration_ms = (time.monotonic() - start) * 1000
+
+        log.info("venta_completada",
+                 venta_id=str(venta_id),
+                 duration_ms=duration_ms)
+
+        # OBS-2: emitir métrica
+        metrics.histogram("venta.duration_ms", duration_ms,
+                          labels={"status": "success"})
+        metrics.counter("venta.total", 1, labels={"status": "success"})
+
+        return Ok(venta_id)
+
+    except Exception as e:
+        duration_ms = (time.monotonic() - start) * 1000
+        log.exception("venta_fallida",
+                      duration_ms=duration_ms,
+                      error_type=type(e).__name__)
+        metrics.counter("venta.total", 1, labels={"status": "error"})
+        return Err(code="DB_ERROR", message=str(e))
+```
+
+**Salida JSON resultante**:
+
+```json
+{"timestamp": "2026-05-20T15:23:01.234Z", "level": "info",
+ "operation": "registrar_venta", "trace_id": "abc-123",
+ "user_id": "user-456", "customer_id": "cust-789",
+ "items_count": 3, "event": "venta_iniciada"}
+
+{"timestamp": "2026-05-20T15:23:01.456Z", "level": "info",
+ "operation": "registrar_venta", "trace_id": "abc-123",
+ "user_id": "user-456", "customer_id": "cust-789",
+ "items_count": 3, "venta_id": "venta-001",
+ "duration_ms": 222, "event": "venta_completada"}
+```
+
+### Patrón correcto (PostgreSQL — audit_log con campos estructurados)
+
+```sql
+CREATE TABLE observability_log (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    level       TEXT NOT NULL CHECK (level IN ('debug','info','warn','error','fatal')),
+    service     TEXT NOT NULL,
+    operation   TEXT NOT NULL,
+    trace_id    TEXT,
+    user_id     UUID,
+    tenant_id   UUID,
+    duration_ms INTEGER,
+    message     TEXT,
+    metadata    JSONB,         -- campos extra estructurados
+    error_type  TEXT,
+    error_stack TEXT
+);
+
+CREATE INDEX idx_obs_log_trace ON observability_log(trace_id, occurred_at);
+CREATE INDEX idx_obs_log_tenant ON observability_log(tenant_id, occurred_at);
+CREATE INDEX idx_obs_log_errors ON observability_log(occurred_at)
+    WHERE level IN ('error', 'fatal');
+
+-- Helper para logging desde funciones SQL
+CREATE OR REPLACE FUNCTION log_event(
+    p_level TEXT,
+    p_operation TEXT,
+    p_message TEXT,
+    p_metadata JSONB DEFAULT '{}'::jsonb
+) RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+BEGIN
+    INSERT INTO observability_log (
+        level, service, operation, trace_id,
+        user_id, tenant_id, message, metadata
+    ) VALUES (
+        p_level, 'api', p_operation,
+        current_setting('request.headers', true)::json->>'traceparent',
+        auth.uid(), get_my_sc_company_id(), p_message, p_metadata
+    );
+END;
+$BODY$;
+```
+
+### Stack típico de observabilidad
+
+| Capa | Self-hosted | Managed |
+|---|---|---|
+| **Logs** | Loki, ELK stack | Datadog, Honeycomb, Better Stack |
+| **Metrics** | Prometheus + Grafana | Datadog, Grafana Cloud, New Relic |
+| **Tracing** | Tempo, Jaeger | Honeycomb, Datadog APM, Lightstep |
+| **All-in-one** | Grafana stack | Datadog, Honeycomb |
+
+Para vibe coders Tier 1: **Better Stack** o **Grafana Cloud free tier** son
+buenos starters de bajo costo.
+
+### Por qué importa más para vibe coders
+
+Como harness engineer:
+- NO vas a estar 24/7 mirando dashboards
+- Bug en producción a las 3am → tu único debugging tool son los logs
+- Sin trace_id, no podés correlacionar "el usuario X reportó error" con
+  "qué pasó en el backend en ese momento"
+- Métricas mal calibradas → ves errores a las 10am, no a las 3am cuando
+  pasaron
+- Sin SLOs, no sabés si "1 error cada 100 requests" es aceptable o catástrofe
+
+Observabilidad es lo que te permite **operar producción sin estar siempre
+encima**. Es el equivalente arquitectónico a tener cámaras de seguridad.
+
+### Anti-pattern conocido
+
+Ver **AP-3.12 Unstructured Logging** en `ANTI-PATRONES.md`.
+
+### Cómo verificar
+
+Validaciones automáticas:
+```
+- Detectar: print() en código que no es script one-shot → alert
+- Detectar: logger.info("string interpolado " + var) sin structured fields → review
+- Detectar: handler HTTP sin log de inicio/fin → review
+- Detectar: operación crítica sin métrica asociada → review
+- Detectar: error path sin logger.exception() → alert
+- CI check: cada servicio tiene /health/liveness y /health/readiness
+```
+
+---
+
+## A22 — Secrets Management
+
+> **NUNCA hardcoded secrets. Vault obligatorio (env vars + secret manager) +
+> rotation policy + service accounts en producción + detection en CI. Un
+> secret leaked es vector de ataque #1 en SaaS.**
+
+### Definición
+
+**Secrets** = credenciales que dan acceso a recursos protegidos:
+- API keys (Stripe, OpenAI, SendGrid, AWS)
+- Database passwords
+- JWT signing keys
+- OAuth client secrets
+- Webhook signing secrets
+- Encryption keys
+- TLS private keys
+
+Estos NUNCA viven en código, archivos de config committeados, o logs.
+
+### Sub-reglas obligatorias
+
+```
+SEC-1: NO secrets en código
+  - Ni .env committeado
+  - Ni hardcoded en string literals
+  - Ni en comments "TODO: replace this api key"
+  - Ni en migraciones SQL
+  - .env va en .gitignore obligatoriamente
+
+SEC-2: Vaulting obligatorio
+  - Env vars en runtime (no en código)
+  - Secret manager para producción:
+    * AWS Secrets Manager / Parameter Store
+    * GCP Secret Manager
+    * Azure Key Vault
+    * HashiCorp Vault
+    * Doppler / Infisical (managed para Tier 1)
+    * Vercel Env Variables (si stack es Vercel)
+  - Secrets se inyectan al pod/lambda en runtime, no se persisten en imagen
+
+SEC-3: Rotation policy declarada
+  - Por tipo de secret:
+    * API keys de terceros: 90 días o tras incidente
+    * DB passwords: 180 días o tras incidente
+    * JWT signing keys: 30 días con grace period
+    * Service account credentials: 90 días
+  - Rotation automatizada cuando posible
+  - Audit log de rotaciones
+
+SEC-4: Service accounts en producción
+  - NUNCA credenciales personales en producción
+  - Cada servicio tiene su propia identity (IAM role / service account)
+  - Mínimo privilegio (least privilege principle)
+  - Credenciales temporales (STS tokens) > credenciales permanentes
+
+SEC-5: Audit log de acceso a secrets sensibles
+  - Quién accedió a qué secret, cuándo
+  - Alertas sobre acceso anómalo (madrugada, IPs raras)
+  - Retention >= 1 año para forensics
+
+SEC-6: Detection de secret leaks en CI
+  - Pre-commit hook con gitleaks/trufflehog
+  - CI/CD scan en cada PR
+  - GitHub secret scanning habilitado
+  - Si se detecta leak → ROTAR INMEDIATAMENTE (no "lo dejo, ya está)
+```
+
+### Patrón correcto
+
+**.gitignore** (obligatorio):
+
+```
+# Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+secrets/
+credentials.json
+```
+
+**.env.example** (committeable, sin valores reales):
+
+```bash
+# Database
+DATABASE_URL=postgresql://user:password@host:5432/dbname
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxx
+
+# OpenAI
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxx
+
+# JWT
+JWT_SIGNING_KEY=<256-bit random>
+```
+
+**Código (Python, con validación al startup)**:
+
+```python
+# config.py
+import os
+from typing import Optional
+
+class Settings:
+    """Settings cargadas de env vars. Falla al startup si falta algo crítico."""
+
+    def __init__(self):
+        # Críticas: fallan al startup si no están
+        self.database_url = self._required("DATABASE_URL")
+        self.stripe_secret_key = self._required("STRIPE_SECRET_KEY")
+        self.jwt_signing_key = self._required("JWT_SIGNING_KEY")
+
+        # Opcionales: default razonable
+        self.log_level = os.getenv("LOG_LEVEL", "INFO")
+
+    def _required(self, name: str) -> str:
+        value = os.getenv(name)
+        if not value:
+            raise RuntimeError(f"Missing required env var: {name}")
+        return value
+
+settings = Settings()
+
+# Uso en código
+from config import settings
+
+stripe.api_key = settings.stripe_secret_key
+```
+
+**Pre-commit hook** (`.pre-commit-config.yaml`):
+
+```yaml
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+```
+
+**CI check** (`.github/workflows/security.yml`):
+
+```yaml
+name: security
+on: [pull_request]
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Qué hacer cuando un secret se filtra
+
+**ROTACIÓN INMEDIATA, no debate**:
+
+```
+1. Identificar qué secret se filtró
+2. Revocar en el proveedor (Stripe Dashboard, AWS Console, etc.)
+3. Generar nuevo secret
+4. Deploy con nuevo secret
+5. Verificar que no hubo uso malicioso en el período de exposición
+6. Eliminar de git history (BFG Repo Cleaner o git filter-repo)
+   NOTA: Eliminar de git history NO es garantía; siempre rotar primero
+7. Post-mortem: cómo se filtró, qué cambiar para que no vuelva a pasar
+```
+
+NUNCA "lo dejo, total nadie lo va a ver" — los bots de scraping de GitHub
+encuentran API keys en minutos.
+
+### Por qué importa más para vibe coders
+
+Como harness engineer:
+- Casos reales documentados: $50,000 USD de cargos en Stripe en 1 día por
+  API key filtrada en repo público
+- Bills de OpenAI/Anthropic explotando por API key en GitHub commit historic
+- AWS keys filtradas → mining crypto en tu cuenta = bills de $10k+
+- Tu primer incidente de seguridad casi seguro será un secret leak
+
+Secrets management bien hecho NO requiere ser experto. Doppler/Infisical
+gratis + .env en .gitignore + gitleaks pre-commit = 80% de defensa.
+
+### Anti-pattern conocido
+
+Ver **AP-2.14 Hardcoded Secrets** en `ANTI-PATRONES.md`.
+
+### Cómo verificar
+
+Validaciones automáticas:
+```
+- Pre-commit hook: gitleaks ejecuta antes de cada commit
+- CI: scan en cada PR + scan periódico de main branch
+- Validator estático: archivo .env en root → alert si está sin .gitignore
+- Validator: string literal con patrón "sk_live_*", "AKIA*", "ghp_*" → alert
+- Validator: logger.info(...secret...) en código → alert
+- Audit periódico: rotation status de todos los secrets
+```
+
+---
+
+## A23 — Deployment Safety
+
+> **Zero-downtime migrations + API versioning + feature flags + canary strategy
+> + rollback declarado ANTES del deploy. Cada deploy es seguro o no es deploy.**
+
+### Definición
+
+**Deployment Safety** = conjunto de prácticas que hacen que cada release a
+producción sea **reversible** y **gradual**, no un evento de fe.
+
+Tres dimensiones:
+1. **Schema changes (BD)**: zero-downtime via migraciones en pasos
+2. **API changes (contract)**: versionado explícito de breaking changes
+3. **Feature rollout (behavior)**: feature flags + canary/blue-green
+
+### Sub-reglas obligatorias
+
+```
+DEP-1: Migraciones Zero-Downtime
+  - Schema changes en 3 pasos (no destructivos en un solo deploy):
+    1. ADD nullable column / new table (deploy compatible)
+    2. BACKFILL data + start writing both (deploy + datafix)
+    3. DROP old column / set NOT NULL (deploy after grace period)
+  - NUNCA: ALTER TABLE ... DROP COLUMN en deploy directo
+  - NUNCA: rename column en deploy directo (rompe clientes en vuelo)
+
+DEP-2: API Versioning Explícito
+  - Breaking changes van en versión NUEVA, no en existente
+  - URL versioning: /v1/orders, /v2/orders
+  - O header versioning: Accept: application/vnd.api+json; version=2
+  - Deprecation policy: v1 mantenido N meses tras lanzar v2
+
+DEP-3: Feature Flags para cambios riesgosos
+  - Flags de runtime (no compile-time)
+  - Rollout gradual: 0% → 1% → 10% → 50% → 100%
+  - Kill switch: poder desactivar en segundos sin redeploy
+  - Tools: LaunchDarkly, Unleash, Flagsmith, ConfigCat
+  - Para Tier 1: tabla feature_flags + función is_enabled() en BD
+
+DEP-4: Canary / Blue-Green
+  - Canary: nueva versión recibe 1-5% del tráfico, monitorear, escalar
+  - Blue-Green: dos entornos paralelos, swap atómico
+  - Para Tier 1: feature flags pueden suplir canary en MVPs
+
+DEP-5: Rollback Strategy Declarada ANTES del Deploy
+  - Documentar en el PR:
+    * Cómo revertir si algo falla
+    * Cuánto tiempo toma el rollback
+    * Si requiere data migration inversa
+  - Si rollback NO es posible (migración destructiva ya corrió) → NO deploy
+  - Smoke tests post-deploy automatizados
+
+DEP-6: Pre-Deploy Checklist Automatizable
+  - Migration dry-run en staging
+  - Smoke tests verdes
+  - Métricas baseline registradas
+  - Feature flag default OFF para cambios nuevos
+  - Runbook actualizado
+```
+
+### Patrón correcto — Migración Zero-Downtime
+
+**Caso: agregar campo `email` NOT NULL a tabla `customers`**
+
+**Deploy 1 (compatible)**:
+
+```sql
+-- Agregar columna nullable
+ALTER TABLE customers ADD COLUMN email TEXT;
+
+-- Código de la app sigue funcionando (email opcional, default null)
+-- Nuevos INSERTs pueden o no incluir email
+```
+
+**Deploy 2 (backfill + dual-write)**:
+
+```sql
+-- Backfill data existente (con default, no NULL)
+UPDATE customers
+SET email = COALESCE(email, 'unknown_' || id || '@placeholder.local')
+WHERE email IS NULL;
+```
+
+```python
+# Código: ahora REQUIERE email en inputs nuevos
+def create_customer(name: str, email: str):
+    if not email:
+        raise ValueError("email required")
+    # ... insert con email
+```
+
+**Deploy 3 (constraint)**:
+
+```sql
+-- Después de N días sin filas NULL, hacer NOT NULL
+ALTER TABLE customers ALTER COLUMN email SET NOT NULL;
+ALTER TABLE customers ADD CONSTRAINT email_format CHECK (email LIKE '%@%.%');
+```
+
+### Patrón correcto — Feature Flags (SQL)
+
+```sql
+CREATE TABLE feature_flags (
+    flag_name       TEXT PRIMARY KEY,
+    description     TEXT,
+    enabled         BOOLEAN NOT NULL DEFAULT FALSE,
+    rollout_percent INTEGER NOT NULL DEFAULT 0 CHECK (rollout_percent BETWEEN 0 AND 100),
+    enabled_tenants UUID[] DEFAULT '{}',           -- tenants específicos
+    disabled_tenants UUID[] DEFAULT '{}',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE OR REPLACE FUNCTION is_feature_enabled(p_flag_name TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+DECLARE
+    v_tenant_id UUID := get_my_sc_company_id();
+    v_flag RECORD;
+BEGIN
+    SELECT * INTO v_flag FROM feature_flags WHERE flag_name = p_flag_name;
+
+    IF NOT FOUND THEN
+        RETURN FALSE;  -- default-deny: flag desconocida = OFF
+    END IF;
+
+    -- Kill switch global
+    IF NOT v_flag.enabled THEN RETURN FALSE; END IF;
+
+    -- Tenant explícitamente excluido
+    IF v_tenant_id = ANY(v_flag.disabled_tenants) THEN RETURN FALSE; END IF;
+
+    -- Tenant explícitamente incluido (override del %)
+    IF v_tenant_id = ANY(v_flag.enabled_tenants) THEN RETURN TRUE; END IF;
+
+    -- Rollout gradual por hash del tenant_id
+    RETURN (hashtext(v_tenant_id::text) % 100) < v_flag.rollout_percent;
+END;
+$BODY$;
+
+-- Uso en código de negocio
+CREATE OR REPLACE FUNCTION generar_reporte_mejorado()
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+BEGIN
+    IF is_feature_enabled('reporte_v2') THEN
+        -- nueva implementación
+        RETURN generar_reporte_v2();
+    ELSE
+        -- implementación vieja, estable
+        RETURN generar_reporte_v1();
+    END IF;
+END;
+$BODY$;
+```
+
+### Patrón correcto — API Versioning
+
+```python
+# Routing por versión
+@app.get("/v1/orders/{order_id}")
+def get_order_v1(order_id: UUID):
+    order = order_service.get(order_id)
+    # v1 schema
+    return {
+        "id": str(order.id),
+        "total": order.total.amount,  # solo amount, no currency
+        "status": order.status
+    }
+
+@app.get("/v2/orders/{order_id}")
+def get_order_v2(order_id: UUID):
+    order = order_service.get(order_id)
+    # v2 schema: breaking changes
+    return {
+        "id": str(order.id),
+        "total": {
+            "amount": order.total.amount,
+            "currency": order.total.currency  # NUEVO en v2
+        },
+        "status": order.status,
+        "created_at": order.created_at.isoformat()  # NUEVO en v2
+    }
+
+# Deprecation policy en docs/OpenAPI
+# v1 deprecated 2026-06-01, removed 2026-12-01
+```
+
+### Anti-pattern conocido
+
+Ver **AP-3.13 Breaking API Change Without Versioning** en `ANTI-PATRONES.md`.
+
+### Cómo verificar
+
+Validaciones automáticas:
+```
+- Detectar: ALTER TABLE ... DROP COLUMN en migración → alert (requiere ADR)
+- Detectar: rename column sin paso intermedio → alert
+- Detectar: cambio en RETURNS TABLE de RPC pública → review (breaking change)
+- Detectar: PR que modifica /v1/* sin discusión → review
+- CI: smoke tests post-deploy automatizados
+- CI: migration dry-run en staging antes de prod
+```
+
+---
+
+## A24 — Data Lifecycle & Privacy
+
+> **Retention policies declaradas + GDPR right-to-erasure + PII clasificada
+> + backups con RPO/RTO + anonymization para analytics. Sin esto, compliance
+> breach + multas + cliente enterprise perdido.**
+
+### Definición
+
+**Data Lifecycle** = ciclo completo de los datos: creación → uso → retention
+→ deletion. **Privacy** = derechos del individuo sobre sus datos personales
+(GDPR, CCPA, LGPD).
+
+Para Tier 1 commercial robust, esto NO es opcional:
+- GDPR multas: 4% revenue global anual o €20M (lo que sea mayor)
+- CCPA multas: $7,500 por violación intencional
+- Enterprise clients (B2B SaaS): requieren DPA (Data Processing Agreement)
+  firmado antes de comprar
+
+### Sub-reglas obligatorias
+
+```
+DLP-1: Data Retention Policies por tipo
+  - Cada tipo de dato declara cuánto se guarda y por qué
+  - Ejemplos típicos:
+    * Audit log: 7 años (compliance)
+    * Customer transactions: 7 años (fiscal)
+    * Session data: 30 días
+    * Email engagement: 1 año (marketing analytics)
+    * Server logs: 90 días
+    * Soft-deleted records: 30 días before hard-delete
+  - Implementado via cron job / pg_cron / scheduled function
+
+DLP-2: GDPR Right-to-Erasure
+  - Endpoint /api/users/me/delete o equivalente
+  - Soft-delete inmediato + hard-delete diferido (30 días buffer)
+  - Cascadea a TODA la data del usuario:
+    * Profile, sessions, orders, messages, files
+    * Excepción: data anonimizada que ya no es PII
+    * Excepción: data requerida por ley (audit logs, transacciones fiscales)
+  - Audit log de eliminación (qué/cuándo/por qué)
+  - Confirmación al usuario por canal independiente (email)
+
+DLP-3: PII Classification
+  - Cada campo de cada tabla clasificado:
+    * PUBLIC: nombre comercial, descripción producto
+    * INTERNAL: tenant_id, role
+    * PII_BASIC: email, nombre, phone
+    * PII_SENSITIVE: SSN, passport, healthcare data
+    * PCI: card numbers (delegar a Stripe, NO almacenar)
+  - Acceso a PII auditado (quién leyó qué)
+  - PII en logs solo si necesario + sanitization (mask)
+
+DLP-4: Anonymization para Analytics
+  - BI / data warehouse usa datos anonimizados, no PII real
+  - Técnicas: hashing, generalization, k-anonymity
+  - "Customer A" no debe ser identificable cruzando con datasets externos
+
+DLP-5: Backup Policy con RPO/RTO
+  - RPO (Recovery Point Objective): max data loss aceptable (ej: 1 hora)
+  - RTO (Recovery Time Objective): max downtime aceptable (ej: 4 horas)
+  - Backups automáticos (no manuales)
+  - Backups encrypted at rest
+  - Restore drills periódicos (testear que el restore funciona)
+  - Backups en región distinta de la primaria (geo-redundancy)
+
+DLP-6: Multi-Region Failover (si Tier 1 lo requiere)
+  - Para clientes enterprise: SLA 99.99% requiere multi-region
+  - Read replicas en múltiples regiones
+  - Write failover plan documentado
+  - Costo significativo; típicamente diferido hasta first enterprise customer
+```
+
+### Patrón correcto — Right-to-Erasure
+
+```sql
+-- Tabla de erasure requests para audit + grace period
+CREATE TABLE erasure_requests (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID NOT NULL,
+    company_id      UUID NOT NULL,
+    requested_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    soft_deleted_at TIMESTAMPTZ,
+    hard_delete_scheduled_for TIMESTAMPTZ,
+    hard_deleted_at TIMESTAMPTZ,
+    reason          TEXT,
+    confirmation_token TEXT
+);
+
+-- Soft delete inmediato + schedule hard delete en 30 días
+CREATE OR REPLACE FUNCTION request_user_erasure(p_reason TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+DECLARE
+    v_user_id UUID := auth.uid();
+    v_company_id UUID := get_my_sc_company_id();
+    v_request_id UUID;
+BEGIN
+    -- Registrar request
+    INSERT INTO erasure_requests (
+        user_id, company_id, reason,
+        soft_deleted_at, hard_delete_scheduled_for
+    ) VALUES (
+        v_user_id, v_company_id, p_reason,
+        now(), now() + interval '30 days'
+    ) RETURNING id INTO v_request_id;
+
+    -- Soft delete cascading
+    UPDATE users_sc SET deleted_at = now() WHERE id = v_user_id;
+    UPDATE orders_sc SET customer_deleted_at = now() WHERE customer_id = v_user_id;
+    -- ... otras tablas con FK a users_sc
+
+    -- Audit log
+    INSERT INTO audit_log_sc (user_id, action, company_id, occurred_at)
+    VALUES (v_user_id, 'erasure_requested', v_company_id, now());
+
+    -- TODO: trigger email confirmation al usuario
+
+    RETURN jsonb_build_object(
+        'ok', true,
+        'request_id', v_request_id,
+        'hard_delete_at', now() + interval '30 days'
+    );
+END;
+$BODY$;
+
+-- Job periódico (pg_cron) que ejecuta hard delete
+CREATE OR REPLACE FUNCTION process_pending_erasures()
+RETURNS INTEGER
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+DECLARE
+    v_count INTEGER := 0;
+    v_request RECORD;
+BEGIN
+    FOR v_request IN
+        SELECT * FROM erasure_requests
+        WHERE hard_delete_scheduled_for <= now()
+          AND hard_deleted_at IS NULL
+    LOOP
+        -- Hard delete cascading
+        DELETE FROM sessions_sc WHERE user_id = v_request.user_id;
+        DELETE FROM email_log_sc WHERE user_id = v_request.user_id;
+        -- ANONIMIZAR (no eliminar) data fiscal/audit:
+        UPDATE orders_sc SET
+            customer_id = '00000000-0000-0000-0000-000000000000',
+            customer_email = 'erased@erased.local',
+            customer_name = 'ERASED'
+        WHERE customer_id = v_request.user_id;
+        -- Audit log keeps user_id pero se anonimiza si la ley lo permite
+
+        DELETE FROM users_sc WHERE id = v_request.user_id;
+
+        UPDATE erasure_requests
+        SET hard_deleted_at = now()
+        WHERE id = v_request.id;
+
+        v_count := v_count + 1;
+    END LOOP;
+
+    RETURN v_count;
+END;
+$BODY$;
+```
+
+### Patrón correcto — PII Classification (comentarios estructurados)
+
+```sql
+COMMENT ON COLUMN users_sc.email IS 'PII_BASIC: email del usuario, sujeto a erasure';
+COMMENT ON COLUMN users_sc.phone IS 'PII_BASIC: phone optional';
+COMMENT ON COLUMN users_sc.ssn IS 'PII_SENSITIVE: encrypted at rest, audit on access';
+COMMENT ON COLUMN orders_sc.total_cents IS 'INTERNAL: financial, retain 7 years';
+COMMENT ON COLUMN products_sc.name IS 'PUBLIC: catalog data';
+```
+
+### Anti-pattern conocido
+
+Ver **AP-2.15 PII Without Classification** en `ANTI-PATRONES.md`.
+
+### Cómo verificar
+
+Validaciones automáticas:
+```
+- Detectar: tabla nueva sin COMMENT de classification por columna → review
+- Detectar: SELECT * FROM users_sc en logs (potencial PII leak) → alert
+- Detectar: ausencia de endpoint de erasure → alert para Tier 1
+- Validator: para cada tabla con FK a users_sc, debe haber estrategia de erasure
+- Periodic: alert si erasure_requests con hard_delete_scheduled_for vencidos
+  y NO procesados (job de hard delete falló)
+- CI: restore drill mensual de backups (validar que funciona)
+```
+
+---
+
+## A25 — Authorization Model (RBAC/ABAC)
+
+> **Modelo de autorización declarado (RBAC simple o ABAC granular) + permission
+> checks granular por operación sensible + roles en BD (no hardcoded) +
+> default deny. A12 protege contra cross-tenant; A25 protege contra
+> privilege escalation DENTRO del tenant.**
+
+### Definición
+
+**A12 Zero Trust** cubre: "estás autenticado y en tu tenant correcto".
+**A25 Authorization** cubre: "qué podés HACER dentro de tu tenant".
+
+Sin A25, un usuario común puede invocar endpoints de admin si nadie los protege
+granularmente. Common confusion: "estoy autenticado" ≠ "tengo permiso para
+esta operación".
+
+Modelos típicos:
+
+**RBAC (Role-Based Access Control)** — simple, suficiente para 80% de casos:
+```
+Usuario → tiene Roles → cada Role tiene Permissions
+admin: [orders.read, orders.write, users.read, users.write, settings.write]
+manager: [orders.read, orders.write, users.read]
+employee: [orders.read]
+```
+
+**ABAC (Attribute-Based Access Control)** — granular, para casos complejos:
+```
+Authorize(user, action, resource):
+  - user.role
+  - user.department
+  - resource.owner_id
+  - resource.classification
+  - request.time, request.location
+  - etc.
+```
+
+### Sub-reglas obligatorias
+
+```
+AUTHZ-1: Modelo declarado
+  - Decisión: RBAC simple, ABAC complejo, o híbrido
+  - Documentado en ADR del proyecto
+  - NO improvisado por endpoint
+
+AUTHZ-2: Permission checks granular por operación sensible
+  - NO basta "estás autenticado"
+  - Cada operación crítica verifica permiso específico:
+    require_permission('orders.write')
+  - Default-deny: sin permiso explícito → 403 Forbidden
+
+AUTHZ-3: Roles/permissions en BD (no hardcoded)
+  - Tablas: roles, permissions, role_permissions, user_roles
+  - Admins de tenant pueden gestionar (no requiere deploy para cambiar)
+  - Cambios audit-logged
+
+AUTHZ-4: Default deny
+  - Sin permiso explícito → 403
+  - Nunca "si no encuentro la regla, permito" (default-allow)
+
+AUTHZ-5: Audit log de cambios de permisos
+  - Quién cambió qué permiso de quién, cuándo
+  - Retention según DLP-1
+
+AUTHZ-6: Tests adversariales de privilege escalation
+  - Para cada endpoint sensible, test que usuario sin permiso recibe 403
+  - Test de horizontal escalation (usuario A accede a recursos de usuario B)
+  - Test de vertical escalation (empleado accede a endpoint de admin)
+  - A15 Unhappy Path First aplicado a authz
+```
+
+### Patrón correcto — RBAC en SQL
+
+```sql
+-- Schema de RBAC
+CREATE TABLE roles_sc (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id  UUID NOT NULL,
+    name        TEXT NOT NULL,
+    description TEXT,
+    is_system   BOOLEAN NOT NULL DEFAULT FALSE,  -- admin/manager/employee
+    UNIQUE (company_id, name)
+);
+
+CREATE TABLE permissions_sc (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name        TEXT UNIQUE NOT NULL,   -- 'orders.read', 'users.delete', etc.
+    description TEXT,
+    category    TEXT
+);
+
+CREATE TABLE role_permissions_sc (
+    role_id        UUID REFERENCES roles_sc(id) ON DELETE CASCADE,
+    permission_id  UUID REFERENCES permissions_sc(id) ON DELETE CASCADE,
+    granted_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    granted_by     UUID,
+    PRIMARY KEY (role_id, permission_id)
+);
+
+CREATE TABLE user_roles_sc (
+    user_id     UUID NOT NULL,
+    role_id     UUID REFERENCES roles_sc(id) ON DELETE CASCADE,
+    company_id  UUID NOT NULL,
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    assigned_by UUID,
+    PRIMARY KEY (user_id, role_id, company_id)
+);
+
+-- Helper: check permission
+CREATE OR REPLACE FUNCTION current_user_has_permission(p_permission TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+DECLARE
+    v_user_id UUID := auth.uid();
+    v_company_id UUID := get_my_sc_company_id();
+BEGIN
+    -- Default deny si no autenticado
+    IF v_user_id IS NULL OR v_company_id IS NULL THEN
+        RETURN FALSE;
+    END IF;
+
+    RETURN EXISTS (
+        SELECT 1
+        FROM user_roles_sc ur
+        JOIN role_permissions_sc rp ON rp.role_id = ur.role_id
+        JOIN permissions_sc p ON p.id = rp.permission_id
+        WHERE ur.user_id = v_user_id
+          AND ur.company_id = v_company_id
+          AND p.name = p_permission
+    );
+END;
+$BODY$;
+
+-- Decorator-style: require permission
+CREATE OR REPLACE FUNCTION require_permission(p_permission TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $BODY$
+BEGIN
+    IF NOT current_user_has_permission(p_permission) THEN
+        RAISE EXCEPTION 'forbidden: missing permission %', p_permission
+            USING ERRCODE = '42501';  -- insufficient_privilege
+    END IF;
+END;
+$BODY$;
+
+-- Uso en endpoints sensibles
+CREATE OR REPLACE FUNCTION eliminar_usuario(p_user_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $BODY$
+BEGIN
+    -- AUTHZ-2: check granular antes de operar
+    PERFORM require_permission('users.delete');
+
+    -- A12: además verifica tenant (Zero Trust ya implementado)
+    -- ...
+
+    -- Audit log (AUTHZ-5 + DLP)
+    INSERT INTO audit_log_sc (user_id, action, company_id, occurred_at, metadata)
+    VALUES (
+        auth.uid(),
+        'user_deleted',
+        get_my_sc_company_id(),
+        now(),
+        jsonb_build_object('deleted_user_id', p_user_id)
+    );
+
+    -- ... operación
+    UPDATE users_sc SET deleted_at = now() WHERE id = p_user_id;
+
+    RETURN jsonb_build_object('ok', true);
+END;
+$BODY$;
+```
+
+### Patrón correcto — Tests adversariales de privilege escalation
+
+```python
+# tests/security/test_privilege_escalation.py
+
+def test_employee_no_puede_eliminar_usuarios(client_employee):
+    """Empleado normal NO puede llamar /users/delete."""
+    response = client_employee.delete("/api/users/some-user-id")
+    assert response.status_code == 403
+    assert response.json()["code"] == "INSUFFICIENT_PRIVILEGE"
+
+def test_manager_no_puede_cambiar_billing(client_manager):
+    """Manager NO puede cambiar plan de billing (solo admin)."""
+    response = client_manager.post("/api/billing/upgrade", json={"plan": "pro"})
+    assert response.status_code == 403
+
+def test_user_no_puede_acceder_recursos_de_otro_user(client_user_a, user_b_order_id):
+    """Horizontal escalation: user A no puede ver órdenes de user B."""
+    response = client_user_a.get(f"/api/orders/{user_b_order_id}")
+    assert response.status_code in (403, 404)  # 404 prefiere no revelar existencia
+
+def test_endpoint_admin_requiere_role_admin(client_no_role):
+    """Sin role admin → /admin/* devuelve 403."""
+    response = client_no_role.get("/api/admin/users")
+    assert response.status_code == 403
+```
+
+### Por qué importa más para vibe coders
+
+Vibe coders comunes confunden authentication con authorization:
+- "Si el usuario está logueado, puede hacer todo" → privilege escalation horizontal/vertical
+- Endpoints de admin sin protección granular → cualquier user llega
+- Roles hardcoded en código → cambio de modelo requiere deploy
+
+A25 + tests adversariales = mucho menos probable que tu primer breach sea
+de privilege escalation.
+
+### Anti-pattern conocido
+
+Ver **AP-2.16 Authorization Only in UI** en `ANTI-PATRONES.md`.
+
+### Cómo verificar
+
+Validaciones automáticas:
+```
+- Detectar: endpoint sensible sin require_permission() → alert
+- Detectar: function con check de role hardcoded ("IF user.role = 'admin'") → review
+- Detectar: tests de seguridad sin cobertura de privilege escalation → review
+- Validator: cada endpoint en /admin/* tiene authz check
+- CI: penetration test suite con casos de horizontal/vertical escalation
+```
+
+---
+
 ## Mapping a Harness Engineering Subsystems
 
 Estas reglas materializan las 5 subsystems del harness según la disciplina formal:
@@ -2171,6 +3537,12 @@ Estas reglas materializan las 5 subsystems del harness según la disciplina form
 | A17 | **Scope** (edge protection = perímetro defensivo) |
 | A18 | **Session Lifecycle** (jobs asíncronos = lifecycle separado) |
 | A19 | **Verification** + **Session Lifecycle** (external = lifecycle independiente) |
+| A20 | **Instructions** (ports = interfaces formales del dominio) |
+| A21 | **Verification** (observabilidad = inspección de estado runtime) |
+| A22 | **Scope** (secrets = perímetro de credenciales) |
+| A23 | **Session Lifecycle** (deploys = lifecycle de release) |
+| A24 | **Scope** + **Session Lifecycle** (data = scope temporal + retention) |
+| A25 | **Scope** + **Verification** (authz = límite de operación + check) |
 
 ---
 
@@ -2197,6 +3569,12 @@ Estas reglas materializan las 5 subsystems del harness según la disciplina form
 | A17 Edge Protection | **SRP** + **DIP** (defensa perimetral abstrae infra específica) |
 | A18 Async Processing | **SRP** (handler ≠ worker, separación de responsabilidad) |
 | A19 External Resilience | **DIP** + **LSP** (abstracción de servicio, contrato sustituible) |
+| A20 Hexagonal Architecture | **DIP** en su forma más pura (dominio define interfaces) |
+| A21 Structured Observability | **SRP** (observabilidad = concern separado del negocio) |
+| A22 Secrets Management | **SRP** + **ISP** (secrets = responsabilidad separada, mínimo privilegio) |
+| A23 Deployment Safety | **OCP** (cambios extienden sin romper, versionado explícito) |
+| A24 Data Lifecycle | **SRP** (lifecycle = responsabilidad separada del CRUD) |
+| A25 Authorization | **SRP** + **ISP** (authz = concern separado, permisos granulares) |
 
 ---
 
@@ -2242,9 +3620,18 @@ Si alguna es NO → re-evaluar si pertenece a otro nivel.
   (Rate Limiting, Edge Protection, Async Processing, External Service Resilience).
   Cubre **dimensión de infraestructura resiliente** que faltaba en A1-A15.
   Agregadas reglas A16-A19 + mapping actualizado.
+- **1.3** (2026-05-20): 3er audit empírico (Opción D — catálogo completo Nivel 2)
+  detectó 6 GAPS adicionales en 4 dimensiones arquitectónicas nuevas
+  (paradigma, observabilidad, secrets, data lifecycle) + 2 importantes
+  (deployment, authorization). Decisión arquitectónica de Julián: implementar
+  ANTES del sandbox empírico para que las reglas funcionen como criterio
+  contra el cual evaluar el stack del ecosistema. Aplicación del 2° principio
+  rector como "doble advertencia" (Nivel 2 declarativo + Nivel 3 ejecutable
+  son complementos por diseño, no sustitutos). Agregadas A20-A25 + mapping
+  actualizado a Harness Engineering y SOLID. Total: 25 reglas A* universales.
 
 ---
 
-Versión: 1.2 | Creado: 2026-05-15 | Última edición: 2026-05-15 (post audit empírico 2)
+Versión: 1.3 | Creado: 2026-05-15 | Última edición: 2026-05-20 (post audit empírico 3 / Opción D)
 Origen: destilado de legacy SigmaControl (`core/contratos.py`, `skill-contratos-modulos.md`, 170+ reglas SQL)
 Manifestaciones empíricas: 1 (Stallen via SigmaControl legacy)

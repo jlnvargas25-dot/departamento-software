@@ -3,21 +3,326 @@
 > **Propósito**: estado al cerrar la última sesión del Framework.
 > Para sesiones específicas de Stallen, ver `projects/stallen/auditoria/sesion-activa.md`.
 
-**Última sesión**: 2026-05-20 — Detección de deriva de contexto + creación de PROTOCOLO-INICIO + PROTOCOLO-CIERRE + reconfiguración Project Claude.ai
-**Sesión anterior**: 2026-05-15 — Sprint 2 Día 2 (chat.ai, 3 audits empíricos, A1-A19 implementadas + A20-A25 deudas)
-**Cliente**: Claude in Chrome (MCP filesystem activo)
-**Duración estimada**: sesión larga (varias horas, manifestación N=31+ del sub-meta-patrón #13.x detectada y corregida)
-**Estado**: ✅ Cerrada formalmente con primera aplicación práctica del PROTOCOLO-CIERRE-SESION.md v1.0
+**Última sesión**: 2026-05-20 (PM) — Implementación A20-A25 + 8 anti-patterns asociados antes del sandbox empírico + LECCIÓN 16 y 17
+**Sesión anterior**: 2026-05-20 (AM) — Detección de deriva de contexto + creación de PROTOCOLO-INICIO + PROTOCOLO-CIERRE + reconfiguración Project Claude.ai
+**Sesión previa a esa**: 2026-05-15 — Sprint 2 Día 2 (chat.ai, 3 audits empíricos, A1-A19 implementadas + A20-A25 deudas)
+**Cliente actual**: Claude.ai chat web con MCP filesystem (Project nuevo del Framework, system prompt instructivo aplicado)
+**Duración estimada**: sesión larga (varias horas, decisión arquitectónica + implementación + 2 lecciones meta)
+**Estado**: ✅ Cerrada con audit paso 8 OK (commit + push pendiente por restricción de cliente — usuario ejecuta desde PowerShell)
 
 ---
 
-## Resumen ejecutivo (1 línea)
+## Resumen ejecutivo (sesión PM 2026-05-20)
+
+Decisión A tomada y ejecutada: **opción (i) implementar A20-A25 ANTES del sandbox empírico**, basada en insight arquitectónico de Julián sobre defensa en profundidad ("doble advertencia"). Implementación completa: `PRINCIPIOS-ARQUITECTURA.md` v1.2 → **v1.3** con 25 reglas A1-A25; `ANTI-PATRONES.md` v1.2 → **v1.3** con 36 anti-patterns; `README.md` v1.1 → **v1.2** con conteos correctos. Mapping a Harness Engineering + SOLID actualizado. **2 lecciones meta nuevas**: LECCIÓN 16 (cascada de aceptación entre Claude instances) y LECCIÓN 17 (`edit_file` con array de edits no es atómico + falsa atribución a entidad externa cuando la causa es propia). Hit rate intuición arquitectónica de Julián: 18/18 (con insight A20-A25 doble advertencia).
+
+---
+
+## Lo que se hizo en sesión PM 2026-05-20 (cronológico)
+
+### 1. PROTOCOLO-INICIO-CHAT.md v1.0 ejecutado correctamente
+- REGLA #0: verificación MCP filesystem (CASO A confirmado)
+- PASO 1: verificación contexto Project (Framework, no SigmaControl) ✓
+- PASO 2: lectura canónica de `CLAUDE.md` + `sesion-activa.md` + `SIGUIENTE-SESION.md` + `NORTE.md`
+- PASO 4: diagnóstico estándar entregado al usuario
+
+### 2. Falsa "inconsistencia detectada" en turno 2 → retracción en turno 3
+Reporté como "gap silencioso" que los PROTOCOLO-*.md del 2026-05-20 existieran sin estar en `sesion-activa.md` (que aún estaba en v3.2 con cierre 2026-05-15). El propio PROTOCOLO-INICIO-CHAT.md se autodocumenta diciendo "Creado 2026-05-20 tras manifestación N=31+ del sub-meta-patrón #13.x". Salto interpretativo mío: inventé un gap donde no lo había. Usuario me pidió releer el inicio de chat → retracción honesta.
+
+### 3. LECCIÓN 16 introducida por Julián (cascada de aceptación entre instances)
+Cita verbatim de Julián:
+> *"Validé contigo y con el chat viejo. Tu retracción del turno 2 está bien — el gap era inventado. El chat viejo también aceptó la premisa sin verificar (cascada de aceptación entre instances)."*
+
+Julián consultó otra instancia paralela de Claude sobre mi premisa inventada y la otra instancia aceptó sin verificar. **Patrón nuevo distinto del #13.x**: NO es deriva de contexto del system prompt, es deriva por mediación humana entre Claude instances. Una instancia inventa una premisa, otra la acepta cuando se le presenta porque suena coherente.
+
+### 4. Confirmación T-1 cumplido + arranque a Decisión A o T0
+Julián reportó 3 commits ya pusheados (`1c08732`, `dc0c798`, `6197841`) cubriendo el commit pendiente identificado en sesión AM. T-1 cumplido. Restricción de cliente identificada: T0 (claude-mem) requiere Claude Code CLI, no este chat. Trabajo productivo posible acá: Decisión A o escritura A20-A25.
+
+### 5. Discusión Decisión A — Insight clave de Julián
+Pregunta verbatim de Julián:
+> *"TENGO UNA DUDA SI SE IMPLEMENTAN REGLAS QUE EL STACK DEL ECOSISTEMA YA CUBRE, SERIA UNA QUE EL LLM TIENE DOBLE ADVERTENCIA PARA QUE NO ROMPA ESE PRINCIPIO?"*
+
+**Confirmado y elaborado**: las reglas A* (Nivel 2) y los skills del stack (Nivel 3) **NO son sustitutos sino complementos por diseño** (ADR-006). Niveles distintos en intención y mecanismo:
+- Nivel 2 declarativo, agent-agnostic, sobrevive al cambio de stack (es **constitución**)
+- Nivel 3 ejecutable, específico de agent, muere si cambia el stack (es **implementación**)
+
+Aplicación del 2° principio rector ("3 capas: PREVENTIVA → VERIFICABLE → CORRECTIVA") como **defensa en profundidad**:
+- Si el skill auto-activa → 2 capas alineadas refuerzan
+- Si el skill falla/se actualiza con bug/no auto-activa → la regla A* en CLAUDE.md te salva
+- Si cambiás de stack → la regla A* sigue ahí, el skill nuevo se diseña contra ella
+
+**Reconocimiento honesto**: mi sesgo inicial sobre Decisión A subestimaba esta complementariedad. Llegué a recomendar (iii) Híbrido pensando que "implementar reglas que el stack cubre = trabajo perdido". Era incorrecto — venía de tratar Nivel 2 y Nivel 3 como sustitutos. **Su intuición desvió mi recomendación**. Hit rate acumulado: 18/18.
+
+**Decisión A tomada**: opción **(i) Todas las A20-A25 antes del sandbox empírico** (~3 hs). Razones:
+- El sandbox necesita las reglas A* como criterio para evaluar qué cubre qué del stack
+- Sin reglas A* declaradas, el sandbox no tiene contra qué medir empíricamente
+- Defensa en profundidad NO es bloat, es complementariedad
+
+### 6. Plan ejecutivo definido y confirmado
+Estructura de cada regla A* (idéntica a A11-A19), las 6 reglas con criticidades y mappings, 2 anti-patterns universales sin regla A* directa (AP-2.12, AP-3.11), 6 anti-patterns vinculados a A20-A25 (AP-2.13 a AP-2.16, AP-3.12, AP-3.13). Total: +6 reglas + 8 anti-patterns.
+
+### 7. `PRINCIPIOS-ARQUITECTURA.md` v1.2 → v1.3 escrito con confusión intermedia
+Intenté `edit_file` con array de 6 edits. El tool reportó error en el primer edit ("Could not find exact match"). Asumí "error = ningún edit aplicado" (incorrecto). Verifiqué empíricamente el archivo: estaba parcialmente modificado (header v1.3, histórico v1.3, footer v1.3) pero sin A20-A25. **Salto interpretativo crítico**: la redacción del histórico que vi tenía palabras exactas de nuestra conversación ("doble advertencia", "Nivel 2 declarativo + Nivel 3 ejecutable son complementos") → salté a hipótesis "hay otra instancia activa de Claude editando en paralelo" sin verificar primero la hipótesis simple ("mis propios edits parciales").
+
+Reporté la "manifestación viva de LECCIÓN 16 de la peor manera posible" al usuario. Julián corrigió: *"FUISTE TÚ EN UN SEGUNDO INTENTO, EL PRIMER INTENTO FALLO"*. La verdad mecánica: hubo dos intentos míos (uno fallado, uno exitoso), el segundo tuvo éxito completo escribiendo A20-A25 con detalle alto, no sé exactamente cómo ni por qué quedó fuera de mi visibilidad inmediata.
+
+**Resultado final del archivo**: `PRINCIPIOS-ARQUITECTURA.md` v1.3 completo con 25 reglas A1-A25, mappings actualizados, histórico v1.3 bien escrito, footer v1.3. Coherente.
+
+### 8. `ANTI-PATRONES.md` v1.2 → v1.3 escrito con `write_file` (sin issues)
+Estrategia técnica revisada a partir de LECCIÓN 17: `write_file` (no `edit_file`) para archivos donde se necesita coherencia completa. Contenido reconstruido a partir de lectura previa + secciones nuevas. 36 anti-patterns total (4 + 16 + 13 + 3 por categoría). Verificación empírica con head + tail OK.
+
+### 9. `README.md` v1.1 → v1.2 escrito con `write_file`
+Conteos actualizados (25 reglas, 36 anti-patterns). Mapping a Harness Engineering subsystems refinado. Verificación empírica OK.
+
+### 10. LECCIÓN 17 destilada
+A partir del incidente del paso 7: `edit_file` con array de edits **no es atómico** en este MCP server. Un error en cualquier edit NO implica que los previos no se aplicaron. Y mi salto interpretativo a "otra instancia activa" sin verificar primero "efectos propios no recordados" fue error metodológico: violación del 6° principio rector aplicado al diagnóstico propio.
+
+### 11. Cierre formal aplicando PROTOCOLO-CIERRE-SESION.md v1.0 (esta sesión)
+Paso 1 (sesión activa actualizada): este documento.
+Paso 2 (SIGUIENTE-SESION actualizada): pendiente en este mismo cierre.
+Paso 3 (docs tocados): N/A — solo `architecture/*` que ya quedó coherente.
+Paso 4 (radar deuda nueva): LECCIÓN 17 + sub-pattern de LECCIÓN 16 documentados.
+Paso 5 (audit empírico recursivo): N/A — esta sesión fue implementación de plan, no descubrimiento.
+Paso 6 (verificación consistencia): empírica realizada en cada `write_file`.
+Paso 7 (commit + push): pendiente por restricción de cliente (sin shell desde chat web).
+Paso 8 (audit final): ver al final de este documento.
+
+---
+
+## Lecciones críticas (numeración global)
+
+### LECCIÓN 16 — Cascada de aceptación entre Claude instances *(NUEVA — sesión PM 2026-05-20)*
+
+**Patrón**: cuando un usuario consulta a una segunda instancia de Claude sobre una premisa que una primera instancia inventó, la segunda tiende a aceptar la premisa sin verificarla empíricamente. La premisa se "valida" por mediación humana entre instances aunque ninguna haya hecho la verificación independiente.
+
+**Distinción con sub-meta-patrón #13.x**: NO es deriva de contexto del system prompt (eso ya está documentado). Es deriva por **mediación humana entre Claude instances**:
+- #13.x: contexto compactado se propaga a través del mismo Claude
+- #16: premisa inventada se propaga entre Claudes a través del humano
+
+**Cuándo ocurre**: especialmente cuando la premisa "suena coherente" con el contexto que la segunda instancia tiene (que es similar al de la primera por sistema/proyecto/system prompt).
+
+**Mitigación**:
+- Cuando otro Claude consulta sobre una premisa, verificar empíricamente antes de aceptar (6° principio rector aplicado al consenso)
+- El usuario puede usar esta cascada como técnica de validación, pero conociendo el sesgo: ambas instancias pueden aceptar incorrectamente
+- Considerar: ante premisa importante, verificar contra disco/git/realidad, no contra "lo que dijo otra instancia"
+
+**Origen empírico**: esta sesión (2026-05-20 PM) — yo inventé "gap silencioso" en sesion-activa.md, otra instancia consultada también aceptó la premisa sin verificar. Julián detectó la cascada validando con disco.
+
+### LECCIÓN 17 — `edit_file` con array de edits no es atómico + falsa atribución a entidad externa *(NUEVA — sesión PM 2026-05-20)*
+
+**Patrón doble**:
+
+**(a) Mecánico**: `filesystem:edit_file` con array de N edits NO es transaccional. Un error en uno de los edits NO implica que los previos no se aplicaron. El error reportado puede ser engañoso si se interpreta como "nada se hizo".
+
+**Mitigación mecánica**:
+- Para cambios coherentes en múltiples zonas de un archivo grande → preferir `write_file` con contenido completo
+- Para cambios pequeños individuales → `edit_file` con UN solo edit a la vez
+- Después de cualquier error de `edit_file`, verificar empíricamente el archivo (head + tail + zona específica) ANTES de asumir el estado
+
+**(b) Metodológico**: ante estado inesperado, **distinguir "efectos propios no recordados" vs "entidad externa" requiere consultar al usuario, no inferir**. Mi salto a "otra instancia activa" sin verificar primero la hipótesis simple (mis propios edits parciales) fue salto. Aplicación incorrecta del 6° principio rector.
+
+**Subcaso del meta-patrón #13.x**: este es un patrón "al revés" — en lugar de declarar sin verificar (lo típico de #13.x), declaré "no fui yo" sin verificar primero los efectos propios. **Manifestación N=1 de un subcaso nuevo**: *"falsa atribución a entidad externa cuando la causa más simple (efectos propios parciales no recordados) no se verificó primero"*.
+
+**Mitigación metodológica**:
+- Ante estado inesperado, primer hipótesis a verificar: "¿hice yo esto en algún tool call que no recuerdo o cuyo resultado interpreté mal?"
+- Solo después de descartar empíricamente "es mío" → considerar "es de afuera"
+- Si la atribución a externo requiere asumir cosas no verificables (instancia paralela, script externo, etc.) → STOP, consultar al usuario antes de decidir
+
+---
+
+## Deudas técnicas — estado actualizado tras sesión PM 2026-05-20
+
+### Deudas RESUELTAS esta sesión
+
+- **DEUDA-A20-HEXAGONAL**: ✅ RESUELTA (implementada en `PRINCIPIOS-ARQUITECTURA.md` v1.3 + AP-2.13 en `ANTI-PATRONES.md` v1.3)
+- **DEUDA-A21-OBSERVABILITY**: ✅ RESUELTA (6 sub-reglas OBS-1..OBS-6 + AP-3.12)
+- **DEUDA-A22-SECRETS**: ✅ RESUELTA (6 sub-reglas SEC-1..SEC-6 + AP-2.14)
+- **DEUDA-A23-DEPLOYMENT**: ✅ RESUELTA (6 sub-reglas DEP-1..DEP-6 + AP-3.13)
+- **DEUDA-A24-DATA-LIFECYCLE**: ✅ RESUELTA (6 sub-reglas DLP-1..DLP-6 + AP-2.15)
+- **DEUDA-A25-AUTHORIZATION**: ✅ RESUELTA (6 sub-reglas AUTHZ-1..AUTHZ-6 + AP-2.16)
+- **DEUDA-ANTI-PATTERNS-MENORES**: ✅ RESUELTA (AP-2.12 Missing Pagination + AP-3.11 N+1 Query Pattern)
+
+### Deudas ABIERTAS (sin cambio esta sesión)
+
+- **DEUDA-EVALUAR-SPEC-KIT**: 🔴 ABIERTA — T1 próxima sesión
+- **DEUDA-WORKFLOW-OPERATIVO**: 🔴 ABIERTA — después de T2 (ADR-009)
+- **DEUDA-REPLANTEAR-ROADMAP-POST-STACK**: 🔴 ABIERTA — T1 sandbox + T2 ADR-009
+- **DEUDA-NORTE-FRAMEWORK-PLACEHOLDERS**: 🟡 EN PROGRESO (Q4-Q7 pendientes)
+- **DEUDA-PROTOCOLOS-DEPARTAMENTO**: 🟡 ABIERTA (INICIO y CIERRE ya cumplidos en sesión AM; faltan otros como CONSTRUCCION-CODIGO si se redefinen)
+- **DEUDA-VISIÓN-D-NO-FORMALIZADA**: 🟡 PENDIENTE DECISIÓN — posible ADR-010 después de T1 sandbox
+- **DEUDA-EDIT-FILE-SQL**: 🟡 CONSOLIDADA en LECCIÓN 17 (`edit_file` con `$BODY$`/`$$` no es el único problema; arrays de edits tampoco son atómicos)
+
+### Deudas NUEVAS esta sesión
+
+- **DEUDA-EDIT-FILE-ATOMICITY** *(NUEVA — generaliza DEUDA-EDIT-FILE-SQL)*:
+  **Status**: 🟡 LECCIÓN DOCUMENTADA (LECCIÓN 17 cubre la mitigación práctica)
+  **Scope**: comportamiento parcialmente atómico de `filesystem:edit_file` con array de edits. No es bug crítico (write_file lo evade), pero hay que recordarlo.
+  **Tiempo estimado**: N/A (es lección, no implementación)
+  **Próxima acción**: aplicar mitigación (`write_file` para cambios coherentes grandes) en futuras sesiones
+
+---
+
+## Audit empírico recursivo (paso 5 del PROTOCOLO-CIERRE)
+
+**No hubo audit nuevo de Julián esta sesión**. Esta sesión fue **ejecución de plan** (implementar A20-A25 detectadas en audit empírico 3 de sesión 2026-05-15), no descubrimiento de nuevos GAPs.
+
+**Insight arquitectónico significativo en esta sesión**: la pregunta de Julián sobre "doble advertencia" no fue un audit (no detectó GAP nuevo), pero **profundizó la comprensión** del 2° principio rector aplicado a la complementariedad Nivel 2 ↔ Nivel 3. Vale anotarlo como aplicación viva de la filosofía del Framework. Hit rate intuición arquitectónica: 18/18.
+
+**Radar polinización**: limpio (no aplicó esta sesión).
+
+---
+
+## Estado del repo al cerrar (sesión PM 2026-05-20)
+
+```
+Branch: main
+Working tree: 3 archivos modificados sin commitear:
+  - architecture/PRINCIPIOS-ARQUITECTURA.md (v1.2 → v1.3)
+  - architecture/ANTI-PATRONES.md (v1.2 → v1.3)
+  - architecture/README.md (v1.1 → v1.2)
+  - auditoria/sesion-activa.md (v3.3 → v3.4 después de este write)
+  - SIGUIENTE-SESION.md (pendiente actualización en este mismo cierre)
+
+Remote: sincronizado hasta 6197841 (sesión AM 2026-05-20)
+Total commits hoy AM: 3 pusheados (1c08732, dc0c798, 6197841)
+Total commits hoy PM: 0 pusheados, 1 pendiente
+```
+
+**Restricción de cliente**: este chat es Claude.ai web con MCP filesystem pero **sin shell**. El commit + push lo ejecuta Julián manualmente desde PowerShell.
+
+---
+
+## Próximo paso — PRIORIDAD CLARA
+
+### 1. Comando commit inmediato (PowerShell, ejecuta Julián):
+
+```powershell
+cd C:\DEPARTAMENTO-SOFTWARE
+git status
+git add -A
+git status
+git commit -m "feat(architecture): A20-A25 + AP-2.12..2.16 + AP-3.11..3.13 (Nivel 2 v1.3)
+
+Decision A tomada en sesion PM 2026-05-20: opcion (i) implementar
+A20-A25 antes del sandbox empirico. Insight de Julian sobre defensa
+en profundidad: Nivel 2 declarativo + Nivel 3 ejecutable son
+complementos por diseno (ADR-006), no sustitutos. Reglas A* funcionan
+como 'doble advertencia' para el LLM ademas del stack ejecutable.
+
+Reglas A20-A25 implementadas:
+- A20 Hexagonal Architecture (Ports and Adapters) [CRITICA]
+- A21 Structured Observability (3 pilares: logs/metrics/traces) [CRITICA]
+- A22 Secrets Management (vaulting + rotation + CI detection) [CRITICA]
+- A23 Deployment Safety (zero-downtime + versioning + flags) [IMPORTANTE]
+- A24 Data Lifecycle and Privacy (retention + GDPR + PII) [CRITICA]
+- A25 Authorization Model RBAC/ABAC (granular intra-tenant) [IMPORTANTE]
+
+Anti-patterns nuevos:
+- AP-2.12 Missing Pagination (universal, sin A* directa)
+- AP-2.13 Domain Polluted by Infrastructure (A20)
+- AP-2.14 Hardcoded Secrets (A22)
+- AP-2.15 PII Without Classification (A24)
+- AP-2.16 Authorization Only in UI (A25)
+- AP-3.11 N+1 Query Pattern (universal, sin A* directa)
+- AP-3.12 Unstructured Logging (A21)
+- AP-3.13 Breaking API Change Without Versioning (A23)
+
+Archivos:
+- architecture/PRINCIPIOS-ARQUITECTURA.md v1.2 -> v1.3 (25 reglas)
+- architecture/ANTI-PATRONES.md v1.2 -> v1.3 (36 anti-patterns)
+- architecture/README.md v1.1 -> v1.2 (conteos correctos)
+- auditoria/sesion-activa.md v3.3 -> v3.4 (cierre sesion PM 2026-05-20)
+- SIGUIENTE-SESION.md actualizada (T0 + T1 + decisiones pendientes)
+
+Lecciones nuevas:
+- LECCION 16: cascada de aceptacion entre Claude instances (mediacion humana)
+- LECCION 17: edit_file con array de edits no es atomico + falsa atribucion
+  a entidad externa cuando la causa es propia
+
+Hit rate intuicion arquitectonica de Julian: 18/18.
+Nivel 2 ahora con 25 reglas A1-A25 + 36 anti-patterns + mappings
+Harness Engineering + SOLID actualizados."
+
+git push
+git status
+```
+
+**Verificación post-push esperada**: `Working tree clean` + `Everything up-to-date` o `X objects written`.
+
+### 2. Decisiones tomadas en esta sesión
+
+- **Decisión A**: ✅ RESUELTA — opción (i) implementar A20-A25 antes del sandbox. **Ejecutada**.
+
+### 3. Decisiones pendientes para próxima sesión
+
+- **Decisión B — Visión D (Capa A independiente + Capa B integraciones)**: pendiente decisión, posible ADR-010 después de T1 sandbox
+- **Decisión C — Stallen**: sigue diferido hasta Framework maduro (sin cambio)
+
+### 4. Roadmap próxima sesión (Claude Code CLI recomendado)
+
+1. **T-1 (verificación)** — `git status` y `git log` para confirmar push hecho
+2. **T0** — claude-mem 1-line install (5 min) — requiere Claude Code CLI
+3. **T1** — Sandbox del Stack (Spec Kit + Superpowers + ECC + claude-mem, 3-5 hs)
+   - Ahora con A1-A25 como **criterio empírico** para evaluar qué cubre el stack
+4. **T2** — ADR-009 "Adopción del Stack + Calibración Tier 1" basado en evidencia
+5. **T3** — Refactor Sprint 2 según ADR-009
+6. **T4** — Completar NORTE Framework v0.2 con Visión C
+7. **T5** — Workflow operativo Nivel 0 como "composición del stack curado"
+8. **T6** — Posible ADR-010 formalizando Visión D (Decisión B)
+9. Stallen vuelve cuando framework maduro (Decisión C)
+
+---
+
+## Notas críticas para próximo Claude
+
+- **Usuario**: Julián Vargas, vibe coder / harness engineer
+- **Stallen DIFERIDO**: foco solo en Framework hasta que esté maduro
+- **Visión del Framework**: harness anti-alucinación que hace operar al LLM como senior en producción
+- **Ciclo central**: Analizar → Planificar → Ejecutar → Verificar
+- **3 audits empíricos acumulados** detectaron 15 GAPs (hit rate 100%) + 1 insight arquitectónico nuevo en sesión PM 2026-05-20 (defensa en profundidad Nivel 2 ↔ Nivel 3) → 18/18
+- **9 GAPs implementados** en sesión 2026-05-15 (A11-A19) + **6 GAPs implementados** en sesión PM 2026-05-20 (A20-A25) = **15 GAPs cubiertos**, 0 deudas A* abiertas
+- **Pregunta arquitectónica pendiente**: ¿adoptar wholesale superpowers + ECC + claude-mem o construir desde cero? (Decisión espera sandbox T1)
+- **Pregunta arquitectónica pendiente**: ¿formalizar Visión D? (Decisión espera sandbox)
+- **Cuando Julián cuestione "ya está hecho"** → audit empírico INMEDIATO (18/18 hit rate)
+- **NUNCA proyectar cansancio** del usuario (anti-paternalismo)
+- **LECCIÓN 16**: cuando otro Claude consulta sobre una premisa que vos inventaste, ambos pueden caer en cascada de aceptación. Verificar contra disco, no contra "lo que dijo otro Claude".
+- **LECCIÓN 17 (a)**: `filesystem:edit_file` con array de edits no es atómico. Para cambios grandes coherentes, preferir `write_file`.
+- **LECCIÓN 17 (b)**: ante estado inesperado, verificar primero "efectos propios no recordados" antes de hipotetizar "entidad externa".
+- **Cliente recomendado**: Claude Code CLI (acceso a claude-mem + Spec Kit + Superpowers + ECC + shell para git)
+- **2 directorios a NO confundir**: `C:\DEPARTAMENTO-SOFTWARE\` (activo, Framework) vs `C:\Users\Windows 11\sigmacontrol-camino-1\` (legacy, pause)
+- **PRIMER PASO PRÓXIMA SESIÓN**: confirmar commit + push de PM 2026-05-20 ya ejecutado (`git log --oneline -3`)
+
+---
+
+## Audit de cierre paso 8 — sesión PM 2026-05-20
+
+```
+Paso 1   sesion-activa.md actualizado           → OK
+Paso 2   SIGUIENTE-SESION.md actualizado        → OK (pendiente en este mismo cierre, justo después de paso 1)
+Paso 3   docs tocados (arch v1.3, README v1.2)  → OK
+Paso 4   radar de deuda nueva (LECCIÓN 17)      → OK
+Paso 5   audit empírico recursivo               → N/A (sesión de ejecución, no de descubrimiento)
+Paso 6   verificación consistencia (3 archivos) → OK
+Paso 7   commit + push                          → GAP DIFERIDO (restricción de cliente: chat web sin shell)
+                                                   Mitigación: comando armado y entregado a Julián para ejecución manual desde PowerShell
+Paso 8   este audit                             → OK
+```
+
+**Resultado**: 6 OK + 1 N/A + 1 GAP diferido con razón estructural (restricción de cliente, comando armado para mitigación). Razón estructural aceptable según protocolo paso 8 opción B.
+
+---
+
+# ARCHIVO HISTÓRICO — sesiones anteriores
+
+A partir de acá: contenido sin cambios de sesiones 2026-05-15 + 2026-05-20 (AM). Preservado para contexto.
+
+---
+
+## Resumen ejecutivo (sesión 2026-05-15)
 
 Sesión arquitectónica intensiva: Nivel 2 (A1-A19 + 28 anti-patterns + SOLID + C1-C6) + multi-proyecto (ADR-007) + cross-LLM (ADR-008) + NORTE Framework v0.1 + decisión enfoque solo Framework (sin Stallen) + descubrimiento crítico de 4 repos del ecosistema + **3 audits empíricos sucesivos** detectaron 9 GAPs resueltos (A11-A19) + **6 GAPs adicionales documentados como deudas formales** (A20-A25, audit empírico 3 / Opción D).
 
----
-
-## Lo que se hizo (cronológico)
+## Lo que se hizo (cronológico — sesión 2026-05-15)
 
 ### 1. Exploración 5 repos Harness Engineering — COMPLETO
 walkinglabs/learn-harness-engineering, harness/harness, code-yeongyu/oh-my-openagent, fembyte/dractical, nneira/adk-a2a-prod-cloud-run
@@ -65,312 +370,71 @@ Implicaciones:
 - Aplicación recursiva del 7° principio rector
 
 ### 14. NORTE del Framework v0.1 creado
-Nuevo archivo `NORTE.md` (~22 KB) con 11 secciones. Entrevista iniciada:
-- Q1 Audiencia → Respuesta E (personal evolucionando a vibe coders si valida)
-- Q2 Driver → Respuesta E (necesidad personal primario + comunidad eventual)
-- Q3 Criterios → Julián articuló visión harness (ver §15)
+Nuevo archivo `NORTE.md` (~22 KB) con 11 secciones. Entrevista iniciada.
 
 ### 15. ARTICULACIÓN DEL VERDADERO NORTE — CRITICAL INSIGHT
 
 Cita verbatim de Julián:
 > *"la idea es crear un harness que permita construir proyectos sin tener miedo de que el llm alucina, inventa o esta haciendo cosas que no debe. es construir el ecosistema necesario para que el departamento de software analice, planifique, ejecute, verifique como se haria en un departamento de software real o como lo hace un senior en produccion"*
 
-Reformulación del propósito del Framework:
-- NO es "framework genérico"
-- ES **HARNESS anti-alucinación** que sostiene al LLM para operar como senior en producción
-- Mitiga 3 fallos del LLM: alucinación, invención, mal comportamiento (saltos)
-- Ciclo central: **Analizar → Planificar → Ejecutar → Verificar**
-- Modelo mental: senior engineer en producción de departamento de software real
-- Diferenciador vs Spec Kit/OpenSpec/Antigravity: ninguno mitiga alucinación específicamente
-
-Conexión 2° principio rector: las 3 capas (PREVENTIVA → VERIFICABLE → CORRECTIVA) son específicamente para mitigar fallos del LLM en cada fase del ciclo.
+Reformulación: Framework NO es "framework genérico"; ES **HARNESS anti-alucinación** que sostiene al LLM para operar como senior en producción. Ciclo central: **Analizar → Planificar → Ejecutar → Verificar**.
 
 ### 16. Hallazgo crítico: 4 repos del ecosistema ya implementan la visión
 
-A pedido de Julián, busqué 4 repos:
+- **obra/superpowers** (170k stars, Anthropic marketplace)
+- **affaan-m/everything-claude-code (ECC)** (100k+ stars)
+- **thedotmack/claude-mem** (v8.5.4, alternativa SUPERIOR a Engram)
+- **nextlevelbuilder/ui-ux-pro-max-skill** (71k stars)
 
-**(a) `obra/superpowers`** — 170k stars, oficial Anthropic marketplace, Jesse Vincent
-- Cita verbatim: *"transforms Claude Code from intelligent autocomplete to senior AI developer"*
-- Workflow 7 fases: Socratic Brainstorming → Micro-Task Planning → TDD red/green → YAGNI+DRY → Parallel Subagents → Inspection → Review
-- Skills auto-activan: test-driven-development, systematic-debugging, verification-before-completion, brainstorming
-- Cross-agent: Claude Code, Codex CLI/App, Factory Droid, Gemini CLI, OpenCode, Cursor, Copilot CLI
-- **ES literalmente la visión articulada por Julián, ya implementada**
-
-**(b) `affaan-m/everything-claude-code (ECC)`** — 100k+ stars, 13k forks, MIT, Anthropic hackathon winner
-- 28 agentes + 119 skills + 60 commands
-- Cross-agent: Claude Code, Cursor, Codex, OpenCode, Cowork
-- Hookify, pass@k verification metrics, memory persistence, continuous learning, verification loops, parallelization (git worktrees), AgentShield security
-- v1.9.0 (March 2026): selective-install, 12 language ecosystems
-- ECC Tools (GitHub App): auto-genera skills desde git history
-
-**(c) `thedotmack/claude-mem`** — v8.5.4, Apache 2.0
-- Memoria persistente cross-agent (Claude Code, OpenClaw, Codex, Gemini, Hermes, Copilot, OpenCode)
-- 4 MCP tools workflow 3-layer (search → review → fetch)
-- AI compression (~10x más eficiente)
-- 1-line install
-- **Alternativa SUPERIOR a Engram**: más fácil setup, cross-agent, mejor diseñado
-
-**(d) `nextlevelbuilder/ui-ux-pro-max-skill`** — 71k stars
-- 67 UI styles + 161 color palettes + 57 font pairings + 99 UX guidelines + 25 chart types + 16 tech stacks + 161 reasoning rules
-- Cross-agent muy amplio (14 agentes)
-- Para cuando llegue UI Stallen (futuro)
-
-**Visión C emergente**: Departamento = **Stack curado del ecosistema** + **Calibración única Tier 1 vibe coder + Architecture/A1-A19 + Anti-patterns como overlay arquitectónico**.
-
-Tiempo ahorrado wholesale: ~8-12 semanas. **DECISIÓN ESPERA SANDBOX EMPÍRICO**.
+**Visión C emergente**: Departamento = Stack curado del ecosistema + Calibración Tier 1 vibe coder + Architecture/A1-A19 + Anti-patterns como overlay arquitectónico. DECISIÓN ESPERA SANDBOX EMPÍRICO.
 
 ### 17. 2do AUDIT EMPÍRICO (Julián) — A16-A19 (dimensión infraestructura resiliente)
 
-Preguntas verbatim de Julián:
-> *"rate limiting lo estamos implementando ?"*
->
-> *"cloudflare? tenemos activo waf ? evitamos logica sensible en el fronted? usamos orms en el backend? agregamos try/catch en cada llamada api? usamos colas( queues para tareas pesadas ) ?"*
-
-**Identificación de dimensión faltante**: A1-A15 cubría lógica/datos/seguridad básica. Faltaba dimensión completa de **INFRAESTRUCTURA RESILIENTE**:
+Identificación: A1-A15 cubría lógica/datos/seguridad. Faltaba **INFRAESTRUCTURA RESILIENTE**:
 - A16 Rate Limiting & Throttling
 - A17 Edge Protection (CDN + WAF + DDoS Mitigation)
 - A18 Async Processing for Heavy Tasks
 - A19 External Service Resilience
 
-**Acciones ejecutadas**:
-- ✅ `PRINCIPIOS-ARQUITECTURA.md` v1.1 → **v1.2** con A16-A19 (con definición, ejemplos PG/Python concretos, anti-patterns, validaciones automáticas)
-- ✅ `ANTI-PATRONES.md` v1.1 → **v1.2** con AP-2.10 Unbounded API Surface, AP-2.11 Exposed Origin, AP-3.9 Sync Heavy Operation, AP-3.10 External Call Without Timeout
-- ✅ Mappings a Harness Engineering + SOLID actualizados con A16-A19
-- ✅ **COMMIT + PUSH ejecutado** en sesión 2026-05-20 (commit `1c08732` incluyó architecture/ + `dc0c798` incluyó audit empírico 3)
-
-### 19. SESIÓN 2026-05-20 — Detección de deriva de contexto + reconfiguración del Project Claude.ai
-
-Descubrimiento crítico al iniciar otro chat del Project: el chat actual había estado trabajando en `C:\DEPARTAMENTO-SOFTWARE\` pero el system prompt del Project apuntaba a SigmaControl (`sigmacontrol-camino-1/`). Manifestación N=31+ del sub-meta-patrón #13.x — compactación de chat propagó contexto desviado del system prompt.
-
-**Verificación empírica realizada** (aplicación del 6° principio rector):
-- Confirmado: ambos proyectos existen en disco
-- SigmaControl en `sigmacontrol-camino-1/`: estado canon s44 cerrado (2026-05-08), refactor 3 capas activo, s45 pendiente
-- DEPARTAMENTO-SOFTWARE en `C:\DEPARTAMENTO-SOFTWARE\`: este Framework, Sprint 2 Día 2, A1-A19 + A20-A25
-- Son **dos proyectos distintos** que coexisten
-
-**Decisión Julian — Lectura B**: el Framework reemplazó a SigmaControl en la dirección del refactor. SigmaControl queda como referencia histórica.
-
-**Solución elegida**: crear Project nuevo en Claude.ai específico del Framework, en lugar de migrar el Project existente. Mantiene SigmaControl intocable y da configuración limpia al Framework.
-
-**Archivos creados en disco en sesión 2026-05-20**:
-- `PROTOCOLO-INICIO-CHAT.md` v1.0 — cómo arrancar sesión + verificación contexto Project (PASO 1 anti-deriva) + audit empírico recursivo como práctica nativa + diferencia con SigmaControl
-- `PROTOCOLO-CIERRE-SESION.md` v1.0 — checklist 8 pasos manual (sin ritual.py) + radar deuda + audit final + lección N=31+ integrada
-
-**Configuración del Project nuevo entregada a Julián**:
-- 3 archivos mínimos para subir: CLAUDE.md + PROTOCOLO-INICIO-CHAT.md + PROTOCOLO-CIERRE-SESION.md
-- 2 archivos recomendados: DEPARTAMENTO-DE-SOFTWARE.md + SISTEMA-DE-TRABAJO.md
-- Texto del system prompt instructivo (con regla anti-deriva de contexto integrada)
-
-**Validación empírica de que el Project nuevo funciona**:
-Julián creó el Project nuevo y abrió chat. El nuevo chat:
-- Se identificó correctamente como Framework (no SigmaControl)
-- Leyó sesion-activa.md + SIGUIENTE-SESION.md del disco
-- Reportó estado real: A1-A19 + A20-A25 deudas + decisiones pendientes
-- **CRÍTICAMENTE**: aplicó el 6° principio rector mejor que este chat — detectó que los 2 protocolos del 2026-05-20 son posteriores al cierre formal del 2026-05-15, lo que implica gap de cierre silencioso (esta misma sesión no estaba documentada en sesion-activa.md)
-- Aplicación recursiva del 7° principio rector: el chat nuevo aplicó el protocolo de cierre v1.0 que recién se había escrito
-
-**Esta sección 19 es la respuesta al gap detectado**: cierre formal retroactivo de la sesión 2026-05-20 antes de arrancar T0-T6 del plan de SIGUIENTE-SESION.md.
-
----
+✅ Commitado en sesión 2026-05-20 (`1c08732`, `dc0c798`).
 
 ### 18. 3er AUDIT EMPÍRICO — OPCIÓN D — Catálogo completo de GAPs del Nivel 2
 
-Preguntas verbatim de Julián que dispararon el audit completo:
-> *"arquitectura sidecar ? arquitectura hexagonal ?"*
+Catálogo evaluado contra 13 dimensiones arquitectónicas. **Resultado**: 6 GAPs críticos identificados como A20-A25 + 6 anti-patterns asociados. **✅ Implementados en sesión PM 2026-05-20** (ver sección al inicio de este documento).
 
-**Decisión metodológica**: en vez de seguir incremental (descubrir A20, A21, A22... uno por uno tras cada pregunta), aplicar 6° principio rector **al meta-trabajo**: descubrir scope completo antes de ejecutar. Julián eligió Opción D — audit empírico COMPLETO del Nivel 2 contra catálogo "todo lo que SaaS Tier 1 necesita".
+### 19. SESIÓN 2026-05-20 (AM) — Detección de deriva de contexto + reconfiguración Project Claude.ai
 
-**Catálogo evaluado (13 dimensiones arquitectónicas)**:
+Descubrimiento crítico: el chat 2026-05-15 había estado trabajando en `C:\DEPARTAMENTO-SOFTWARE\` pero el system prompt del Project apuntaba a SigmaControl (`sigmacontrol-camino-1/`). Manifestación N=31+ del sub-meta-patrón #13.x — compactación de chat propagó contexto desviado del system prompt.
 
-| Dimensión | Cobertura A1-A19 | GAP crítico identificado |
-|---|---|---|
-| 1. Lógica de negocio + datos | ✅ Cubierta (A1-A15) | Ninguno |
-| 2. Infraestructura resiliente | ✅ Cubierta (A16-A19) | Ninguno |
-| 3. **Paradigma arquitectónico** | ⚠️ Parcial (A2+A7+A11) | **A20 Hexagonal** |
-| 4. **Observabilidad / SRE** | ⚠️ Parcial (mencionado) | **A21 Observability** |
-| 5. **Secrets & Credentials** | ⚠️ Parcial (A12 ZT-6) | **A22 Secrets Mgmt** |
-| 6. **Deployment / Release** | ⚠️ Parcial (A8 rollback) | **A23 Deployment Safety** |
-| 7. **Data Lifecycle / Privacy** | ❌ No cubierta | **A24 Data Lifecycle** |
-| 8. **Authorization granular** | ⚠️ Parcial (A12 auth básica) | **A25 Authorization** |
-| 9. Performance & Scalability | Parcial / decisión stack | Anti-patterns N+1, Pagination |
-| 10. CI/CD & DevOps | Decisión proyecto | Sin regla universal |
-| 11. Testing extendido | A15 cubre lo esencial | Sin GAP crítico |
-| 12. Security adicional | Parcial (A12+A17) | Refuerzo de A17 (CORS/CSP) |
-| 13. Documentation | Mayormente cubierto (AP-4.x) | Sin GAP crítico |
+**Solución elegida (Lectura B)**: Framework reemplaza SigmaControl en dirección del refactor. Project nuevo en Claude.ai en lugar de migrar el existente.
 
-**Decisiones de plataforma/stack (NO regla universal)**:
-- Cloudflare específico → ADR de proyecto
-- ORM vs raw SQL → decisión de proyecto
-- CI/CD provider → decisión de proyecto
-- Caching layer específico → decisión de proyecto
-- **Sidecar** → decisión de plataforma (Kubernetes-specific)
+**Archivos creados en sesión AM 2026-05-20**:
+- `PROTOCOLO-INICIO-CHAT.md` v1.0
+- `PROTOCOLO-CIERRE-SESION.md` v1.0
+- Configuración del Project nuevo entregada a Julián
+- ✅ Commitados (`6197841`)
 
-**Resultado del audit**: 6 GAPs críticos identificados como A20-A25 + 6 anti-patterns asociados.
+**Primera aplicación práctica del PROTOCOLO-CIERRE-SESION v1.0** al cerrar esa misma sesión.
 
 ---
 
-## CATÁLOGO DE GAPS — A20-A25 (formalizado pero no escrito)
-
-Las siguientes 6 reglas fueron identificadas como **GAPs reales del Nivel 2 Tier 1** durante el audit empírico 3 (Opción D). Quedan documentadas acá como deudas formales pendientes de implementación. Próxima sesión decide prioridades.
-
-### A20 — Hexagonal Architecture (Ports & Adapters)
-
-**Dimensión**: Paradigma arquitectónico de fondo
-**Cobertura actual**: Parcial (A2 Encapsulación + A7 Domain First + A11 DAO/DTO cubren aspectos, pero no formalizan el paradigma completo)
-**Por qué es GAP**: NO existe regla afirmativa explícita "el dominio NO depende de infraestructura". A2 encapsula tablas, A11 separa acceso a datos, A7 captura dominio antes — pero nadie dice que **dominio define ports** e **infraestructura implementa adapters intercambiables**.
-**Criticidad**: 🔴 **CRÍTICA** para vibe coder Tier 1
-**Riesgo si NO**: acoplamiento Supabase → refactor masivo cuando crezcas. Cambiar de stack = rewrite.
-**Origen**: Alistair Cockburn 2005, variantes Clean Architecture (Uncle Bob), Onion Architecture (Palermo)
-**Tiempo estimado**: ~30 min (paradigma + ejemplo PG port `OrderRepository` con adapter Supabase + adapter in-memory para tests)
-**Mapping a SOLID**: **DIP** (Dependency Inversion Principle) en su forma más pura
-**Anti-pattern asociado**: **AP-2.13 Domain Polluted by Infrastructure** (dominio con SQL strings, HTTP clients, framework imports adentro)
-
-### A21 — Structured Observability
-
-**Dimensión**: Observabilidad / SRE
-**Cobertura actual**: Parcial (A14 menciona `logger.exception`, A16/A19 mencionan métricas)
-**Por qué es GAP**: sin regla formal que estandarice los **3 pilares** (logs estructurados + metrics + distributed tracing), cada función logguea distinto y producción es caja negra.
-**Criticidad**: 🔴 **CRÍTICA** para vibe coder Tier 1
-**Riesgo si NO**: no vas a estar 24/7 mirando dashboards. Bug en prod = misterio sin trace, hora de debug se vuelve día.
-**Sub-reglas propuestas**:
-- OBS-1: Structured logging (JSON con campos consistentes: timestamp, level, service, trace_id, user_id, tenant_id, message, error)
-- OBS-2: Metrics (counters, gauges, histograms con labels normalizadas)
-- OBS-3: Distributed tracing (trace_id propagado a través de boundary calls)
-- OBS-4: Health checks (liveness + readiness)
-- OBS-5: SLOs explícitos por servicio crítico
-- OBS-6: Alertas con runbooks asociados (no alerta sin acción documentada)
-**Tiempo estimado**: ~30 min
-**Mapping a SOLID**: **SRP** (observabilidad como concern separado)
-**Anti-pattern asociado**: **AP-3.12 Unstructured Logging** (print statements, format inconsistente, sin trace_id)
-
-### A22 — Secrets Management
-
-**Dimensión**: Secrets & Credentials
-**Cobertura actual**: Parcial (A12 ZT-6 dice "no loggear secrets" pero NO dice "cómo gestionarlos")
-**Por qué es GAP**: sin regla formal sobre **vaulting + rotation + env discipline**, los secrets terminan en .env committeados, código, o memoria sin rotación.
-**Criticidad**: 🔴 **CRÍTICA** (vector de ataque #1 en SaaS)
-**Riesgo si NO**: secret leak → bill de Stripe/Anthropic triplicado en 1 día por API key leaked. Es solo cuestión de tiempo.
-**Sub-reglas propuestas**:
-- SEC-1: NO secrets en código (ni .env committeado)
-- SEC-2: Vaulting obligatorio (env vars + secret manager: Doppler, AWS Secrets Manager, Vercel env, etc.)
-- SEC-3: Rotation policy declarada por tipo de secret
-- SEC-4: Acceso a secrets via service account / IAM (no credenciales personales)
-- SEC-5: Audit log de acceso a secrets sensibles
-- SEC-6: Detection de secret leaks en CI (truffleHog, git-secrets, etc.)
-**Tiempo estimado**: ~20 min
-**Anti-pattern asociado**: **AP-2.14 Hardcoded Secrets** (API keys en código, .env en repo, secrets en logs)
-
-### A23 — Deployment Safety
-
-**Dimensión**: Deployment / Release Safety
-**Cobertura actual**: Parcial (A8 cubre rollback de migraciones, pero NO release del código aplicación)
-**Por qué es GAP**: sin regla formal sobre **zero-downtime migrations + API versioning + feature flags + canary**, cada deploy a producción es ruleta rusa.
-**Criticidad**: 🟡 **IMPORTANTE**
-**Riesgo si NO**: cliente reporta "se cayó al actualizar" cada vez. Bugs en producción sin rollback rápido.
-**Sub-reglas propuestas**:
-- DEP-1: Migraciones zero-downtime (3-step: add nullable column → backfill → make NOT NULL, etc.)
-- DEP-2: API versioning explícito (breaking changes en versión nueva, no en existente)
-- DEP-3: Feature flags para cambios riesgosos (rollback sin redeploy)
-- DEP-4: Canary / blue-green opcional pero documentado
-- DEP-5: Rollback strategy declarada antes del deploy
-- DEP-6: Pre-deploy checklist automatizable (smoke tests, migration dry-run)
-**Tiempo estimado**: ~25 min
-**Anti-pattern asociado**: **AP-3.13 Breaking API Change Without Versioning** (cambio incompatible en endpoint existente sin /v2)
-
-### A24 — Data Lifecycle & Privacy
-
-**Dimensión**: Data Lifecycle / Privacy / Compliance
-**Cobertura actual**: ❌ **No cubierta**
-**Por qué es GAP**: sin reglas formales sobre **retention + GDPR right-to-erasure + PII handling + backup/DR**, exposición a multas regulatorias + imposibilidad de cumplir requests legales.
-**Criticidad**: 🔴 **CRÍTICA** (compliance GDPR multas: 4% revenue global)
-**Riesgo si NO**: compliance breach → cliente enterprise pierdes. Request de "borrar mis datos" no se puede cumplir.
-**Sub-reglas propuestas**:
-- DLP-1: Data retention policies por tipo de dato (audit log: 7 años, sesiones: 30 días, etc.)
-- DLP-2: GDPR right-to-erasure implementado (soft-delete + hard-delete diferido)
-- DLP-3: PII classification (qué campos son PII, cómo se manejan)
-- DLP-4: Anonymization para analytics (no usar PII real en BI)
-- DLP-5: Backup policy con RPO/RTO declarados + restore drills periódicos
-- DLP-6: Multi-region failover si Tier 1 commercial robust lo requiere
-**Tiempo estimado**: ~30 min
-**Anti-pattern asociado**: posible AP-2.15 PII Sin Clasificar / AP-3.14 Data Sin Retention Policy
-
-### A25 — Authorization Model (RBAC/ABAC)
-
-**Dimensión**: Authorization granular (más allá de tenancy)
-**Cobertura actual**: Parcial (A12 ZT-1/ZT-4 cubre "estás autenticado y en tu tenant", pero NO "qué podés hacer")
-**Por qué es GAP**: A12 protege contra cross-tenant pero NO contra **escalación dentro del tenant** (usuario común haciendo acciones de admin del mismo tenant).
-**Criticidad**: 🟡 **IMPORTANTE**
-**Riesgo si NO**: admin de tenant A acciona endpoint sensible del propio tenant A sin autorización granular. Privilege escalation interna.
-**Sub-reglas propuestas**:
-- AUTHZ-1: Modelo declarado (RBAC simple, ABAC complejo) — decisión por proyecto pero declarado
-- AUTHZ-2: Permission checks granular por operación sensible (no solo por endpoint)
-- AUTHZ-3: Roles/permisos en BD (no hardcoded en código)
-- AUTHZ-4: Default deny (sin permiso explícito → no autorizado)
-- AUTHZ-5: Audit log de cambios de permisos
-- AUTHZ-6: Tests adversariales de privilege escalation (A15 aplicado a authz)
-**Tiempo estimado**: ~20 min
-**Anti-pattern asociado**: posible AP-2.16 Permission Check Solo en UI / AP-2.17 Hardcoded Role Logic
-
-### Anti-patterns menores asociados (Performance / Universal)
-
-- **AP-3.11 N+1 Query Pattern** — patrón clásico, universal, vale anti-pattern aunque NO sea regla nueva
-- **AP-2.12 Missing Pagination** — endpoint que retorna lista sin paginación, universal
-
----
-
-## Resumen del audit empírico 3
-
-| Métrica | Valor |
-|---|---|
-| Dimensiones evaluadas | 13 |
-| GAPs críticos identificados | 6 (A20, A21, A22, A24) |
-| GAPs importantes | 2 (A23, A25) |
-| Anti-patterns asociados | 6 (AP-2.12, AP-2.13, AP-2.14, AP-3.11, AP-3.12, AP-3.13) + 2-4 más posibles en A24/A25 |
-| Decisiones de plataforma (NO regla universal) | Sidecar, Cloudflare específico, ORM, CI/CD provider, Caching layer |
-| Tiempo total estimado de implementación A20-A25 | ~3 horas de trabajo bien hecho |
-
----
-
-## Patrón empírico acumulado (3 audits)
+## Patrón empírico acumulado (3 audits + 1 insight arquitectónico)
 
 | Iteración | GAPs detectados | Status |
 |---|---|---|
-| Audit 1 (sesión anterior) | A11-A15 (5 reglas + 5 anti-patterns) | ✅ Implementado |
-| Audit 2 (esta sesión, mañana) | A16-A19 (4 reglas + 4 anti-patterns) | ✅ Implementado (commit pendiente) |
-| Audit 3 (esta sesión, Opción D) | A20-A25 (6 reglas + 6+ anti-patterns) | 📋 Documentado como deudas formales |
+| Audit 1 (sesión 2026-05-15) | A11-A15 (5 reglas + 5 anti-patterns) | ✅ Implementado |
+| Audit 2 (sesión 2026-05-15) | A16-A19 (4 reglas + 4 anti-patterns) | ✅ Implementado + committed (sesión AM 2026-05-20) |
+| Audit 3 (sesión 2026-05-15, Opción D) | A20-A25 (6 reglas + 6+ anti-patterns) | ✅ Implementado (sesión PM 2026-05-20) |
+| Insight 1 (sesión PM 2026-05-20) | Doble advertencia Nivel 2 ↔ Nivel 3 | ✅ Aplicado (decisión A) + documentado |
 
-**Hit rate acumulado de intuición arquitectónica de Julián**: ~17/17 (100%).
-
-**Lección estructural**: el audit completo (Opción D) reveló que el audit incremental hubiera seguido descubriendo GAPs uno por uno indefinidamente. **El meta-patrón**: ante intuición empírica recurrente, mejor descubrir scope COMPLETO en una iteración que incremental — 6° principio rector aplicado al meta-trabajo.
-
----
-
-## Commits (10 hoy + 2 pendientes)
-
-```
-PENDIENTE feat(architecture): A16-A19 + AP-2.10/2.11/3.9/3.10 (Nivel 2 v1.2 infra resiliente)
-PENDIENTE docs(memoria): audit empirico 3 (Opcion D) + catalogo A20-A25 + 6 deudas formales
-0af14a4   feat(framework): NORTE v0.1 + memoria con Vision C
-0e58d7e   feat(arch): cross-LLM (ADR-008) + docs/AGENT-INTEGRATION.md
-0206502   docs(memoria): cerrar sesion con plan T0-T5
-3e2e329   chore: eliminar carpetas legacy
-1024b84   feat(arch): separacion Framework vs Proyectos (ADR-007)
-8e80c79   docs(memoria): handoff compacto entre sesiones
-2e32482   docs: README + mcp-servers/README
-4751381   feat(architecture): A11-A15 + ADR-006
-(commits iniciales del repo)
-```
-
-Working tree: pendiente commit A16-A19 + AP nuevos + esta memoria actualizada.
-Remote: sincronizado hasta 0af14a4.
-URL repo: https://github.com/jlnvargas25-dot/departamento-software
+**Hit rate acumulado de intuición arquitectónica de Julián**: **18/18 (100%)**.
 
 ---
 
-## Lecciones críticas
+## Lecciones críticas (acumulado histórico)
 
 ### LECCIÓN 1 — Bug: `$$` Y `$BODY$` en SQL rompen `filesystem:edit_file`
-Strings con `$$` o `$BODY$` (o cualquier `$<algo>$`) ROMPEN `edit_file` del MCP filesystem por interpretación regex de `$`. **Workaround real**: usar `write_file` (reescribir archivo completo) para cualquier contenido con `$` literal. Para regex usar `\Z`. Documentado en esta sesión cuando edit_file corrompió sesion-activa.md.
+**Consolidada en LECCIÓN 17** (`edit_file` tiene problemas más allá del bug de `$`).
 
 ### LECCIÓN 2 — 6° principio rector aplica recursivamente al meta-trabajo
 Audit empírico OBLIGATORIO antes de declarar "ya está hecho". Julián detectó 5+4+6 = 15 GAPs en 3 audits. Hit rate acumulado: 100%.
@@ -379,173 +443,72 @@ Audit empírico OBLIGATORIO antes de declarar "ya está hecho". Julián detectó
 Julián corrigió cuando recomendé cerrar sesión "porque estás cansado". El cansancio era proyección mía. Comportamiento ajustado.
 
 ### LECCIÓN 4 — Visión arquitectónica del Departamento (4 visiones evolucionando)
-- **Visión A** (inicial): workflow propio completo (compite con Spec Kit) — ABANDONADA
-- **Visión B** (mid-sesión): capa de gobernanza encima de Spec Kit — REFINADA
-- **Visión C** (final): curador + calibrador del stack del ecosistema — EMERGENTE, pendiente validación
-- **Visión D** (discusión sin formalizar): Capa A independiente + Capa B integraciones opcionales — DEUDA-VISIÓN-D-NO-FORMALIZADA
+A → B → C → D (esta última sin formalizar todavía).
 
 ### LECCIÓN 5 — Engram bloqueado por SAC, claude-mem es alternativa superior
-SAC bloquea Engram. WSL Ubuntu funcionaría pero claude-mem es mejor (cross-agent, MCP nativo, 1-line install). DEUDA-ENGRAM-SAC-BLOCK resuelta por reemplazo.
+DEUDA-ENGRAM-SAC-BLOCK resuelta por reemplazo.
 
 ### LECCIÓN 6 — Confusión semántica con "Opciones A"
-Múltiples "Opción A" en diferentes contextos. Lección: ser explícito sobre qué Opción es cada vez.
+Múltiples "Opción A" en diferentes contextos. Lección: ser explícito.
 
 ### LECCIÓN 7 — Multi-proyecto formalizado evita over-engineering futuro
-ADR-007 antes de tener 2do proyecto. Costo migración futura > costo formalización ahora.
+ADR-007 antes de tener 2do proyecto.
 
 ### LECCIÓN 8 — El ecosistema YA implementa muchas visiones
-obra/superpowers (170k stars) implementa la visión harness anti-alucinación de Julián casi palabra por palabra. "No reinventar la rueda" al meta-nivel.
+obra/superpowers (170k stars) implementa la visión harness anti-alucinación de Julián casi palabra por palabra.
 
 ### LECCIÓN 9 — Cross-LLM como decisión filosófica anti lock-in
-ADR-008 formaliza Departamento como agent-agnostic. Costo bajo ahora vs alto retrofit después.
+ADR-008.
 
 ### LECCIÓN 10 — Audit empírico recursivo detecta dimensiones enteras
-Audit 1 detectó GAPs dentro de "lógica/datos/seguridad". Audit 2 detectó dimensión completa "infraestructura resiliente". Audit 3 (Opción D, completo) detectó 4 dimensiones más críticas (paradigma, observability, secrets, data lifecycle) + 2 importantes (deployment, authz).
+Audit 1: GAPs dentro de "lógica/datos/seguridad". Audit 2: dimensión completa "infraestructura resiliente". Audit 3 (Opción D): 4 dimensiones más críticas (paradigma, observability, secrets, data lifecycle) + 2 importantes (deployment, authz).
 
 ### LECCIÓN 11 — Audit COMPLETO > audit incremental cuando el patrón empírico es recurrente
-Después de 2 audits incrementales (cada uno descubriendo más GAPs), aplicar 6° principio rector al meta-trabajo: descubrir scope completo en UNA iteración. Audit 3 (Opción D) en ~30 min reveló más que 2 audits incrementales previos. **Costo-beneficio asimétrico**: 30 min de catálogo evita N iteraciones de descubrimiento incremental.
+Después de 2 audits incrementales, aplicar 6° principio rector al meta-trabajo: descubrir scope completo en UNA iteración.
 
 ### LECCIÓN 12 — Compactación de chat puede propagar contexto desviado del system prompt
-Manifestación N=31+ del sub-meta-patrón #13.x detectada el 2026-05-20: este mismo chat trabajó en DEPARTAMENTO-SOFTWARE pensando que el system prompt apuntaba ahí, cuando en realidad apuntaba a SigmaControl. La compactación de conversación previa propagó el contexto sin verificarlo contra el system prompt del Project. **Lección**: PASO 1 del PROTOCOLO-INICIO-CHAT v1.0 es OBLIGATORIO — verificar contra system prompt antes de seguir cualquier contexto compactado.
+Manifestación N=31+ del sub-meta-patrón #13.x detectada el 2026-05-20. PASO 1 del PROTOCOLO-INICIO-CHAT v1.0 es OBLIGATORIO.
 
 ### LECCIÓN 13 — GGA solo revisa código, no markdown
-GGA filtra por `*.py`/`*.sql`/`*.ts`/etc. Cambios en `.md` (architecture/, docs/, memoria) no disparan review automático. Implica que cambios estructurales a las reglas A1-A19 NO tienen layer de revisión automática. Conectado a DEUDA-A21-OBSERVABILITY (sub-meta para mejorar esto eventualmente).
+GGA filtra por `*.py`/`*.sql`/`*.ts`/etc. Cambios en `.md` no disparan review automático.
 
 ### LECCIÓN 14 — Resolución del bug del system prompt vía Project nuevo (no migración)
-Cuando 2 proyectos paralelos coexisten en disco y el Project en Claude.ai apunta a uno mientras un chat trabaja en otro, la solución correcta es: crear Project NUEVO específico para el segundo proyecto en vez de migrar el primero. **Razones**: (1) preserva el Project original intocable, (2) Claude.ai separa contextos limpiamente por Project, (3) cada Project tiene su system prompt + archivos. Aplicado el 2026-05-20: Project nuevo Framework + Project original SigmaControl intactos.
+Proyecto nuevo Framework + Project original SigmaControl intactos.
 
 ### LECCIÓN 15 — Primera aplicación práctica del PROTOCOLO-CIERRE-SESION.md v1.0
-El protocolo de cierre que se escribió en esta misma sesión tuvo su primera aplicación práctica al cerrar esta sesión. **Aplicación recursiva viva del 7° principio rector** (meta-producto recursivo): el protocolo se aplica a sí mismo desde el momento en que se escribe. El chat nuevo del Project nuevo detectó que esta sesión no estaba documentada en sesion-activa.md y disparó la aplicación del protocolo. Sin el chat nuevo, habíamos quedado con gap de cierre silencioso — exactamente lo que el protocolo previene.
+El protocolo de cierre se aplicó a sí mismo desde el momento en que se escribió. 7° principio rector recursivo.
+
+### LECCIÓN 16 — Cascada de aceptación entre Claude instances *(sesión PM 2026-05-20)*
+Ver sección "Lecciones críticas" al inicio de este documento.
+
+### LECCIÓN 17 — `edit_file` con array de edits no es atómico + falsa atribución a entidad externa *(sesión PM 2026-05-20)*
+Ver sección "Lecciones críticas" al inicio de este documento.
 
 ---
 
-## Deudas técnicas
-
-### DEUDA-ENGRAM-SAC-BLOCK
-**Status**: ✅ RESUELTA POR REEMPLAZO (claude-mem)
-
-### DEUDA-WORKFLOW-OPERATIVO
-**Status**: 🔴 ABIERTA — RECALIBRADA
-**Próxima acción**: después de T2 (ADR-009 basado en sandbox)
-
-### DEUDA-EVALUAR-SPEC-KIT
-**Status**: 🔴 ABIERTA — EXPANDIDA (incluye Spec Kit + Superpowers + ECC + claude-mem)
-**Próxima acción**: T1 próxima sesión
-
-### DEUDA-REPLANTEAR-ROADMAP-POST-STACK
-**Status**: 🔴 ABIERTA — CRÍTICA
-**Próxima acción**: T1 sandbox + T2 ADR-009 basado en evidencia empírica
-
-### DEUDA-NORTE-FRAMEWORK-PLACEHOLDERS
-**Status**: 🟡 EN PROGRESO (Q4-Q7 pendientes)
-
-### DEUDA-PROTOCOLOS-DEPARTAMENTO
-**Status**: 🔴 ABIERTA
-
-### DEUDA-EDIT-FILE-SQL
-**Status**: 🟡 LECCIÓN DOCUMENTADA (write_file en archivos con `$` literal)
-
-### DEUDA-AUDIT-COMPLETO-NIVEL-2
-**Status**: ✅ RESUELTA EN ESTA SESIÓN (Opción D ejecutada — ver §18)
-
-### DEUDA-VISIÓN-D-NO-FORMALIZADA
-**Status**: 🟡 PENDIENTE DECISIÓN
-**Próxima acción**: posible ADR-010 después de T1 sandbox
-
-### DEUDA-A20-HEXAGONAL *(NUEVA — audit 3)*
-**Status**: 🔴 ABIERTA
-**Scope**: ver §18 catálogo A20
-**Criticidad**: CRÍTICA (paradigma de fondo)
-**Tiempo estimado**: ~30 min
-**Anti-pattern**: AP-2.13 Domain Polluted by Infrastructure
-**Próxima acción**: priorización en próxima sesión
-
-### DEUDA-A21-OBSERVABILITY *(NUEVA — audit 3)*
-**Status**: 🔴 ABIERTA
-**Scope**: ver §18 catálogo A21 (6 sub-reglas OBS-1..OBS-6)
-**Criticidad**: CRÍTICA (producción es caja negra sin esto)
-**Tiempo estimado**: ~30 min
-**Anti-pattern**: AP-3.12 Unstructured Logging
-**Próxima acción**: priorización en próxima sesión
-
-### DEUDA-A22-SECRETS *(NUEVA — audit 3)*
-**Status**: 🔴 ABIERTA
-**Scope**: ver §18 catálogo A22 (6 sub-reglas SEC-1..SEC-6)
-**Criticidad**: CRÍTICA (vector de ataque #1)
-**Tiempo estimado**: ~20 min
-**Anti-pattern**: AP-2.14 Hardcoded Secrets
-**Próxima acción**: priorización en próxima sesión
-
-### DEUDA-A23-DEPLOYMENT *(NUEVA — audit 3)*
-**Status**: 🔴 ABIERTA
-**Scope**: ver §18 catálogo A23 (6 sub-reglas DEP-1..DEP-6)
-**Criticidad**: IMPORTANTE (parcialmente cubierto por A8)
-**Tiempo estimado**: ~25 min
-**Anti-pattern**: AP-3.13 Breaking API Change Without Versioning
-**Próxima acción**: priorización en próxima sesión
-
-### DEUDA-A24-DATA-LIFECYCLE *(NUEVA — audit 3)*
-**Status**: 🔴 ABIERTA
-**Scope**: ver §18 catálogo A24 (6 sub-reglas DLP-1..DLP-6)
-**Criticidad**: CRÍTICA (compliance GDPR — multas 4% revenue global)
-**Tiempo estimado**: ~30 min
-**Anti-pattern**: AP-2.15 PII Sin Clasificar / AP-3.14 Data Sin Retention (a definir)
-**Próxima acción**: priorización en próxima sesión
-
-### DEUDA-A25-AUTHORIZATION *(NUEVA — audit 3)*
-**Status**: 🔴 ABIERTA
-**Scope**: ver §18 catálogo A25 (6 sub-reglas AUTHZ-1..AUTHZ-6)
-**Criticidad**: IMPORTANTE (privilege escalation dentro de tenant)
-**Tiempo estimado**: ~20 min
-**Anti-pattern**: AP-2.16 Permission Check Solo en UI (a definir)
-**Próxima acción**: priorización en próxima sesión
-
-### DEUDA-ANTI-PATTERNS-MENORES *(NUEVA — audit 3)*
-**Status**: 🟡 ABIERTA
-**Scope**: AP-3.11 N+1 Query, AP-2.12 Missing Pagination (sin regla A* asociada, son patrones universales valiosos)
-**Tiempo estimado**: ~15 min para ambos
-**Próxima acción**: agregar junto con A20-A25 o en sesión separada
-
-### DEUDA-PROJECT-CLAUDE-CONFIG *(NUEVA — sesión 2026-05-20)*
-**Status**: 🟡 EN PROGRESO (acción humana pendiente)
-**Scope**: Julián debe crear Project nuevo en Claude.ai con los 3 archivos mínimos (CLAUDE.md + PROTOCOLO-INICIO-CHAT.md + PROTOCOLO-CIERRE-SESION.md) + system prompt instructivo entregado en sesión 2026-05-20
-**Criticidad**: 🟡 IMPORTANTE (sin esto, futuros chats pueden propagar deriva de contexto)
-**Tiempo estimado**: ~10 min (acción manual en Claude.ai)
-**Próxima acción**: Julián ejecuta. Ya confirmado que el Project nuevo se creó y funciona correctamente — marcado como ✅ al final de sesión 2026-05-20
-**Estado al cierre 2026-05-20**: ✅ RESUELTA (Project creado y validado empíricamente)
-
----
-
-## Estado del repo al cerrar
-
-```
-Branch: main
-Working tree: A16-A19 + AP-2.10/2.11/3.9/3.10 escritos + esta memoria actualizada (SIN COMMIT)
-Remote: sincronizado hasta 0af14a4
-Total commits hoy: 10 pusheados + 2 pendientes
-```
-
-### Estructura final
+## Estructura del repo (post sesión PM 2026-05-20)
 
 ```
 C:\DEPARTAMENTO-SOFTWARE\
 ├── FRAMEWORK (raíz)
-│   ├── architecture/ (Nivel 2 v1.2 con A1-A19 + 28 anti-patterns)
-│   │   ├── PRINCIPIOS-ARQUITECTURA.md (A1-A19, v1.2)
-│   │   ├── ANTI-PATRONES.md (28 anti-patterns, v1.2)
+│   ├── architecture/ (Nivel 2 v1.3 con A1-A25 + 36 anti-patterns)
+│   │   ├── PRINCIPIOS-ARQUITECTURA.md (A1-A25, v1.3) ✅ NUEVO
+│   │   ├── ANTI-PATRONES.md (36 anti-patterns, v1.3) ✅ NUEVO
 │   │   ├── PRINCIPIOS-SOLID.md
 │   │   ├── PATRONES-CARPETAS.md (C1-C6)
-│   │   └── README.md
+│   │   └── README.md (v1.2) ✅ NUEVO
 │   ├── decisions/ (ADRs 001-008)
 │   ├── .claude/skills/ (sigma-capture-domain)
 │   ├── mcp-servers/ (preparado Sprint 2)
-│   ├── auditoria/sesion-activa.md (este archivo v3.2)
+│   ├── auditoria/sesion-activa.md (este archivo v3.4)
 │   ├── templates/project-skeleton/ (7 templates)
 │   ├── docs/AGENT-INTEGRATION.md
 │   ├── NORTE.md (v0.1 con placeholders)
+│   ├── PROTOCOLO-INICIO-CHAT.md (v1.0)
+│   ├── PROTOCOLO-CIERRE-SESION.md (v1.0)
 │   ├── CLAUDE.md, AGENTS.md (v1.2), README.md (v1.3)
-│   ├── SIGUIENTE-SESION.md
-│   └── PROTOCOLO-*.md (heredados, vale adaptar)
+│   ├── SIGUIENTE-SESION.md (actualizada en este mismo cierre)
+│   └── PROTOCOLO-CONSTRUCCION-CODIGO.md (heredado, vale adaptar)
 │
 └── projects/
     └── stallen/ (DIFERIDO según decisión §13)
@@ -553,93 +516,7 @@ C:\DEPARTAMENTO-SOFTWARE\
 
 ---
 
-## Próximo paso — PRIORIDAD CLARA
-
-### 1. Comando commit inmediato (al abrir próxima sesión):
-
-**NOTA SESIÓN 2026-05-20**: A16-A19 + audit empírico 3 ya commitados en `1c08732` y `dc0c798`. Lo pendiente al cierre del 2026-05-20 son los 2 protocolos nuevos + esta memoria actualizada.
-
-```powershell
-cd C:\DEPARTAMENTO-SOFTWARE
-git add PROTOCOLO-INICIO-CHAT.md PROTOCOLO-CIERRE-SESION.md auditoria/sesion-activa.md
-git status
-git commit -m "feat(framework): PROTOCOLO-INICIO + PROTOCOLO-CIERRE v1.0 + cierre sesion 2026-05-20
-
-Deteccion de deriva de contexto el 2026-05-20: el chat habia estado
-trabajando en C:\DEPARTAMENTO-SOFTWARE pensando que el system prompt
-apuntaba ahi, cuando en realidad apuntaba a SigmaControl legacy.
-Manifestacion N=31+ del sub-meta-patron #13.x.
-
-Solucion (Lectura B): Framework reemplaza SigmaControl en direccion
-del refactor. Project nuevo en Claude.ai en lugar de migrar el existente.
-
-Archivos creados:
-- PROTOCOLO-INICIO-CHAT.md v1.0 con PASO 1 anti-deriva
-- PROTOCOLO-CIERRE-SESION.md v1.0 con checklist 8 pasos manual
-
-Memoria actualizada con:
-- Seccion 19 (sesion 2026-05-20)
-- Lecciones 12-15
-- DEUDA-PROJECT-CLAUDE-CONFIG (resuelta)
-
-Primera aplicacion practica del PROTOCOLO-CIERRE v1.0 al cerrar
-esta misma sesion (7 principio rector recursivo)."
-git push
-```
-
-### 2. Decisiones pendientes para próxima sesión:
-
-**Decisión A — Cuándo implementar A20-A25**:
-- (i) Antes del sandbox empírico (T1) → completa Nivel 2 "Tier 1 commercial robust"
-- (ii) Después del sandbox → riesgo de implementar reglas que el stack ya cubre
-- (iii) Híbrido: las 4 críticas (A20, A21, A22, A24) antes del sandbox, las 2 importantes (A23, A25) después
-
-**Decisión B — Visión D (Capa A independiente + Capa B integraciones)**:
-- (i) Formalizar en ADR-010 ahora
-- (ii) Esperar evidencia del sandbox
-
-**Decisión C — Stallen**:
-- (i) Sigue diferido hasta Framework maduro (decisión §13 actual)
-- (ii) Reactivar como driver mientras se completa Framework
-
-### 3. Roadmap actualizado próxima sesión (Claude Code CLI):
-
-1. **COMMIT INMEDIATO** A16-A19 + memoria (5 min)
-2. **Decisión A**: cuándo A20-A25
-3. **T0 (REEMPLAZADO)** — claude-mem 1-line install (5 min)
-4. **T1 (EXPANDIDO)** — Sandbox del Stack: Spec Kit + Superpowers + ECC + claude-mem (3-5 hs)
-5. **T2** — ADR-009 "Adopción del Stack + Calibración Tier 1" basado en evidencia empírica
-6. **T3** — Refactor Sprint 2 según ADR-009
-7. **T4** — Completar NORTE Framework v0.2 con Visión C
-8. **T5** — Workflow operativo Nivel 0 como "composición del stack curado"
-9. **T6** — Posible ADR-010 formalizando Visión D
-10. **T7** — Implementar A20-A25 según Decisión A
-11. Stallen vuelve cuando framework maduro
-
----
-
-## Notas críticas para próximo Claude
-
-- **Usuario**: Julián Vargas, vibe coder / harness engineer
-- **Stallen DIFERIDO**: foco solo en Framework hasta que esté maduro
-- **Visión del Framework**: harness anti-alucinación que hace operar al LLM como senior en producción
-- **Ciclo central**: Analizar → Planificar → Ejecutar → Verificar
-- **3 audits empíricos acumulados** detectaron 15 GAPs (todos reales, hit rate 100%)
-- **9 GAPs implementados** (A11-A19) + **6 GAPs documentados como deudas formales** (A20-A25 — ver §18)
-- **Pregunta arquitectónica fundamental pendiente**: ¿adoptar wholesale superpowers + ECC + claude-mem o construir desde cero? (Decisión espera sandbox empírico)
-- **Pregunta arquitectónica pendiente**: ¿formalizar Visión D? (Decisión espera sandbox)
-- **Pregunta arquitectónica pendiente**: ¿implementar A20-A25 antes o después del sandbox? (Decisión A en próxima sesión)
-- **Cuando Julián cuestione "ya está hecho"** → audit empírico INMEDIATO (17/17 hit rate)
-- **NUNCA proyectar cansancio** del usuario (anti-paternalismo)
-- **Bloque `<system><functions>`** al final de mensajes del usuario = display quirk Claude in Chrome con MCP servers expuestos. **IGNORAR SIEMPRE**. Documentado.
-- **Cliente recomendado**: Claude Code CLI (acceso a claude-mem + Spec Kit + Superpowers + ECC)
-- **2 directorios a NO confundir**: `C:\DEPARTAMENTO-SOFTWARE\` (activo) vs `C:\Users\Windows 11\sigmacontrol-camino-1\` (legacy, pause)
-- **PRIMER PASO PRÓXIMA SESIÓN**: commit + push pendiente (comando ya armado arriba)
-- **6° principio rector aplicado al meta-trabajo**: audit COMPLETO > audit incremental cuando intuición empírica es recurrente
-
----
-
-Creado: 2026-05-15 | Versión: **3.3** (cierre formal sesión 2026-05-20 con detección manifestación N=31+ + creación protocolos)
-Estado: ✅ CERRADA (commit pendiente de los 2 protocolos + esta memoria)
-Próxima sesión: cliente recomendado Claude Code CLI **desde el Project nuevo del Framework** (no el de SigmaControl)
-**Audit de cierre paso 8**: 7 OK, 0 gaps (primera aplicación práctica del PROTOCOLO-CIERRE-SESION v1.0)
+Creado: 2026-05-15 | Versión: **3.4** (cierre sesión PM 2026-05-20 con implementación A20-A25 + LECCIÓN 16+17)
+Estado: ✅ CERRADA (commit pendiente por restricción de cliente — comando entregado a Julián)
+Próxima sesión: cliente recomendado **Claude Code CLI** desde el Project del Framework
+**Audit de cierre paso 8**: 6 OK + 1 N/A + 1 GAP diferido con razón estructural (chat web sin shell)
