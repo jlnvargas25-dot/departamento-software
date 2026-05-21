@@ -3,7 +3,8 @@
 > **Output canónico del sandbox**: evidencia empírica para ADR-009 (Adopción del Stack + Calibración Tier 1)
 
 **Fecha**: 2026-05-21 (sesión PM 2026-05-20 — continuación)
-**Versión**: 0.1 (evaluación inicial; pendiente workflow real ejecutado)
+**Versión**: 0.5 PRELIMINAR (planning-phase ejecutado en T1.7; pendiente T1.9 comparación SDD↔Spec Kit + iteración 3 con `/implement` para v1.0)
+**Header bumpeado**: 2026-05-21 PM continuación (cierre #2 — sesión paralela agregó addendum sin actualizar header; fix de coherencia)
 **Autor**: Claude (Claude Code CLI) + Julián Vargas
 
 ---
