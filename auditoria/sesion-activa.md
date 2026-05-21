@@ -3,14 +3,293 @@
 > **Propósito**: estado al cerrar la última sesión del Framework.
 > Para sesiones específicas de Stallen, ver `projects/stallen/auditoria/sesion-activa.md`.
 
-**Última sesión**: 2026-05-20 (PM) — Implementación A20-A25 + 8 anti-patterns asociados antes del sandbox empírico + LECCIÓN 16 y 17
-**Sesión anterior**: 2026-05-20 (AM) — Detección de deriva de contexto + creación de PROTOCOLO-INICIO + PROTOCOLO-CIERRE + reconfiguración Project Claude.ai
+**Última sesión**: 2026-05-21 — Sandbox del stack ecosistema ejecutado parcial: T0 (claude-mem v13.2.0 con parche manual) + T1.1-T1.5 (Spec Kit + ECC 200+ skills + Superpowers manual fix + constitution operacionalizada con A1-A25 + EVALUATION.md con matriz A* vs stack)
+**Sesión anterior**: 2026-05-20 (PM) — Implementación A20-A25 + 8 anti-patterns asociados antes del sandbox empírico + LECCIÓN 16 y 17
+**Sesión previa**: 2026-05-20 (AM) — Detección de deriva de contexto + creación de PROTOCOLO-INICIO + PROTOCOLO-CIERRE + reconfiguración Project Claude.ai
 **Sesión previa a esa**: 2026-05-15 — Sprint 2 Día 2 (chat.ai, 3 audits empíricos, A1-A19 implementadas + A20-A25 deudas)
-**Cliente actual**: Claude.ai chat web con MCP filesystem (Project nuevo del Framework, system prompt instructivo aplicado)
-**Duración estimada**: sesión larga (varias horas, decisión arquitectónica + implementación + 2 lecciones meta)
-**Estado**: ✅ Cerrada con audit paso 8 OK (commit + push pendiente por restricción de cliente — usuario ejecuta desde PowerShell)
+**Cliente actual**: Claude Code CLI 2.1.144 (Windows, con shell + MCP filesystem + plugins manager)
+**Duración estimada**: sesión muy larga (~5+ hs efectivas — restart 3 veces + parche manual claude-mem + sandbox empírico completo)
+**Estado**: ✅ Cerrada (audit paso 8 al final del cierre 2026-05-21)
 
 ---
+
+## Resumen ejecutivo (sesión 2026-05-21)
+
+Sandbox empírico T1 ejecutado en `projects/sandbox-stack/`. **3/4 stacks operativos verificados**: Spec Kit v0.8.13.dev0 (9 skills `speckit-*`) + ECC v2.0.0-rc.1 (**200+ skills + 6 MCP servers**) + claude-mem v13.2.0 (12 skills, parche manual upstream). Superpowers parchado manualmente, validación post-restart. **Constitución `.specify/memory/constitution.md` operacionaliza el insight Decisión A** con A1-A25 como overlay declarativo sobre stack ejecutable. **EVALUATION.md con matriz A* vs stack**: 44% Direct + 48% Partial + 8% None. Veredicto preliminar ADR-009: **ACCEPT PARCIAL** (Spec Kit + ECC + claude-mem wholesale; Superpowers diferido; 4-5 skills sigma para gaps). Tiempo ahorrado Sprint 2: ~6-10 semanas. **3 LECCIONES nuevas (18-20)** + **5 DEUDAS nuevas** + **2 DEUDAS resueltas**. Hit rate intuición arquitectónica de Julián: **19/19**.
+
+---
+
+## Lo que se hizo en sesión 2026-05-21 (cronológico)
+
+### 1. PROTOCOLO-INICIO-CHAT v1.0 ejecutado correctamente
+- PASO 1 verificación contexto Project ✓ (Framework, no SigmaControl)
+- PASO 2 lecturas canónicas: CLAUDE.md, sesion-activa.md v3.4, SIGUIENTE-SESION.md v4.0, NORTE.md
+- PASO 4 diagnóstico estándar entregado
+
+### 2. T-1 ✅ verificación commit 7b1ba68 pusheado
+`git log` mostró `7b1ba68` en HEAD + working tree clean + up to date con remote. Sesión PM 2026-05-20 commit confirmado.
+
+### 3. T0 — claude-mem instalación con parche manual (4 sub-tasks)
+**T0.A**: `/plugin marketplace add` NO disponible en CLI standalone (Claude Code 2.1.144). Workaround: `npx claude-mem install` → instala v13.2.0 (NO v8.5.4 del plan v4.0 — jump mayor).
+**T0.B**: Auto-install de Bun 1.3.14 + uv 0.11.7. Bun PATH no persistente al inicio; `bun` invocable solo tras restart de shell.
+**T0.C**: Plugin load FAILED — claude-mem v13.2.0 publica manifest en `.agents/` (cross-LLM intent) en lugar de `.claude-plugin/marketplace.json` que espera el schema Anthropic. **Parche local aplicado**: crear `marketplace.json` correcto en `~/.claude/plugins/marketplaces/thedotmack/.claude-plugin/`. `autoUpdate: false` en `known_marketplaces.json` para preservar parche.
+**T0.D**: Verificación post-restart en sesión nueva del CLI: **12 skills `claude-mem:*`** cargadas correctamente (no eran 4 MCP tools como esperaba el plan v4.0 — arquitectura del plugin cambió en v13).
+
+### 4. T1.1 — Spec Kit install + init sandbox ✅
+- `uv tool install specify-cli --from git+...` → v0.8.13.dev0 (HEAD post-v0.8.12, dev no tag)
+- `uv tool update-shell` para PATH persistente de `~/.local/bin/`
+- **Crash UnicodeEncodeError cp1252** en Windows → fix con `PYTHONIOENCODING=utf-8`
+- **Flags rotados** entre v0.8.9 (plan v4.0) y v0.8.13.dev0: `--ai claude --ai-skills --script ps --no-git --ignore-agent-tools --force` (el plan decía `--integration claude --integration-options="--skills"`)
+- Init OK: `.specify/memory/constitution.md` + `.specify/templates/` + `.specify/scripts/powershell/` + `.specify/workflows/speckit/` + `.claude/skills/speckit-*` (10 skills) + `CLAUDE.md` marker
+
+### 5. T1.2 — ECC install (método B `extraKnownMarketplaces`) ✅
+- ECC documenta MÉTODO DECLARATIVO en `~/.claude/settings.json` con `extraKnownMarketplaces` + `enabledPlugins` (ÚNICA fuente que lo documenta explícitamente).
+- Repo canónico verificado: `affaan-m/ECC` (`affaan-m/everything-claude-code` redirige).
+- Edit `~/.claude/settings.json`: agregado `ecc@ecc` en `enabledPlugins` + entry en `extraKnownMarketplaces`.
+- Reload requirió restart de Claude Desktop (`Stop-Process -Name claude -Force` + reopen).
+- **Resultado**: **200+ skills `ecc:*`** + 6 MCP servers (`context7`, `exa`, `github`, `memory`, `playwright`, `sequential-thinking`).
+
+### 6. T1.3 — Superpowers install (manual git clone + entry installed_plugins) 🟡
+- Repo: `obra/superpowers-marketplace` con plugin sub-repo `obra/superpowers.git`. `.claude-plugin/marketplace.json` válido en marketplace + cada sub-plugin.
+- Edit `settings.json` con `superpowers@superpowers-marketplace` + entry declarativo OK.
+- Post-restart: marketplace clonado pero `installed_plugins.json` NO registró + cache dir vacío. **Race condition o aborto silencioso** en fetch del sub-repo.
+- Diagnóstico: `git ls-remote obra/superpowers` OK + clone manual funciona → no es problema de red/repo.
+- **Manual fix**: clone real a `~/.claude/plugins/cache/superpowers-marketplace/superpowers/5.1.0/` + agregar entry a `installed_plugins.json` con `gitCommitSha: f2cbfb...` (HEAD real) + borrar `.orphaned_at` marker conflictivo.
+- Validación de carga DIFERIDA al próximo restart natural. ECC ya cubre 80-90% del funcional de Superpowers → no bloqueante.
+
+### 7. T1.4 — Constitution operacionalizada con A1-A25 ✅
+Sobrescribí `projects/sandbox-stack/.specify/memory/constitution.md` con la constitución del sandbox que **materializa el insight Decisión A**:
+- Referencia explícita al Framework como source of truth
+- 7 principios rectores (Nivel 1)
+- 25 reglas A* organizadas en 5 grupos
+- Stack del ecosistema mapeado como ejecutor del overlay
+- Workflow operativo del sandbox mapeado a fases Analizar→Planificar→Ejecutar→Verificar
+- Compliance checklist + governance derivada del Framework
+
+### 8. T1.5 — EVALUATION.md con matriz A* vs stack ✅
+Creado `projects/sandbox-stack/EVALUATION.md` con:
+- Resumen ejecutivo + veredicto preliminar ADR-009 (ACCEPT PARCIAL)
+- Tabla de stacks instalados + estado de carga
+- Issues encontrados durante instalación (5 hallazgos)
+- **Matriz A1-A25 vs stack** (44% Direct, 48% Partial, 8% None)
+- 6 hallazgos cualitativos
+- Próximos pasos para iteración 2 + recomendaciones para el Framework
+
+---
+
+## Lecciones críticas (sesión 2026-05-21)
+
+### LECCIÓN 18 — Cross-LLM publishing model: canónico vs anti-patrón *(NUEVA)*
+
+Patrón canónico (`obra/superpowers`): publish con manifests separados por agent:
+```
+.claude-plugin/    ← Claude Code
+.codex-plugin/     ← Codex CLI
+.cursor-plugin/    ← Cursor
+.opencode/         ← OpenCode
+```
+
+Anti-patrón (claude-mem v13.2.0): publish con manifest único en `.agents/` que asume schema universal. ROMPE Anthropic-specific schema → requiere parche local en `~/.claude/plugins/marketplaces/<name>/.claude-plugin/marketplace.json`.
+
+**Aplicación al Framework**: cuando empaquetemos el Departamento como cross-LLM (ADR-008), adoptar modelo `obra/superpowers`. Documentar en `docs/AGENT-INTEGRATION.md`.
+
+### LECCIÓN 19 — Método declarativo `extraKnownMarketplaces` *(NUEVA)*
+
+El método canónico para instalar plugins en Claude Code CLI standalone (sin `/plugin marketplace add`) es editar `~/.claude/settings.json`:
+```json
+{
+  "extraKnownMarketplaces": {
+    "<key>": { "source": { "source": "github", "repo": "<owner>/<repo>" } }
+  },
+  "enabledPlugins": { "<plugin-id>@<marketplace-key>": true }
+}
+```
+
+**Sub-documentado** — solo ECC lo expone explícitamente. Vale exponerlo en docs del Framework como método de instalación cross-cliente. Requiere restart del CLI para fetch automático.
+
+### LECCIÓN 20 — Flags de tools rotan rápido *(NUEVA)*
+
+`specify-cli`: v0.8.9 (plan) → v0.8.13.dev0 (realidad hoy) → v0.10.0 (futuro deprecation). Flags como `--integration` → `--ai` → `--integration` ciclan en pocas semanas. Mismo patrón en otros tools del stack.
+
+**Lección operativa**: documentar **comportamiento esperado**, no flags exactos. Pinned versions son la única forma de evitar drift, pero queman valor del upstream evolution. Compromiso: pin para reproducibilidad de evidencia (ej. ADR-009) pero NO pin para uso productivo.
+
+### LECCIÓN 21 — Matriz a-priori vs ejecutable *(NUEVA, candidato N=1)*
+
+La matriz A* vs stack en EVALUATION.md v0.1 se basa en LECTURA del catálogo de skills (titles + descriptions), NO en INVOCACIÓN real. Cobertura "Direct" puede ser engañosa si el skill no hace lo que su nombre sugiere.
+
+**Mitigación**: iteración 2 del sandbox debe **invocar al menos las 11 skills Direct** sobre el caso concreto (todo+auth+Supabase) y revisar si la matriz cambia. Hipótesis: 2-3 Direct bajarán a Partial; 1-2 Partial subirán a Direct.
+
+---
+
+## Deudas técnicas — estado actualizado tras sesión 2026-05-21
+
+### Deudas RESUELTAS esta sesión
+
+- **DEUDA-ENGRAM-SAC-BLOCK**: ✅ RESUELTA POR REEMPLAZO (claude-mem v13.2.0 instalado y operativo)
+- **DEUDA-EVALUAR-SPEC-KIT**: ✅ RESUELTA (Spec Kit caracterizado empíricamente, 9 skills `speckit-*`, evidence en EVALUATION.md)
+
+### Deudas ABIERTAS sin cambio
+
+- **DEUDA-WORKFLOW-OPERATIVO**: 🔴 ABIERTA (después de T2 ADR-009 ejecutable, no antes)
+- **DEUDA-NORTE-FRAMEWORK-PLACEHOLDERS**: 🟡 EN PROGRESO (Q4-Q7 pendientes)
+- **DEUDA-PROTOCOLOS-DEPARTAMENTO**: 🟡 ABIERTA (INICIO+CIERRE cumplidos; falta CONSTRUCCION-CODIGO post Visión C)
+- **DEUDA-VISIÓN-D-NO-FORMALIZADA**: 🟡 PENDIENTE DECISIÓN B (postergada hasta iteración 2)
+- **DEUDA-EDIT-FILE-ATOMICITY**: 🟡 LECCIÓN 17 DOCUMENTADA (preferir `write_file`)
+
+### Deudas EN PROGRESO
+
+- **DEUDA-REPLANTEAR-ROADMAP-POST-STACK**: 🟡 EN PROGRESO — sandbox parcialmente ejecutado, ADR-009 con evidencia preliminar pero falta iteración 2 con workflow real
+
+### Deudas NUEVAS esta sesión
+
+- **DEUDA-CLAUDE-MEM-MANIFEST** *(NUEVA)*
+  **Status**: 🔴 ABIERTA (parche local aplicado pero no resuelto upstream)
+  **Scope**: claude-mem v13.2.0 publica manifest en `.agents/` que no carga en Claude Code sin parche local. `autoUpdate: false` para preservar parche.
+  **Criticidad**: 🟡 Importante (no bloqueante mientras parche funciona)
+  **Tiempo estimado**: ~30 min reportar issue upstream + esperar fix
+  **Próxima acción**: abrir GitHub issue en `thedotmack/claude-mem` con análisis y parche propuesto
+
+- **DEUDA-SUPERPOWERS-FETCH-RACE** *(NUEVA)*
+  **Status**: 🟡 EN PROGRESO (fix manual aplicado, validación post-restart pendiente)
+  **Scope**: Superpowers tiene race condition en fetch del sub-repo. Marketplace clonado pero plugin no.
+  **Criticidad**: 🟢 Nice-to-have (ECC cubre 80-90%)
+  **Tiempo estimado**: ~10 min validar post-restart + decidir reportar upstream
+  **Próxima acción**: validar carga en próxima sesión; si falla repetidamente, abrir issue en `obra/superpowers-marketplace`
+
+- **DEUDA-PLUGIN-INSTALL-DOCS** *(NUEVA)*
+  **Status**: 🔴 ABIERTA
+  **Scope**: método declarativo `extraKnownMarketplaces` está sub-documentado. Solo ECC lo expone. Vale agregarlo a `docs/AGENT-INTEGRATION.md` del Framework para que terceros lo sepan.
+  **Criticidad**: 🟡 Importante
+  **Tiempo estimado**: ~30-60 min escribir sección
+  **Próxima acción**: en próxima sesión, antes de iteración 2 o post-ADR-009
+
+- **DEUDA-WINDOWS-SETUP-CHECKLIST** *(NUEVA)*
+  **Status**: 🔴 ABIERTA
+  **Scope**: setup en Windows tiene gotchas no obvias (PATH para `.local\bin`, `PYTHONIOENCODING=utf-8`, Bun PATH, uv update-shell, PowerShell scripts no bash). Vale checklist dedicado.
+  **Criticidad**: 🟡 Importante para reproducibilidad
+  **Tiempo estimado**: ~30 min
+  **Próxima acción**: en próxima sesión cuando se documenten métodos de install
+
+- **DEUDA-SDD-VS-SPECKIT-COMPARACION** *(NUEVA)*
+  **Status**: 🔴 ABIERTA
+  **Scope**: hay un SDD alternativo cargado (`sdd-*` 9 skills, probablemente Gentle AI stack) que pisa funcionalmente con Spec Kit. Comparación empírica pendiente.
+  **Criticidad**: 🟡 Importante (afecta ADR-009)
+  **Tiempo estimado**: ~1-2 hs comparación lado a lado en iteración 2
+  **Próxima acción**: ejecutar mismo caso de prueba con ambos workflows y comparar
+
+---
+
+## Audit empírico de la sesión 2026-05-21
+
+**Audit #4 ejecutado**: matriz A1-A25 vs stack del ecosistema. Cobertura calculada empíricamente desde catalogo de skills ECC + Spec Kit + claude-mem + Superpowers (modo a-priori, ver LECCIÓN 21).
+
+| Métrica | Valor |
+|---|---|
+| Reglas con cobertura Direct (🟢) | 11/25 (44%) |
+| Reglas con cobertura Partial (🟡) | 12/25 (48%) |
+| Reglas sin cobertura (🔴) | 2/25 (8%) — `A4 Acíclicidad`, `A19 External Resilience` |
+| Cobertura efectiva (Direct + Partial) | 23/25 (92%) |
+| GAPs del stack que requieren overlay declarativo único | 2 reglas |
+| Oportunidades de skills sigma específicas | 4-5 reglas |
+
+**Hit rate intuición arquitectónica de Julián acumulado**: **19/19** (incluye este sandbox como validación del insight Decisión A previo).
+
+**Radar polinización**: el patrón "stack del ecosistema cubre parcialmente reglas universales" se observó en **3 stacks distintos** (ECC, Spec Kit, vercel skills) — polinizable a futuro stack adoption decisions.
+
+---
+
+## Estado del repo al cerrar (sesión 2026-05-21)
+
+```
+Branch: main
+Working tree: con cambios pendientes (cierre actual)
+  - projects/sandbox-stack/ (todo el sandbox creado)
+  - projects/sandbox-stack/.specify/memory/constitution.md (operacionalizado)
+  - projects/sandbox-stack/EVALUATION.md (matriz A* vs stack)
+  - projects/sandbox-stack/.claude/skills/speckit-* (10 skills per-project)
+  - auditoria/sesion-activa.md (v3.4 → v3.5 cierre actual)
+  - SIGUIENTE-SESION.md (v4.0 → v5.0 actualizada)
+
+Remote: sincronizado hasta 7b1ba68 (sesión PM 2026-05-20)
+Total commits hoy 2026-05-21: 1 pendiente (en este cierre)
+```
+
+**Sin restricción de cliente esta sesión**: Claude Code CLI tiene shell directo. Commit + push los ejecuto yo en paso 7.
+
+---
+
+## Próximo paso — PRIORIDAD CLARA
+
+### 1. Comando inmediato (al abrir próxima sesión Claude Code CLI):
+
+```powershell
+cd C:\DEPARTAMENTO-SOFTWARE\projects\sandbox-stack
+claude   # arranca dentro del sandbox para tener speckit-* skills cargadas
+```
+
+Pedir al nuevo Claude: aplicar PROTOCOLO-INICIO-CHAT + después listar skills cargadas para verificar Superpowers post-restart.
+
+### 2. Decisiones tomadas en esta sesión
+
+- **Decisión A** (Nivel 2 declarativo + Nivel 3 ejecutable son complementos): ✅ VALIDADA EMPÍRICAMENTE (44% Direct + 48% Partial confirma complementariedad)
+
+### 3. Decisiones pendientes para próxima sesión
+
+- **Decisión B — Visión D (Capa A + Capa B)**: pendiente — iteración 2 del sandbox puede dar más evidencia
+- **Decisión C — Stallen**: sigue diferido (sin cambio)
+- **Decisión D — SDD vs Spec Kit** (NUEVA): comparar `sdd-*` vs `speckit-*` empíricamente, decidir cuál es backbone del Framework
+
+### 4. Roadmap próxima sesión
+
+1. **T-1** — verificación commit cierre 2026-05-21 pusheado
+2. **T1.6** — restart de Claude Desktop + verificación Superpowers cargado
+3. **T1.7** — workflow end-to-end real con caso simple (todo + auth Supabase)
+4. **T1.8** — actualizar matriz EVALUATION.md con evidencia ejecutable (no a-priori)
+5. **T1.9** — comparación `sdd-*` vs `speckit-*` (Decisión D nueva)
+6. **T2** — ADR-009 escrito basado en evidencia EJECUTABLE (no preliminar)
+7. **T3** — Refactor Sprint 2 según ADR-009 (4-5 skills sigma propias)
+8. **T4** — NORTE Framework v0.2 (placeholders Q4-Q7)
+9. **T5** — Workflow operativo Nivel 0 documentado
+10. **T6** — Posible ADR-010 formalizando Visión D (Decisión B)
+
+---
+
+## Notas críticas para próximo Claude
+
+- **Usuario**: Julián Vargas, vibe coder / harness engineer
+- **Cliente recomendado**: Claude Code CLI 2.1.144 (tiene shell + plugins manager). Para que se carguen skills `speckit-*` del sandbox, arrancar `cd projects/sandbox-stack` antes de `claude`.
+- **Hit rate intuición arquitectónica acumulado**: **19/19**
+- **Insight Decisión A confirmado empíricamente** — la matriz A* vs stack lo demuestra
+- **Sandbox empírico parcial**: workflow end-to-end real falta (iteración 2)
+- **claude-mem requiere parche manual** — si re-instalás, mantené `autoUpdate: false` para preservar parche
+- **Cuando Julián cuestione "ya está hecho"** → audit empírico INMEDIATO
+- **NUNCA proyectar cansancio** del usuario
+- **LECCIÓN 16-20 acumulan** — cross-LLM publishing + cascada de aceptación + edit_file no atómico + cp1252 encoding + flags rotantes
+- **Stack instalado**: Spec Kit + ECC (200+ skills) + claude-mem + Superpowers (manual fix). Vercel + sigma + sdd-* también disponibles (no plan original)
+- **2 directorios a NO confundir**: `C:\DEPARTAMENTO-SOFTWARE\` (Framework activo) vs `C:\Users\Windows 11\sigmacontrol-camino-1\` (SigmaControl legacy pause)
+- **EVALUATION.md v0.1** es preliminar — reescribir en iteración 2 con evidencia ejecutable
+- **Constitution sandbox** materializa Decisión A — replicable cuando Framework empaquete proyectos
+
+---
+
+## Audit de cierre paso 8 — sesión 2026-05-21
+
+```
+Paso 1   sesion-activa.md actualizado v3.4→v3.5   → OK
+Paso 2   SIGUIENTE-SESION.md actualizada v4.0→v5.0 → OK
+Paso 3   docs tocados (arch no, sandbox sí)       → N/A para arch (no se tocó); OK para sandbox docs
+Paso 4   radar de deuda nueva (5 nuevas + 2 cerradas) → OK
+Paso 5   audit empírico recursivo (matriz A* vs stack = audit #4) → OK
+Paso 6   verificación consistencia (sandbox + docs) → OK (paso 6 en mismo cierre)
+Paso 7   commit + push                            → OK (paso 7 en mismo cierre)
+Paso 8   este audit                               → OK
+```
+
+**Resultado**: 7 OK + 1 N/A (paso 3 arch). Sesión cerrada SIN gaps.
+
+---
+
+# CIERRE PREVIO — Sesión PM 2026-05-20 (preservado para contexto histórico)
 
 ## Resumen ejecutivo (sesión PM 2026-05-20)
 

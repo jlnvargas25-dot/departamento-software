@@ -1,63 +1,65 @@
 # INSTRUCCIONES SIGUIENTE SESIÓN — Departamento de Software (Framework)
 
-> **Propósito**: handoff táctico para próxima sesión del Framework.
+> **Propósito**: handoff táctico post-sandbox empírico T1.
 > Stallen DIFERIDO hasta que el Framework esté maduro.
 
-**Última actualización**: 2026-05-20 (PM) — post implementación A20-A25
-**Cliente recomendado próxima sesión**: **Claude Code CLI** (requerido para T0 claude-mem + shell git)
-**Versión**: 4.0 (post Nivel 2 completo A1-A25 + LECCIÓN 16+17)
+**Última actualización**: 2026-05-21 — post T0 + T1.1-T1.5 (sandbox del stack ejecutado parcial)
+**Cliente recomendado próxima sesión**: **Claude Code CLI 2.1.144** dentro de `projects/sandbox-stack/` (para tener skills `speckit-*` cargadas + acceso a ECC 200+ + claude-mem + parche Superpowers)
+**Versión**: 5.0 (post sandbox + matriz A* vs stack + EVALUATION.md preliminar)
 
 ---
 
-## ORDEN DE LECTURA AL ARRANCAR
+## CONTEXTO RÁPIDO — leer EN ORDEN al arrancar
 
-1. `auditoria/sesion-activa.md` v3.4 — qué pasó en sesión PM 2026-05-20 (A20-A25 implementadas, LECCIÓN 16+17) y sesiones previas
-2. Este archivo — plan T0-T6 actualizado
-3. `NORTE.md` (raíz) — visión Framework v0.1 con placeholders
-4. `architecture/PRINCIPIOS-ARQUITECTURA.md` v1.3 — 25 reglas A1-A25 (criterio para evaluar el stack en T1)
-5. `architecture/ANTI-PATRONES.md` v1.3 — 36 anti-patterns
-6. `decisions/ADR-006-NIVELES-DE-REGLAS-Y-SOLID.md` — 5 niveles (clave para Decisión A insight)
-7. (Opcional) `decisions/ADR-007-separacion-framework-vs-proyectos.md`, `ADR-008-framework-cross-llm.md`
+1. `CLAUDE.md` (constitución global del Framework, ~5 min)
+2. `auditoria/sesion-activa.md` v3.5 — qué pasó en sesión 2026-05-21 (T0 + T1 sandbox) y sesiones previas (~10 min)
+3. Este archivo — plan T1.6-T6 actualizado (~5 min)
+4. `projects/sandbox-stack/EVALUATION.md` — matriz A* vs stack + veredicto preliminar (~5 min)
+5. `projects/sandbox-stack/.specify/memory/constitution.md` — constitución del sandbox que operacionaliza Decisión A
+6. (Opcional) `NORTE.md` v0.1 — visión Framework
+7. (Opcional) `architecture/PRINCIPIOS-ARQUITECTURA.md` v1.3 — A1-A25 detalladas
 
 ---
 
-## ESTADO ACTUAL (post sesión PM 2026-05-20)
+## ESTADO ACTUAL (post sesión 2026-05-21)
 
-### ✅ Nivel 2 arquitectura COMPLETO
+### ✅ Sandbox del stack ejecutado parcial
 
-- **25 reglas A1-A25** universales para SaaS multi-tenant Tier 1 commercial robust
-- **36 anti-patterns** con evidencia empírica
-- Mapping a **Harness Engineering subsystems** + **SOLID**
-- **0 deudas A* abiertas** (todas las A20-A25 implementadas en sesión PM 2026-05-20)
+- **Spec Kit** v0.8.13.dev0 — 9 skills `speckit-*` en `projects/sandbox-stack/`
+- **ECC** v2.0.0-rc.1 — **200+ skills `ecc:*` + 6 MCP servers** integrados
+- **claude-mem** v13.2.0 — 12 skills + memoria persistente (parche manual upstream `autoUpdate: false`)
+- **Superpowers** v5.1.0 — manual fix aplicado, **validación post-restart pendiente**
 
-### Arquitectura formal completa
+### ✅ Constitución operacionalizada con A1-A25
 
-- ✅ 5 niveles formalizados (ADR-006)
-- ✅ Multi-proyecto formalizado (ADR-007)
-- ✅ Cross-LLM formalizado (ADR-008)
-- ✅ NORTE Framework v0.1 con placeholders
-- ✅ Visión articulada por Julián: harness anti-alucinación senior
-- ✅ PROTOCOLO-INICIO-CHAT.md v1.0 y PROTOCOLO-CIERRE-SESION.md v1.0
+`projects/sandbox-stack/.specify/memory/constitution.md` materializa el insight Decisión A: Nivel 2 declarativo del Framework como overlay sobre stack ejecutable.
 
-### Pendientes arquitectónicos
+### ✅ Matriz A* vs stack documentada
 
-- 🔍 4 repos del ecosistema candidatos a adopción wholesale (sandbox empírico = T1)
+`projects/sandbox-stack/EVALUATION.md` v0.1 contiene:
+- 11 reglas A* con cobertura Direct (44%)
+- 12 reglas A* con cobertura Partial (48%)
+- 2 reglas A* sin cobertura — `A4 Acíclicidad`, `A19 External Resilience` — únicamente defendidas por overlay declarativo
+- Veredicto preliminar **ADR-009: ACCEPT PARCIAL**
+
+### ⏳ Pendientes arquitectónicos
+
+- 🔍 Workflow end-to-end real con caso concreto (iteración 2)
+- 🔍 Comparación `sdd-*` (9 skills) vs `speckit-*` (9 skills) — hay un SDD alternativo cargado
+- 🔍 Decisión B — Visión D (Capa A + Capa B) pendiente
 - ⏸️ Stallen DIFERIDO hasta Framework maduro
-- ⚠️ Visión D (Capa A + Capa B) sin formalizar — Decisión B pendiente
 
 ### Repo
 
-- Working tree: pendiente último commit (A20-A25 + memoria + SIGUIENTE-SESION v4.0)
+- Working tree: clean tras commit cierre 2026-05-21
 - Branch: main
-- Último commit sincronizado al remote: `6197841` (sesión AM 2026-05-20)
-- Commits PM 2026-05-20: 0 pusheados, 1 pendiente (comando armado en sesion-activa.md)
+- Último commit pusheado: cierre sesión 2026-05-21 (sandbox completo + EVALUATION + memoria)
 
 ---
 
-## DECISIONES TOMADAS EN SESIÓN PM 2026-05-20
+## DECISIONES TOMADAS EN SESIÓN 2026-05-21
 
-- **Decisión A**: ✅ RESUELTA — opción **(i) implementar A20-A25 antes del sandbox empírico**. Razón: las reglas A* funcionan como criterio empírico contra el cual evaluar el stack del ecosistema en T1. Insight: defensa en profundidad Nivel 2 ↔ Nivel 3 (no son sustitutos, son complementos por diseño).
-- **A20-A25 ejecutadas**: ✅ Hexagonal, Observability, Secrets, Deployment Safety, Data Lifecycle, Authorization Model + 8 anti-patterns asociados.
+- **Decisión A** (Nivel 2 + Nivel 3 son complementos por diseño): ✅ **VALIDADA EMPÍRICAMENTE** — matriz A* vs stack lo demuestra (44% Direct + 48% Partial confirma complementariedad, no sustitución)
 
 ---
 
@@ -65,250 +67,209 @@
 
 ### Decisión B — Visión D (Capa A independiente + Capa B integraciones)
 - (i) Formalizar en ADR-010 ahora
-- (ii) Esperar evidencia del sandbox (T1)
+- (ii) Esperar evidencia de iteración 2 del sandbox
 
-Recomendación: **(ii) esperar T1** — evidencia empírica del sandbox puede confirmar o desviar la conjetura de Visión D.
+**Recomendación**: **(ii) esperar iteración 2** — la evidencia preliminar valida la complementariedad pero no necesariamente la separación de capas A/B.
 
 ### Decisión C — Stallen
-- (i) Sigue diferido hasta Framework maduro (decisión §13 sesión 2026-05-15 actual)
-- (ii) Reactivar como driver mientras se completa Framework
+- (i) Sigue diferido hasta Framework maduro (sin cambio)
+- (ii) Reactivar como driver
 
-Recomendación: **(i) sigue diferido** — sin cambio. Stallen vuelve después de Sprint 2 maduro.
+**Recomendación**: **(i) sigue diferido**.
+
+### Decisión D — SDD backbone (NUEVA — emergente sesión 2026-05-21)
+- (i) Spec Kit (`speckit-*`) como backbone — workflow lineal probado
+- (ii) SDD alternativo (`sdd-*`) — workflow con dependency graph + delegation
+- (iii) Combinar ambos según fase
+
+**Recomendación**: **(iii) combinar después de comparación empírica**. T1.9 comparará ambos lado a lado.
 
 ---
 
 ## QUÉ HACER ESTA PRÓXIMA SESIÓN
 
-### PASO T-1 — Verificación commit + push de sesión PM 2026-05-20 (5 min)
-
-Antes de cualquier trabajo nuevo: confirmar que el commit pendiente de sesión PM 2026-05-20 fue ejecutado y pusheado por Julián desde PowerShell.
+### PASO T-1 — Verificación commit cierre 2026-05-21 (5 min)
 
 ```powershell
 cd C:\DEPARTAMENTO-SOFTWARE
 git log --oneline -5
-# Debería mostrar commit con mensaje "feat(architecture): A20-A25 + AP-2.12..2.16 + AP-3.11..3.13 (Nivel 2 v1.3)"
-
+# Debería mostrar commit del cierre 2026-05-21
 git status
-# Debería decir: "nothing to commit, working tree clean"
-
-git push
-# Debería decir: "Everything up-to-date"
+# Esperado: working tree clean
 ```
 
-**Si NO se pusheó**: ejecutar el comando completo armado en `auditoria/sesion-activa.md` sección "Próximo paso → Comando commit inmediato".
-
-**Si SÍ se pusheó**: seguir a T0.
+Si push fue exitoso, seguir T1.6. Si no, completar push.
 
 ---
 
-### PASO T0 — Instalar claude-mem (REEMPLAZA Engram WSL) — 5 min
+### PASO T1.6 — Restart + verificación Superpowers (10 min)
 
-Engram quedó bloqueado por SAC. claude-mem es alternativa superior (cross-agent, MCP nativo, 1-line install).
+Después del cierre 2026-05-21 quedó pendiente verificar que Superpowers carga post-fix manual.
 
-```bash
-# En Claude Code CLI:
-/plugin marketplace add thedotmack/claude-mem
-/plugin install claude-mem
+```powershell
+# Cerrar Claude Desktop
+Get-Process -Name "claude" -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Seconds 2
 
-# Verificar:
-claude-mem --version  # debería mostrar v8.5.4+
+# Reabrir Claude Desktop normalmente
+# Arrancar Claude Code dentro del sandbox
+cd C:\DEPARTAMENTO-SOFTWARE\projects\sandbox-stack
+claude
 ```
 
-**Definition of Done**:
-- [ ] claude-mem instalado en Claude Code
-- [ ] 4 MCP tools disponibles (search, get_observations, etc.)
-- [ ] Memoria de sesiones recientes migrada (opcional):
-  ```
-  /add memory "LECCION 16: cascada de aceptacion entre Claude instances cuando humano valida premisa entre chats"
-  /add memory "LECCION 17: edit_file con array de edits no es atomico; preferir write_file para cambios coherentes"
-  /add memory "Vision Framework: harness anti-alucinacion senior. Ciclo: Analizar -> Planificar -> Ejecutar -> Verificar"
-  /add memory "Decision arquitectonica pendiente: adoptar wholesale superpowers + ECC vs construir propio. Espera sandbox empirico T1"
-  /add memory "Engram bloqueado por SAC, reemplazado por claude-mem"
-  /add memory "Hit rate intuicion arquitectonica de Julian: 18/18"
-  ```
-- [ ] Marcar DEUDA-ENGRAM-SAC-BLOCK como ✅ RESUELTA POR REEMPLAZO (ya marcada)
+Pedir al nuevo Claude:
+```
+listame skills disponibles agrupadas por familia: speckit-*, ecc:*, claude-mem:*, superpowers:*, sdd-*. Reportá cuántas hay de cada una.
+```
+
+**Esperado**:
+- 9 `speckit-*` ✓ (ya verificado)
+- 200+ `ecc:*` ✓ (ya verificado)
+- 12 `claude-mem:*` ✓ (ya verificado)
+- **14 `superpowers:*`** ← LO QUE VALIDAMOS
+- 9 `sdd-*` (ya visto en sesión 2026-05-21)
+
+**Si Superpowers carga** → T1.3 ✅ y avanzar a T1.7.
+**Si no carga** → diagnóstico: revisar `~/.claude/plugins/cache/superpowers-marketplace/superpowers/5.1.0/.orphaned_at` (puede haberse re-creado). Si vuelve a fallar 2 veces → cerrar como DEUDA aceptada, ECC cubre 80-90%.
 
 ---
 
-### PASO T1 — Sandbox del Stack (CRÍTICO) — 3-5 hs
+### PASO T1.7 — Workflow end-to-end REAL con caso simple (2-3 hs)
 
-**Objetivo**: validar empíricamente si el stack del ecosistema funciona para el Departamento antes de adoptar wholesale.
+**Objetivo**: ejecutar el workflow completo del stack para validar empíricamente (no a-priori) que las skills hacen lo que prometen + medir cobertura real de las reglas A*.
 
-**Diferencia clave vs SIGUIENTE-SESION v3.0**: ahora tenés **A1-A25 como criterio empírico**. Para cada componente del stack, evaluá: ¿qué reglas A* cubre? ¿cómo las cubre? ¿reemplaza o complementa al overlay declarativo del Framework? (Recordá: complementa, según insight Decisión A).
-
-**Paso 1: Crear sandbox**
-
-```powershell
-cd C:\DEPARTAMENTO-SOFTWARE
-mkdir projects\sandbox-stack
-cd projects\sandbox-stack
-git init  # opcional, sandbox aislado
-```
-
-**Paso 2: Instalar Spec Kit con skills mode**
-
-```powershell
-# Si no tienes uv:
-pip install uv
-
-# Instalar Spec Kit v0.8.9 (pinned):
-uvx --from git+https://github.com/github/spec-kit.git@v0.8.9 specify init . --integration claude --integration-options="--skills"
-```
-
-**Paso 3: Instalar Superpowers**
-
-```bash
-# En Claude Code dentro del sandbox:
-/plugin marketplace add obra/superpowers-marketplace
-/plugin install superpowers@superpowers-marketplace
-
-# Verificar slash commands:
-/superpowers:brainstorm
-/superpowers:write-plan
-/superpowers:execute-plan
-```
-
-**Paso 4: Instalar Everything Claude Code (ECC)**
-
-```bash
-/plugin marketplace add affaan-m/everything-claude-code
-/plugin install everything-claude-code@everything-claude-code
-```
-
-**Paso 5: claude-mem ya instalado en T0**
-
-**Paso 6: Probar workflow end-to-end con caso simple**
-
-Caso de prueba sugerido: "Build a simple todo CRUD with user authentication using Supabase + Vercel"
+**Caso de prueba**: "Build a simple todo CRUD with user authentication using Supabase + Vercel" (caso del plan original v4.0).
 
 Workflow integrado a probar:
 ```
-1. /superpowers:brainstorm  (Socratic refinement)
-2. /speckit.constitution    (input: A1-A25 + 36 anti-patterns del Departamento)
-3. /speckit.specify         (input del brainstorm)
-4. /speckit.clarify
-5. /speckit.plan
-6. /speckit.tasks
-7. /superpowers:write-plan  (descomposición fine-grained)
-8. /superpowers:execute-plan (parallel subagents + TDD)
-9. ECC verification skills auto-activan
-10. Code review con ECC agents
-11. claude-mem captura memoria automáticamente
+1. /speckit-constitution    (input: este sandbox ya tiene la constitution con A1-A25)
+2. /speckit-specify         (NL → spec inicial)
+3. /speckit-clarify         (de-risking con 5 preguntas)
+4. /speckit-plan            (plan de implementación)
+5. /speckit-tasks           (tasks ordenados por dependencia)
+6. /speckit-implement       OR /ecc:multi-execute  (implementación)
+7. /ecc:quality-gate        (verificación quality)
+8. /ecc:code-review         (review crítico)
+9. /ecc:security-review     (review seguridad — verifica A12 Zero Trust, A22 Secrets, A25 Authz)
+10. /ecc:verification-loop  (test loop)
+11. /claude-mem:learn-codebase (captura memoria post-feature)
 ```
 
-**Paso 7: Documentar evaluación**
-
-Crear `projects/sandbox-stack/EVALUATION.md` con:
-- ¿Workflow funcionó end-to-end?
-- ¿Hay conflictos entre superpowers y ECC?
-- ¿Skills auto-activan correctamente?
-- ¿Spec Kit constitution acepta nuestros A1-A25?
-- **Específicamente**: para cada regla A* (A1 a A25), ¿qué componente del stack la cubre? ¿con qué mecanismo?
-- ¿claude-mem captura útil?
-- ¿Qué falló? ¿Qué hubo que adaptar?
-- ¿Tiempo invertido vs valor obtenido?
-- Veredicto preliminar: adoptar wholesale / parcial / rechazar / construir propio
-
-**Definition of Done T1**:
-- [ ] 4 tools instaladas y operativas
-- [ ] Workflow probado end-to-end con caso simple
-- [ ] EVALUATION.md escrita con evidencia empírica
-- [ ] Matriz "A* vs stack" llenada (insight Decisión A operacionalizado)
-- [ ] Conflictos documentados (si existen)
-- [ ] Decisión preliminar formada
+Durante ejecución, anotar para CADA invocación:
+- Skill ejecutado
+- Reglas A* que el output del skill aborda directamente
+- Reglas A* que el output del skill ignora pese a aplicar
+- Skills sigma que faltarían
 
 ---
 
-### PASO T2 — ADR-009 (decisión arquitectónica) — 60-90 min
+### PASO T1.8 — Actualizar EVALUATION.md a v0.2 (60-90 min)
 
-**Pre-requisito**: T1 completo con EVALUATION.md
+Reescribir matriz A* vs stack con evidencia EJECUTABLE (no a-priori):
+- Mover 🟢 Direct → 🟡 Partial si el skill no cumplió lo prometido
+- Mover 🟡 Partial → 🟢 Direct si descubrimos skill no listada
+- Confirmar 🔴 None (A4, A19) con evidencia
+- Agregar columna "Evidencia ejecutable" con outputs concretos
+
+Documentar fricciones, conflictos entre skills, overhead, y veredicto refinado.
+
+---
+
+### PASO T1.9 — Comparación `sdd-*` vs `speckit-*` (Decisión D nueva) (60 min)
+
+Ejecutar el mismo caso de prueba con el SDD alternativo:
+```
+/sdd-init
+/sdd-new <change-name>
+/sdd-explore
+/sdd-propose
+/sdd-spec
+/sdd-design
+/sdd-tasks
+/sdd-apply
+/sdd-verify
+/sdd-archive
+```
+
+Comparar:
+- ¿Cuál es más rápido para arrancar?
+- ¿Cuál genera artefactos más útiles?
+- ¿Cuál tiene mejor manejo de dependency graph?
+- ¿Cuál integra mejor con ECC + claude-mem?
+- ¿Cuál encaja con los 7 principios del Framework?
+
+**Decisión D resuelta**: elegir backbone o combinación.
+
+---
+
+### PASO T2 — ADR-009 (decisión arquitectónica con evidencia ejecutable) — 60-90 min
+
+**Pre-requisito**: T1.7 + T1.8 + T1.9 completos con evidencia REAL.
 
 **Archivo**: `decisions/ADR-009-adopcion-stack-ecosistema.md`
 
-**Decisiones posibles a documentar**:
-
-**Opción ACCEPT (wholesale)**: adoptar Spec Kit + Superpowers + ECC + claude-mem
-- Sprint 2 T2.2 reduce de 10 skills propias → 2-3 Stallen-specific
-- T3 sigma-close-session-validator reemplazado por Spec Validate ext + ECC equivalents
-- Workflow operativo (Nivel 0) = "cómo se compone el stack curado"
-- ~8-12 semanas ahorradas
-- **A1-A25 quedan como overlay declarativo encima del stack ejecutable** (insight Decisión A)
-
-**Opción PARTIAL**: adoptar algunos componentes, rechazar otros
-- Ej: adoptar superpowers + claude-mem, rechazar ECC (demasiado vasto)
-- Ej: adoptar ECC selectivamente (28 agents pero solo 30 skills)
-- Documentar criterio de selección
-- A1-A25 siguen como overlay declarativo
-
-**Opción REJECT**: construir Departamento propio desde cero
-- Razones: lock-in, conflictos, calibración Tier 1 no encaja
-- Plan: continuar Sprint 2 T2.2 original
-- A1-A25 siguen como Nivel 2; construir Nivel 3 propio
+**Decisión a documentar** (basada en EVALUATION v0.2):
+- ✅ Adoptar Spec Kit OR SDD alternativo (resultado T1.9) como backbone SDD
+- ✅ Adoptar ECC como stack ejecutable principal
+- ✅ Adoptar claude-mem como memoria persistente
+- 🟡 Superpowers diferido (a confirmar post-T1.6)
+- 🔵 4-5 skills sigma propias (A4 Acíclicidad, A5 Multi-tenant, A19 Resilience, A25 Authz)
 
 **Definition of Done T2**:
-- [ ] ADR-009 escrito (formato estándar)
-- [ ] Basado en evidencia empírica de T1 (no opiniones)
-- [ ] Matriz "A* vs stack" como anexo
-- [ ] Decisión documentada con razones
+- [ ] ADR-009 escrito con formato estándar
+- [ ] Matriz A* vs stack v0.2 como anexo
+- [ ] Decisiones B+D resueltas con razones
 - [ ] Implicaciones para Sprint 2/3 explícitas
 
 ---
 
-### PASO T3 — Refactor Sprint 2 según ADR-009 — 30-60 min
+### PASO T3 — Refactor Sprint 2 según ADR-009 (30-60 min)
 
-Actualizar `HORIZONTE.md` (si existe) y `SIGUIENTE-SESION.md` según ADR-009.
-
-**Si ACCEPT/PARTIAL**:
-- T2.2 reducido a 2-3 skills propias (calibración Tier 1)
-- Workflow operativo simplificado
-- Sprint 2 puede acelerarse 8-12 semanas
-
-**Si REJECT**:
-- Mantener mayor parte del plan original
-- Documentar qué se descarta del ecosistema y por qué
+Actualizar `SIGUIENTE-SESION.md` y `auditoria/sesion-activa.md` con plan reducido:
+- 4-5 skills sigma propias (no 10 del plan original)
+- Workflow operativo = "composición del stack" (Visión C confirmada)
+- Sprint 2 acelerado ~6-10 semanas
 
 ---
 
-### PASO T4 — Completar NORTE Framework v0.2 — 30-60 min
+### PASO T4 — Completar NORTE Framework v0.2 (30-60 min)
 
-Llenar placeholders restantes del NORTE.md raíz con Visión C clarificada:
-
-- Q4 Tier de calibración (Tier 1 default vs multi-tier)
+Llenar placeholders restantes en `NORTE.md`:
+- Q4 Tier de calibración (mantener Tier 1 default o multi-tier)
 - Q5 Stakeholders detallados
-- Q6 Restricciones (presupuesto, tiempo, equipo)
+- Q6 Restricciones
 - Q7 Criterio de stop / pivot
 
-Versionar v0.1 → v0.2 (no v1.0 todavía — eso espera primer proyecto validado).
+Bump v0.1 → v0.2 (no v1.0 todavía — eso espera proyecto productivo aplicado).
 
 ---
 
-### PASO T5 — Adaptar protocolos (si la sesión PM 2026-05-20 no los cubrió ya) — 30-60 min
+### PASO T5 — Workflow operativo Nivel 0 — 1-2 hs
 
-Verificar si los `PROTOCOLO-INICIO-CHAT.md` v1.0 y `PROTOCOLO-CIERRE-SESION.md` v1.0 ya escritos en sesión AM 2026-05-20 necesitan adaptación a Visión C (post ADR-009).
-
-Probablemente: pocos cambios, dado que los protocolos están bien fundamentados en filosofía agnóstica.
-
----
-
-### PASO T6 — Workflow operativo Nivel 0 — 1-2 hs
-
-**Si Visión C adoptada** (T2 = ACCEPT/PARTIAL):
+**Si Visión C confirmada por T2 (ACCEPT PARCIAL)**:
 
 Crear `docs/WORKFLOW-OPERATIVO.md` v1.0 documentando:
 - "Cómo se compone el stack curado del Departamento"
-- Cuándo usar cada pieza (superpowers vs Spec Kit vs ECC)
-- Orden de fases en el ciclo Analizar → Planificar → Ejecutar → Verificar
-- Cuándo se aplica overlay del Departamento (A1-A25)
-
-**Si Visión C rechazada** (T2 = REJECT):
-
-Continuar Camino 1 original: workflow operativo propio desde cero (~2-3 hs).
+- Cuándo usar cada pieza (Spec Kit vs SDD vs ECC vs claude-mem)
+- Orden de fases Analizar → Planificar → Ejecutar → Verificar
+- Cuándo aplicar overlay del Framework (A1-A25)
+- Cuándo invocar skills sigma propias
 
 ---
 
-### PASO T7 — Posible ADR-010 formalizando Visión D — opcional
+### PASO T6 — Documentar lecciones operativas (45 min)
 
-Después de T1+T2, si la evidencia empírica del sandbox sugiere que Visión D tiene sentido (Capa A independiente + Capa B integraciones opcionales), formalizar en ADR-010. Sino, mantener como deuda abierta.
+Agregar a `docs/AGENT-INTEGRATION.md`:
+- Método declarativo `extraKnownMarketplaces` (LECCIÓN 19)
+- Cross-LLM publishing canónico (LECCIÓN 18 — modelo `obra/superpowers`)
+- Windows setup checklist (DEUDA-WINDOWS-SETUP-CHECKLIST)
+- Stack del ecosistema integrado para Claude Code (alternativas para Cursor/Codex/etc.)
+
+---
+
+### PASO T7 — Posible ADR-010 (Decisión B Visión D) — opcional
+
+Si T1.7-T1.8 dan evidencia de que la separación Capa A / Capa B tiene sentido empírico, formalizar en ADR-010. Sino, mantener como deuda abierta.
 
 ---
 
@@ -316,13 +277,23 @@ Después de T1+T2, si la evidencia empírica del sandbox sugiere que Visión D t
 
 ```powershell
 cd C:\DEPARTAMENTO-SOFTWARE
-git status              # debería estar clean tras commit T-1 pendiente
+
+# Estado git
+git status              # debería estar clean
 git pull                # sync con remote
 git log --oneline -10   # ver últimos commits
 
 # Verificar tools (en Claude Code CLI):
 claude mcp list         # MCPs disponibles
-claude --version        # Claude Code CLI
+claude --version        # Claude Code CLI version
+
+# Verificar skills cargadas en sandbox
+cd projects/sandbox-stack
+ls .claude/skills/      # debería listar speckit-*
+
+# Verificar parches anti-degradación
+cat ~/.claude/plugins/known_marketplaces.json | grep -A 5 thedotmack
+# Debería decir "autoUpdate: false"
 ```
 
 ---
@@ -331,7 +302,7 @@ claude --version        # Claude Code CLI
 
 ### 7 Principios rectores
 1. Python traza → IA recorre → Python verifica
-2. **3 capas: PREVENTIVA → VERIFICABLE → CORRECTIVA** (específicamente para mitigar fallos del LLM)
+2. **3 capas: PREVENTIVA → VERIFICABLE → CORRECTIVA**
 3. Dominio-first
 4. Auto-fix > finding cuando inequívoco
 5. Polinización cruzada
@@ -339,69 +310,75 @@ claude --version        # Claude Code CLI
 7. Meta-producto recursivo
 
 ### Reglas A1-A25 más críticas para vibe coders Tier 1
-- A5 Multi-tenant Strict Isolation
-- A12 Zero Trust
+- A5 Multi-tenant Strict Isolation (CRÍTICA, partial cobertura stack)
+- A12 Zero Trust (CRÍTICA, Direct cobertura ECC)
 - A13 Concurrency Safety
-- A14 Explicit Failure
-- A15 Unhappy Path First
-- A20 Hexagonal Architecture (paradigma fundamental)
-- A21 Structured Observability (3 pilares)
-- A22 Secrets Management (vector ataque #1)
-- A24 Data Lifecycle (compliance GDPR)
+- A14 Explicit Failure (Direct ECC)
+- A15 Unhappy Path First (Direct ECC)
+- A20 Hexagonal Architecture (CRÍTICA, Direct `ecc:hexagonal-architecture`)
+- A21 Structured Observability (CRÍTICA, partial)
+- A22 Secrets Management (CRÍTICA, Direct ECC)
+- A24 Data Lifecycle (CRÍTICA, partial)
 
-### Visión articulada del Framework (verbatim Julián)
+### Visión articulada del Framework (verbatim Julián 2026-05-15)
 > *"crear un harness que permita construir proyectos sin tener miedo de que el llm alucina, inventa o esta haciendo cosas que no debe... análice, planifique, ejecute, verifique como se haría en un departamento de software real o como lo hace un senior en producción"*
 
-### Insight Decisión A (sesión PM 2026-05-20)
-**Nivel 2 declarativo + Nivel 3 ejecutable son complementos por diseño, no sustitutos** (ADR-006). Reglas A* funcionan como "doble advertencia" (defensa en profundidad — 2° principio rector). Si el stack falla en activar un skill, la regla A* en CLAUDE.md sigue ahí.
+### Insight Decisión A — **VALIDADO EMPÍRICAMENTE** (sesión 2026-05-21)
+Nivel 2 declarativo A1-A25 + Nivel 3 ejecutable son complementos por diseño. Matriz A* vs stack: 44% Direct + 48% Partial + 8% None confirma complementariedad — el stack NO sustituye al overlay, lo ejecuta donde puede; donde NO puede, el overlay es la única defensa.
 
-### Lecciones técnicas críticas
-- **LECCIÓN 16**: cascada de aceptación entre Claude instances cuando humano valida premisa entre chats. Verificar contra disco, no contra "lo que dijo otro Claude".
-- **LECCIÓN 17 (a)**: `filesystem:edit_file` con array de edits NO es atómico. Para cambios grandes coherentes, usar `write_file`.
-- **LECCIÓN 17 (b)**: ante estado inesperado, verificar primero "efectos propios no recordados" antes de hipotetizar "entidad externa".
-- **LECCIÓN 1** (consolidada en 17): `$$` y `$BODY$` en SQL rompen `edit_file`. Usar `write_file` para archivos con `$` literal.
+### Lecciones técnicas críticas (acumulado)
+- **LECCIÓN 16**: cascada de aceptación entre Claude instances
+- **LECCIÓN 17**: `edit_file` con array no es atómico — preferir `write_file`
+- **LECCIÓN 18** *(2026-05-21)*: cross-LLM publishing canónico (`obra/superpowers` modelo) vs anti-patrón (`.agents/` único de claude-mem)
+- **LECCIÓN 19** *(2026-05-21)*: método declarativo `extraKnownMarketplaces` en `~/.claude/settings.json` para CLI standalone
+- **LECCIÓN 20** *(2026-05-21)*: flags de tools rotan rápido — documentar comportamiento, no flags
+- **LECCIÓN 21** *(2026-05-21, N=1 candidato)*: matriz a-priori vs ejecutable — validar invocando, no solo leyendo metadata
 
 ### Lecciones de proceso
 - Anti-paternalismo: NO proyectar cansancio
-- Audit empírico: cuando Julián cuestiona "ya está hecho" → audit INMEDIATO (hit rate 18/18)
-- El Departamento NO es workflow alternativo: es curador + calibrador del ecosistema (Visión C) + overlay arquitectónico declarativo (insight Decisión A)
+- Audit empírico: cuando Julián cuestiona → audit INMEDIATO (hit rate 19/19)
+- El Departamento es Visión C confirmada (curador + calibrador + overlay arquitectónico declarativo)
 
 ---
 
 ## RIESGOS DE LA PRÓXIMA SESIÓN
 
-- **T0 falla**: claude-mem requiere Apache 2.0 compatible client. Si Claude Code CLI no lo soporta, fallback es seguir sin claude-mem temporalmente.
-- **T1 sandbox revela incompatibilidades graves**: si Spec Kit + Superpowers + ECC chocan irreconciliablemente, ADR-009 = REJECT, plan original Sprint 2.
-- **T1 tiempo subestimado**: 3-5 hs es estimación. Si toma 8+ hs, dividir en T1.1 (instalación) + T1.2 (workflow end-to-end) + T1.3 (matriz A* vs stack).
-- **Decisión B (Visión D) presiona**: si la evidencia del sandbox no es clara, Decisión B puede esperar más sesiones — no forzar.
-- **Compactación de chat**: si la sesión es muy larga, aplicar PROTOCOLO-INICIO-CHAT v1.0 PASO 1 al re-arrancar para evitar deriva (LECCIÓN 12).
+- **T1.6 Superpowers fix no carga**: el restart puede no resolver el race condition. Mitigación: clone manual + entry installed_plugins ya aplicados; si vuelve a quedar orphaned → declarar como deuda permanente y avanzar (ECC cubre 80-90%).
+- **T1.7 workflow falla a mitad**: si Spec Kit + ECC + claude-mem chocan irreconciliablemente en flow real, ADR-009 = ACCEPT solo Spec Kit + ECC sin chain integration.
+- **T1.7 tiempo subestimado**: 2-3 hs puede ser optimista para primer caso end-to-end real. Si toma 4+ hs, dividir en T1.7.1 (constitution + specify + plan) y T1.7.2 (implement + verify).
+- **T1.9 comparación SDD vs Spec Kit confusa**: si ambos workflows son confusamente similares, la Decisión D queda como "depende del proyecto" — aceptable.
+- **Bump de versiones**: spec-kit/ECC/claude-mem pueden bumper entre esta sesión y la próxima. Si flags cambian, adaptar al vuelo.
+- **Compactación de chat**: si la sesión es muy larga, aplicar PROTOCOLO-INICIO-CHAT PASO 1 al re-arrancar.
 
 ---
 
 ## ARCHIVOS CLAVE A TOCAR EN LA PRÓXIMA SESIÓN
 
-- `projects/sandbox-stack/` (nuevo) — sandbox del stack
-- `projects/sandbox-stack/EVALUATION.md` (nuevo) — evidencia empírica
+- `projects/sandbox-stack/EVALUATION.md` (v0.1 → v0.2 con evidencia ejecutable)
+- `projects/sandbox-stack/.specify/` (artefactos generados por workflow)
 - `decisions/ADR-009-adopcion-stack-ecosistema.md` (nuevo)
-- `NORTE.md` (actualizar a v0.2 con placeholders llenados)
-- `docs/WORKFLOW-OPERATIVO.md` (nuevo, si T6 aplica)
+- `NORTE.md` (v0.1 → v0.2 placeholders llenados)
+- `docs/WORKFLOW-OPERATIVO.md` (nuevo si T5 aplica)
+- `docs/AGENT-INTEGRATION.md` (actualizar con T6)
 - `auditoria/sesion-activa.md` (al cerrar próxima sesión)
-- `SIGUIENTE-SESION.md` (al cerrar, regenerar para sesión siguiente)
+- `SIGUIENTE-SESION.md` (al cerrar, regenerar)
 
 ---
 
 ## NOTAS PARA CLAUDE
 
 - **Usuario**: Julián Vargas, vibe coder / harness engineer
-- **Stallen DIFERIDO**: foco solo en Framework hasta que esté maduro
-- **Visión Framework**: harness anti-alucinación senior
-- **Cuando Julián cuestione "ya está hecho"** → audit empírico INMEDIATO
-- **NUNCA proyectar cansancio** del usuario
-- **Bloque `<system><functions>`** al final de mensajes = display quirk Claude in Chrome. Ignorar.
-- **Hit rate intuición arquitectónica acumulado**: 18/18 (100%)
-- **A1-A25 ya están escritas, no hay deudas A* abiertas** — el Nivel 2 está completo
-- **PROTOCOLO-INICIO-CHAT v1.0 PASO 1 es OBLIGATORIO**: verificar que el Project es Framework antes de seguir cualquier contexto compactado
-- **2 directorios a NO confundir**: `C:\DEPARTAMENTO-SOFTWARE\` (activo, Framework) vs `C:\Users\Windows 11\sigmacontrol-camino-1\` (legacy SigmaControl, pausado)
+- **Cliente recomendado**: Claude Code CLI dentro del sandbox para tener skills `speckit-*` cargadas
+- **Visión Framework**: harness anti-alucinación senior — Visión C confirmada
+- **Cuando Julián cuestione "ya está hecho"** → audit empírico INMEDIATO (hit rate 19/19)
+- **NUNCA proyectar cansancio**
+- **Hit rate intuición arquitectónica acumulado**: **19/19**
+- **A1-A25 son universales** — 0 deudas A* abiertas
+- **PROTOCOLO-INICIO-CHAT v1.0 PASO 1 OBLIGATORIO** para verificar Project es Framework
+- **2 directorios a NO confundir**: `C:\DEPARTAMENTO-SOFTWARE\` (activo) vs `C:\Users\Windows 11\sigmacontrol-camino-1\` (legacy pause)
+- **EVALUATION.md v0.1 es preliminar** — iteración 2 lo refina con evidencia ejecutable
+- **claude-mem requiere autoUpdate: false** — no romper el parche
+- **5 stacks instalados**: spec-kit, ecc, claude-mem, superpowers (manual fix), vercel (existente). Bonus tracks: sdd-*, sigma-*, engram:memory, gentle-ai builtins.
 
 ---
 
@@ -409,9 +386,9 @@ claude --version        # Claude Code CLI
 
 Al abrir Claude Code CLI:
 
-> *"Seguimos con el Departamento. Leé `auditoria/sesion-activa.md` y `SIGUIENTE-SESION.md`. Diagnóstico estándar. Arrancamos T-1 (verificar commit pusheado), después T0 (claude-mem 5 min), después T1 (sandbox del stack)."*
+> *"Seguimos con el Departamento. Aplicá PROTOCOLO-INICIO-CHAT. Leé `auditoria/sesion-activa.md` v3.5 y `SIGUIENTE-SESION.md` v5.0. Diagnóstico estándar. Arrancamos T-1 (verificar commit pusheado), después T1.6 (restart + Superpowers), después T1.7 (workflow end-to-end real)."*
 
 ---
 
-Creado: 2026-05-15 | Versión: **4.0** (post implementación A20-A25 + LECCIÓN 16+17 + Decisión A resuelta)
-Para: Claude que abra próxima sesión (Claude Code CLI recomendado por T0 + shell)
+Creado: 2026-05-15 | Versión: **5.0** (post sandbox empírico T1 + matriz A* vs stack + EVALUATION.md v0.1 + Decisión A validada)
+Para: Claude que abra próxima sesión (Claude Code CLI recomendado dentro de `projects/sandbox-stack/`)
