@@ -14,3 +14,7 @@ Thumbs.db
 # Cache de Gentle AI / Claude Code skill-registry (auto-generado, paths absolutos no portables)
 workspace/.atl/
 .atl/
+
+# Claude Code per-developer settings (overrides locales, no portables)
+.claude/settings.local.json
+**/.claude/settings.local.json

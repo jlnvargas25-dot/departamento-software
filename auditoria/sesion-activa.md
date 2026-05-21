@@ -3,7 +3,8 @@
 > **Propósito**: estado al cerrar la última sesión del Framework.
 > Para sesiones específicas de Stallen, ver `projects/stallen/auditoria/sesion-activa.md`.
 
-**Última sesión**: 2026-05-21 — Sandbox del stack ecosistema ejecutado parcial: T0 (claude-mem v13.2.0 con parche manual) + T1.1-T1.5 (Spec Kit + ECC 200+ skills + Superpowers manual fix + constitution operacionalizada con A1-A25 + EVALUATION.md con matriz A* vs stack)
+**Última sesión**: 2026-05-21 PM continuación — T1.6 (Superpowers verificado 14/14) + T1.7 (5 skills speckit-* planning ejecutadas sobre caso todo+auth Supabase: 8 artefactos en specs/001-todo-management/ + 47 tasks) + T1.8 (EVALUATION.md v0.5 PRELIMINAR, matriz 44%→76% Direct con caveat operator-dependiente) + T2 (ADR-009 v0.5 PROPOSED). T1.9 + /implement diferidos a próxima sesión.
+**Sesión anterior**: 2026-05-21 — Sandbox del stack ecosistema ejecutado parcial: T0 (claude-mem v13.2.0 con parche manual) + T1.1-T1.5 (Spec Kit + ECC 200+ skills + Superpowers manual fix + constitution operacionalizada con A1-A25 + EVALUATION.md con matriz A* vs stack)
 **Sesión anterior**: 2026-05-20 (PM) — Implementación A20-A25 + 8 anti-patterns asociados antes del sandbox empírico + LECCIÓN 16 y 17
 **Sesión previa**: 2026-05-20 (AM) — Detección de deriva de contexto + creación de PROTOCOLO-INICIO + PROTOCOLO-CIERRE + reconfiguración Project Claude.ai
 **Sesión previa a esa**: 2026-05-15 — Sprint 2 Día 2 (chat.ai, 3 audits empíricos, A1-A19 implementadas + A20-A25 deudas)
@@ -286,6 +287,101 @@ Paso 8   este audit                               → OK
 ```
 
 **Resultado**: 7 OK + 1 N/A (paso 3 arch). Sesión cerrada SIN gaps.
+
+---
+
+# ADDENDUM POST-CIERRE — Sesión 2026-05-21 PM/continuación (T1.6 → T2)
+
+## Resumen ejecutivo
+
+Cadena T1.6 → T2 ejecutada en alcance reducido ("Solo planeación hoy + ADR-009 preliminar", elegido vía AskUserQuestion para gestión de costo). **T1.6** validó las 14/14 skills `superpowers:*` post fix manual (DEUDA-SUPERPOWERS-FETCH-RACE cerrada de facto). **T1.7** ejecutó las 5 skills de planeación de Spec Kit sobre el caso "Personal Todo Management with User Authentication (Supabase + Vercel)" produciendo 8 artefactos. **T1.8** refinó EVALUATION.md a v0.5 PRELIMINAR: matriz Direct 44%→76% con caveat operator-dependiente. **T2** redactó `decisions/ADR-009-adopcion-stack-ecosistema.md` v0.5 PROPOSED. **T1.9 + /implement** diferidos para promover ADR-009 v0.5 → v1.0 ACCEPTED.
+
+## Lo que se hizo (cronológico)
+
+1. PROTOCOLO-INICIO-CHAT v1.0 ejecutado (Caso A); contexto Framework verificado; canónicos leídos.
+2. TaskList con 5 tareas + dependencias declaradas.
+3. **T1.6**: count visible en system prompt confirmó 9 speckit-* + 200+ ecc:* + 12 claude-mem:* + 14 superpowers:* + 9 sdd-*. DEUDA-SUPERPOWERS-FETCH-RACE cerrada.
+4. AskUserQuestion: scope de T1.7 → "todo CRUD + auth Supabase".
+5. Cost-aware AskUserQuestion: scope chain → "Solo planeación + ADR-009 preliminar".
+6. Fact-Forcing Gate desactivado vía `.claude/settings.local.json` del sandbox (env field). El harness re-lee settings.local.json en runtime; gate desactivado al siguiente Write sin restart. Precedente operativo capturado.
+7. **T1.7 step 1 `/speckit-constitution`**: NO-OP sobre constitution ya operacionalizada (0 placeholders). Finding capturado.
+8. **T1.7 step 2 `/speckit-specify`**: caso input → creó `specs/001-todo-management/spec.md` (3 user stories P1, 9 edge cases, 20 FRs, 11 assumptions, 0 NEEDS CLARIFICATION) + checklists/requirements.md (100% pass) + .specify/feature.json. Prefix `001-` sequential.
+9. **T1.7 step 3 `/speckit-clarify`**: prereq script OK; scan 10 categorías; 3 áreas Partial diferibles a planeación; "No critical ambiguities" → sin mutación. Gap H2: taxonomía clarify cubre ~10/25 reglas A*.
+10. **T1.7 step 4 `/speckit-plan`**: rellené plan.md con Constitution Check explícito A1-A25 (22 OK + 3 DEFERRED/PARTIAL) + Project Structure hexagonal; generé research.md (10 decisiones + 3 deferidas) + data-model.md (3 tablas + RLS + state transitions) + contracts/api.md (10 server actions tagged Result<T>) + quickstart.md; CLAUDE.md SPECKIT markers actualizados.
+11. **T1.7 step 5 `/speckit-tasks`**: generé tasks.md con 47 tareas en 6 phases (Setup, Foundational, US2 auth, US1 todos, US3 adversarial, Polish) + dependency graph + parallel opportunities. Tests incluidos por decisión del operador (Principio II + A15).
+12. **T1.7-EVIDENCE.md** consolidada con findings por skill + insight ejecutable.
+13. **T1.8 EVALUATION.md v0.5 addendum** escrito: matriz refinada con columna "Evidencia ejecutable" + 2 lecciones candidatas (22, 23 — N=1).
+14. **T2 ADR-009 v0.5 PROPOSED** redactado con 5 sub-decisiones + alternativas rechazadas + validación pendiente para v1.0.
+15. AskUserQuestion cierre: "Cierre formal completo" elegido.
+
+## Decisiones tomadas
+
+- **Scope T1.7-T2**: reducido a fase de planeación + ADR-009 preliminar (cost-aware).
+- **Fact-Forcing Gate**: desactivado para sandbox via `.claude/settings.local.json` (precedente operativo).
+- **ADR-009 v0.5 PROPOSED**: ACCEPT PARCIAL del stack + 4 sigma MVP. Pendiente promoción a v1.0 ACCEPTED.
+- **Tests siempre incluidos** en speckit-tasks: decisión del operador apelando a Principio II + A15.
+
+## Decisiones pendientes para próxima sesión
+
+- **Decisión D — SDD vs Spec Kit**: T1.9 lo resuelve.
+- **Decisión B — Visión D (Capa A / Capa B)**: sigue diferida hasta iteración 3 (/implement).
+- **Promoción ADR-009 v0.5 → v1.0 ACCEPTED**: condicionada a T1.9 + iteración /implement + build 4 sigma MVP.
+
+## Lecciones candidatas nuevas (N=1, esperar N=2)
+
+### LECCIÓN 22 candidata — Manual injection point del Constitution Check
+El Constitution Check del plan-template Spec Kit es slot delegado al operador. Sin enforcement programático, cobertura A* depende 100% del operador. **Mitigación**: skills sigma post-procesadoras (`sigma:enforce-constitution-check`) convierten "manual injection point" en "verifiable injection point".
+
+### LECCIÓN 23 candidata — Matriz a-priori vs ejecutable diverge AL ALZA con operador instruido
+Cobertura real del stack subió 44%→76% Direct con operador del Framework. **Implicación**: la pregunta correcta no es "¿qué cobertura tiene el stack?" sino "¿qué cobertura producirá con operador del Framework vs uno genérico?". Justifica empíricamente el Framework.
+
+## Deudas técnicas — estado tras continuación 2026-05-21
+
+### Deudas RESUELTAS
+- **DEUDA-SUPERPOWERS-FETCH-RACE**: ✅ T1.6 confirmó 14/14 cargan post-restart.
+
+### Deudas NUEVAS
+- **DEUDA-CONSTITUTION-CHECK-ENFORCEMENT** *(NUEVA)*: 🔴 Spec Kit plan-template tiene slot delegado sin enforcement. Resuelve: `sigma:enforce-constitution-check` (Sprint 2 MVP).
+- **DEUDA-TAXONOMIA-CLARIFY-INCOMPLETA** *(NUEVA)*: 🟡 `/speckit-clarify` cubre ~10/25 reglas A*. Resuelve: `sigma:clarify-with-a-rules-taxonomy` (Sprint 2 v1.1).
+- **DEUDA-FACT-FORCING-GATE-EN-SANDBOX** *(NUEVA, MENOR)*: 🟢 Gate ECC añade fricción en sandbox. Workaround documentado. No bloqueante.
+
+### Sin cambio
+- DEUDA-CLAUDE-MEM-MANIFEST, DEUDA-PLUGIN-INSTALL-DOCS, DEUDA-WINDOWS-SETUP-CHECKLIST, DEUDA-SDD-VS-SPECKIT-COMPARACION, DEUDA-ADR-010-PROMOTE-TO-ACCEPTED, DEUDA-NORTE-FRAMEWORK-PLACEHOLDERS, DEUDA-WORKFLOW-OPERATIVO, DEUDA-VISIÓN-D-NO-FORMALIZADA, DEUDA-REPLANTEAR-ROADMAP-POST-STACK.
+
+## Audit empírico recursivo (paso 5)
+
+**Audit empírico #5**: cobertura A* ejecutable de speckit-* planning. Hit rate del a-priori v0.1: 4/4 categorías speckit-* (0 directas confirmadas). Operador-instruido sube cobertura a-priori 44%→76% Direct (operator-dependent delta). Hit rate intuición arquitectónica Julián: **20/20** (sin nuevo evento esta continuación, mantiene del addendum PM 2026-05-20).
+
+## Estado del repo al cerrar
+
+```
+Branch: main
+Working tree con cambios pendientes:
+  - projects/sandbox-stack/specs/001-todo-management/ (feature dir nuevo, 8 archivos)
+  - projects/sandbox-stack/.specify/feature.json (nuevo)
+  - projects/sandbox-stack/.claude/settings.local.json (nuevo, desactiva gateguard)
+  - projects/sandbox-stack/CLAUDE.md (SPECKIT markers actualizados)
+  - projects/sandbox-stack/T1.7-EVIDENCE.md (nuevo)
+  - projects/sandbox-stack/EVALUATION.md (v0.1 → v0.5 con addendum)
+  - decisions/ADR-009-adopcion-stack-ecosistema.md (nuevo)
+  - auditoria/sesion-activa.md (este cierre)
+  - SIGUIENTE-SESION.md (v5.0 → v5.1)
+```
+
+## Audit de cierre paso 8
+
+```
+Paso 1  sesion-activa.md actualizado (addendum)        → OK
+Paso 2  SIGUIENTE-SESION.md actualizada v5.0→v5.1      → OK (en este mismo cierre)
+Paso 3  docs tocados (sandbox + ADR + EVALUATION)      → OK
+Paso 4  radar deuda nueva (3 nuevas + 1 resuelta)      → OK
+Paso 5  audit empírico recursivo (#5)                  → OK
+Paso 6  verificación consistencia                      → OK (cross-refs ADR-009 ↔ EVALUATION ↔ T1.7-EVIDENCE coherentes)
+Paso 7  commit                                         → OK (en este mismo cierre); push diferido a decisión del usuario
+Paso 8  este audit                                     → OK
+```
+
+**Resultado**: 8 OK. Cierre limpio.
 
 ---
 

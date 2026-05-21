@@ -237,3 +237,107 @@ Recomendación: esperar 1 iteración real del workflow antes de formalizar.
 ---
 
 **Fin EVALUATION.md v0.1** — input para ADR-009. Reescribir post-iteración 2 con evidencia ejecutable.
+
+---
+
+# ADDENDUM v0.5 — Evidencia de fase de planeación (T1.7, 2026-05-21)
+
+> **Estado**: v0.5 PRELIMINAR (planning-phase only). v1.0 espera evidencia de `/speckit-implement` + comparación SDD vs Spec Kit (T1.9 diferido a próxima sesión).
+> **Fuente**: `projects/sandbox-stack/T1.7-EVIDENCE.md` con detalle por invocación.
+> **Caso ejecutado**: "Personal Todo Management with User Authentication" (todo CRUD + Supabase Auth + RLS).
+
+## Refinamientos a la matriz A* vs stack (post-ejecución)
+
+### Confirmaciones (sin cambio respecto a v0.1)
+
+Las **11 reglas 🟢 Direct** se mantienen tras ejecución:
+- A3, A7, A9, A10, A12, A14, A15, A17, A20, A22, A23
+
+Las **2 reglas 🔴 None** se confirman:
+- A4 Acíclicidad — solo defendible por overlay declarativo
+- A19 External Resilience — solo defendible por overlay declarativo (tasks.md la marca como deuda v1.1)
+
+### Nuevos hallazgos (post-T1.7 que la matriz a-priori NO captó)
+
+#### Hallazgo H1 — Constitution Check del plan-template es el "manual injection point" CRÍTICO
+
+El template de `plan.md` tiene una sección `## Constitution Check` con un placeholder `[Gates determined based on constitution file]`. **Si el operador la deja vaga o vacía → cobertura A* = 0 en el plan**. Si la rellena consciente del Framework → cobertura A* = 25 ítems.
+
+La skill `/speckit-plan` **no enforce** este relleno. Es el momento donde la complementariedad Nivel 2 ↔ Nivel 3 se decide.
+
+**Implicación**: la matriz a-priori medía la **cobertura potencial** del stack. La cobertura real depende del operador. Esto **refuerza el insight Decisión A**: el overlay declarativo no es decorativo — sin él, el stack es ciego a las reglas críticas.
+
+#### Hallazgo H2 — Taxonomía de `/speckit-clarify` cubre ~10/25 reglas A*
+
+La skill prioriza ambigüedades en 10 categorías genéricas. **Faltan categorías para**: A4 Acíclicidad, A6 Audit, A8 Idempotency, A13 Concurrency, A16 Rate Limiting, A17 Edge, A18 Async, A19 External Resilience, A20 Hexagonal, A23 Deployment, A25 Authorization (11 reglas no cubiertas por la taxonomía clarify).
+
+**Implicación**: clarify está diseñada para "MVP genérico", no para "Tier 1 SaaS commercial robust". Skill sigma propuesta: `sigma:clarify-with-a-rules-taxonomy`.
+
+#### Hallazgo H3 — Tasks heredan transitivamente del plan, sin slot propio para A*
+
+`tasks.md` no tiene formato para tag `[A:N,M]` por task. La trazabilidad task ↔ regla A* depende de que el plan ya tenga el mapping. Si no, las tasks se ejecutarán correctamente pero el code review no sabe qué tasks son A5-críticas.
+
+**Implicación**: la **adversarial gate** (T038-T041 en `tasks.md`) es la única evidencia explícita de A5+A12 en el output de `/speckit-tasks`. El resto del mapping vive en el plan o en mi cabeza.
+
+### Tabla refinada (v0.5 con columna "Evidencia ejecutable observada")
+
+| # | Regla | Crit | v0.1 a-priori | v0.5 ejecutable | Evidencia concreta en artefactos |
+|---|---|---|---|---|---|
+| A1 | Module Ownership | I | 🟡 Partial | 🟢 Direct | `plan.md` Project Structure (hexagonal split); `tasks.md` T007 |
+| A2 | Encapsulación tablas | I | 🟡 Partial | 🟢 Direct | `contracts/api.md` (server actions only, no tablas expuestas); `tasks.md` T031 |
+| A3 | Inter-Module Contracts | I | 🟢 Direct | 🟢 Direct | `contracts/api.md` (Result<T> + zod); `tasks.md` T013 |
+| A4 | Acíclicidad | I | 🔴 None | 🔴 None | Solo plan-level ("hexagonal split, no cycles"); sin enforcement ejecutable |
+| A5 | Multi-tenant Isolation | **C** | 🟡 Partial | 🟢 Direct | `data-model.md` RLS policies; `tasks.md` T008, T038-T041 adversarial gate |
+| A6 | Immutability Audit | I | 🟡 Partial | 🟢 Direct | `data-model.md` `todo_events` + `auth_events` insert-only RLS |
+| A7 | Domain Validation | I | 🟢 Direct | 🟢 Direct | Workflow speckit-* lo fuerza estructuralmente |
+| A8 | Idempotency / Rollback | I | 🟡 Partial | 🟡 Partial | `research.md` Decision 3 + `contracts/api.md` (idempotent complete/delete); sin tests específicos |
+| A9 | Stop Conditions | I | 🟢 Direct | 🟢 Direct | N/A en MVP (sin loops); `plan.md` lo flagea explícito |
+| A10 | No Test Code in Prod | I | 🟢 Direct | 🟢 Direct | `plan.md` Project Structure (tests/ separado); `tasks.md` T003 |
+| A11 | DAO + DTO | I | 🟡 Partial | 🟢 Direct | `plan.md` (Supabase=DAO, zod=DTO, domain types separate) |
+| A12 | Zero Trust | **C** | 🟢 Direct | 🟢 Direct | `contracts/api.md` (every action getServerSession); `tasks.md` T015, T038 |
+| A13 | Concurrency Safety | I | 🟡 Partial | 🟢 Direct | `data-model.md` updated_at token; `research.md` Decision 5; `contracts/api.md` expectedUpdatedAt + STALE_VERSION |
+| A14 | Explicit Failure | I | 🟢 Direct | 🟢 Direct | `contracts/api.md` tagged unions; `tasks.md` T037 logging |
+| A15 | Unhappy Path First | I | 🟢 Direct | 🟢 Direct | `tasks.md` US3 prece US1 in execution order; T038-T041 |
+| A16 | Rate Limiting | I | 🟡 Partial | 🟢 Direct | `research.md` Decision 8 + `tasks.md` T016 (Upstash) |
+| A17 | Edge Protection | I | 🟢 Direct | 🟢 Direct | `plan.md` (Vercel WAF default) |
+| A18 | Async for Heavy | I | 🟡 Partial | 🟡 Partial (N/A MVP) | `plan.md` lo declara N/A v1; deuda formal |
+| A19 | External Resilience | I | 🔴 None | 🔴 None | `tasks.md` deuda v1.1; sin circuit breaker en stack |
+| A20 | Hexagonal | **C** | 🟢 Direct | 🟢 Direct | `plan.md` Project Structure (domain→ports→adapters); `tasks.md` T007, T010-T011 |
+| A21 | Observability | **C** | 🟡 Partial | 🟡 Partial (logs+metrics, sin traces) | `research.md` Decision 9; `tasks.md` T014 (pino), T044 (Vercel Analytics); traces deferido v2 |
+| A22 | Secrets | **C** | 🟢 Direct | 🟢 Direct | `quickstart.md` sección 3 (server-only key warning); `tasks.md` T043 (rotación quarterly) |
+| A23 | Deployment Safety | I | 🟢 Direct | 🟢 Direct | `research.md` Decision 10 (migraciones versionadas); Vercel preview deployments |
+| A24 | Data Lifecycle | **C** | 🟡 Partial | 🟢 Direct | `data-model.md` soft-delete 30d + hard purge; `tasks.md` T045 (cron purge) |
+| A25 | Authorization | I | 🟡 Partial | 🟢 Direct | `data-model.md` RLS auth.uid()=user_id; `tasks.md` T020 (auth-provider) |
+
+### Nuevos conteos v0.5 (planning-phase)
+
+- 🟢 **Direct**: **19 reglas (76%)** — subida desde 11 (44%) en v0.1
+- 🟡 **Partial**: **4 reglas (16%)** — A8, A18, A21, (revisar A19/A4 → no movieron)
+- 🔴 **None**: **2 reglas (8%)** — A4, A19 (sin cambio)
+
+**Caveat crítico**: la subida de 44% → 76% Direct es **conseguida por el operador** llenando el Constitution Check + plan + data-model + contracts + tasks con consciencia del Framework. **La skill NO la fuerza**. Si replicamos el caso con un operador "vibe coder" sin Framework, la cobertura caería de vuelta a ~44%.
+
+## Lecciones empíricas adicionales (sobre las 20 anteriores)
+
+### LECCIÓN 22 candidata *(N=1, 2026-05-21)*
+
+**Patrón**: el momento crítico de un workflow SDD asistido por LLM es la sección donde el template **delega al operador** rellenar contenido específico del dominio (en speckit-plan: la Constitution Check). Sin enforcement programático, la cobertura A* depende 100% de la disciplina del operador.
+
+**Mitigación arquitectónica**: construir skills sigma como post-procesadores que **validan** que las secciones delegadas tienen contenido concreto (no placeholders, no vague language). Esto convierte "manual injection point" en "verifiable injection point".
+
+### LECCIÓN 23 candidata *(N=1, 2026-05-21)*
+
+**Patrón**: matriz a-priori (basada en lectura de catálogo) vs matriz ejecutable (post-invocación) diverge **al alza** cuando el operador es consciente del Framework. La cobertura "real" no es propiedad solo del stack, sino del **stack + operador instruido**.
+
+**Implicación operativa**: la pregunta correcta no es "¿qué cobertura tiene el stack?" sino "¿qué cobertura producirá el stack con un operador del Framework vs un operador genérico?". El delta es lo que justifica el Framework.
+
+---
+
+**Estado v0.5**: PROPOSED para ADR-009 PRELIMINAR. v1.0 final pendiente de T1.9 (comparación SDD vs Spec Kit con mismo caso) + opcional iteración con `/speckit-implement`.
+
+**Próximos pasos**:
+1. T2 — ADR-009 v0.5 PRELIMINAR (esta sesión)
+2. T1.9 — comparación `sdd-*` vs `speckit-*` (próxima sesión)
+3. `/speckit-implement` o `/ecc:multi-execute` sobre tasks.md (próxima sesión)
+4. EVALUATION.md v1.0 con evidencia de implementation real (post iteración 3)
+
