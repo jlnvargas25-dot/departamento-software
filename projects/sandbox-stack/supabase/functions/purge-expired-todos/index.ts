@@ -52,10 +52,10 @@ Deno.serve(async (req: Request) => {
   // We also support a manual Bearer token check for direct invocations.
   const authHeader = req.headers.get("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return new Response(
-      JSON.stringify({ error: "Missing authorization" }),
-      { status: 401, headers: { "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: "Missing authorization" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   // Use the built-in SUPABASE_URL + service-role key injected by the Edge runtime.
@@ -64,10 +64,10 @@ Deno.serve(async (req: Request) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!supabaseUrl || !serviceRoleKey) {
-    return new Response(
-      JSON.stringify({ error: "Runtime env vars not available" }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: "Runtime env vars not available" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
@@ -89,15 +89,17 @@ Deno.serve(async (req: Request) => {
     .not("deleted_at", "is", null);
 
   if (error) {
-    console.log(JSON.stringify({
-      level: "error",
-      msg: "purge-expired-todos failed",
-      context: { error: error.message, cutoff: cutoff.toISOString() },
-    }));
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
+    console.log(
+      JSON.stringify({
+        level: "error",
+        msg: "purge-expired-todos failed",
+        context: { error: error.message, cutoff: cutoff.toISOString() },
+      }),
     );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const result = {
@@ -106,14 +108,16 @@ Deno.serve(async (req: Request) => {
     timestamp: new Date().toISOString(),
   };
 
-  console.log(JSON.stringify({
-    level: "info",
-    msg: "purge-expired-todos completed",
-    context: result,
-  }));
-
-  return new Response(
-    JSON.stringify(result),
-    { status: 200, headers: { "Content-Type": "application/json" } },
+  console.log(
+    JSON.stringify({
+      level: "info",
+      msg: "purge-expired-todos completed",
+      context: result,
+    }),
   );
+
+  return new Response(JSON.stringify(result), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 });

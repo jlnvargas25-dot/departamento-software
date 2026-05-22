@@ -45,11 +45,7 @@ import type {
 /** Extract best-effort client IP from request headers (A16). */
 async function getClientIp(): Promise<string> {
   const hdrs = await headers();
-  return (
-    hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    hdrs.get("x-real-ip") ??
-    "unknown"
-  );
+  return hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? hdrs.get("x-real-ip") ?? "unknown";
 }
 
 /** Read the correlation ID injected by middleware (OBS-3). */
@@ -98,7 +94,11 @@ async function writeAuthEvent(params: {
     // Non-fatal — event write must never break the primary flow (A14)
     // G-3/G-6: structured log so infra has visibility without alarming callers
     logger.warn(
-      { action: "writeAuthEvent", errorCode: "AUTH_EVENT_WRITE_FAILED", error: e instanceof Error ? e.message : String(e) },
+      {
+        action: "writeAuthEvent",
+        errorCode: "AUTH_EVENT_WRITE_FAILED",
+        error: e instanceof Error ? e.message : String(e),
+      },
       "writeAuthEvent: failed to insert auth_events row (non-fatal)",
     );
   }
@@ -121,9 +121,7 @@ function hashIp(ip: string): string {
 // A5: duplicate email returns ok (anti-enumeration) — enforced in adapter
 // ---------------------------------------------------------------------------
 
-export async function signUp(
-  input: unknown,
-): Promise<Result<SignUpResult>> {
+export async function signUp(input: unknown): Promise<Result<SignUpResult>> {
   const start = Date.now();
   const [ip, requestId] = await Promise.all([getClientIp(), getRequestId()]);
   const ipHash = hashIp(ip);
@@ -173,9 +171,7 @@ export async function signUp(
 // A12: UNAUTHENTICATED returned for any credential failure (anti-enum FR-005)
 // ---------------------------------------------------------------------------
 
-export async function signInWithPassword(
-  input: unknown,
-): Promise<Result<SignInResult>> {
+export async function signInWithPassword(input: unknown): Promise<Result<SignInResult>> {
   const start = Date.now();
   const [ip, requestId] = await Promise.all([getClientIp(), getRequestId()]);
   const ipHash = hashIp(ip);
@@ -227,9 +223,7 @@ export async function signInWithPassword(
 // A5: always returns sent:true — enforced in adapter
 // ---------------------------------------------------------------------------
 
-export async function requestMagicLink(
-  input: unknown,
-): Promise<Result<RequestMagicLinkResult>> {
+export async function requestMagicLink(input: unknown): Promise<Result<RequestMagicLinkResult>> {
   const start = Date.now();
   const [ip, requestId] = await Promise.all([getClientIp(), getRequestId()]);
   const ipHash = hashIp(ip);
@@ -339,7 +333,10 @@ export async function deleteAccount(): Promise<Result<DeleteAccountResult>> {
   // A12: must have a valid session to delete account
   const cookieStore = await cookies();
   const supabase = createServerClient(cookieStore);
-  const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: sessionError,
+  } = await supabase.auth.getUser();
 
   if (sessionError || !user) {
     return err(Errors.unauthenticated());

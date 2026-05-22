@@ -27,10 +27,10 @@ const PUBLIC_PREFIXES = [
   "/sign-in",
   "/sign-up",
   "/magic-link",
-  "/auth",        // covers /auth/callback for magic-link redemption
-  "/_next",       // Next.js internals
+  "/auth", // covers /auth/callback for magic-link redemption
+  "/_next", // Next.js internals
   "/favicon.ico",
-  "/api/health",  // health check (if added)
+  "/api/health", // health check (if added)
 ];
 
 function isPublicRoute(pathname: string): boolean {
@@ -73,9 +73,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       },
       setAll(cookiesToSet) {
         // Write cookies to both the outgoing request and the response
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value),
-        );
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
         response = NextResponse.next({
           request: { headers: request.headers },
         });

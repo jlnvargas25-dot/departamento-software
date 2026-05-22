@@ -75,7 +75,10 @@ export function createServerClient(
           // The middleware handles session refresh for these cases.
           // console.warn used here per ADR-SB-003 (pino not safe in isomorphic adapter context).
           if (typeof window === "undefined") {
-            console.warn("[supabase/client] setAll: cookie write skipped in read-only Server Component context", e instanceof Error ? e.message : String(e));
+            console.warn(
+              "[supabase/client] setAll: cookie write skipped in read-only Server Component context",
+              e instanceof Error ? e.message : String(e),
+            );
           }
         }
       },

@@ -31,9 +31,7 @@ import { logActionResult, logger } from "@/adapters/logging/pino";
 import { createServerClient, createServiceRoleClient } from "@/adapters/supabase/client";
 import { SupabaseTodoRepository } from "@/adapters/supabase/todo-repository";
 import type { Todo } from "@/domain/todo";
-import type {
-  ListActiveTodosResult,
-} from "@/domain/ports/todo-repository";
+import type { ListActiveTodosResult } from "@/domain/ports/todo-repository";
 
 import {
   CreateTodoInputSchema,
@@ -107,7 +105,11 @@ async function writeTodoEvent(params: {
     // Non-fatal — event write must never break the primary flow (A14)
     // G-3/G-6: structured log so infra has visibility without alarming callers
     logger.warn(
-      { action: "writeTodoEvent", errorCode: "TODO_EVENT_WRITE_FAILED", error: e instanceof Error ? e.message : String(e) },
+      {
+        action: "writeTodoEvent",
+        errorCode: "TODO_EVENT_WRITE_FAILED",
+        error: e instanceof Error ? e.message : String(e),
+      },
       "writeTodoEvent: failed to insert todo_events row (non-fatal)",
     );
   }
@@ -126,14 +128,26 @@ export async function createTodo(input: unknown): Promise<Result<Todo>> {
   // Step 1: validate input (PREVENTIVA)
   const parsed = safeParse(CreateTodoInputSchema, input);
   if (!parsed.ok) {
-    logActionResult({ action: "createTodo", outcome: "error", errorCode: "INVALID_INPUT", durationMs: Date.now() - start, requestId });
+    logActionResult({
+      action: "createTodo",
+      outcome: "error",
+      errorCode: "INVALID_INPUT",
+      durationMs: Date.now() - start,
+      requestId,
+    });
     return parsed;
   }
 
   // Step 2: zero-trust session gate (A12)
   const session = await resolveUser();
   if (!session.ok) {
-    logActionResult({ action: "createTodo", outcome: "error", errorCode: "UNAUTHENTICATED", durationMs: Date.now() - start, requestId });
+    logActionResult({
+      action: "createTodo",
+      outcome: "error",
+      errorCode: "UNAUTHENTICATED",
+      durationMs: Date.now() - start,
+      requestId,
+    });
     return session.result;
   }
 
@@ -145,13 +159,27 @@ export async function createTodo(input: unknown): Promise<Result<Todo>> {
   const durationMs = Date.now() - start;
 
   if (!result.ok) {
-    logActionResult({ action: "createTodo", outcome: "error", errorCode: result.error.code, userId, durationMs, requestId });
+    logActionResult({
+      action: "createTodo",
+      outcome: "error",
+      errorCode: result.error.code,
+      userId,
+      durationMs,
+      requestId,
+    });
     return result;
   }
 
   // Step 4: audit event + log (A21, A6)
   await writeTodoEvent({ kind: "create", actorUserId: userId, todoId: result.value.id });
-  logActionResult({ action: "createTodo", outcome: "success", userId, todoId: result.value.id, durationMs, requestId });
+  logActionResult({
+    action: "createTodo",
+    outcome: "success",
+    userId,
+    todoId: result.value.id,
+    durationMs,
+    requestId,
+  });
 
   return result;
 }
@@ -170,13 +198,25 @@ export async function listActiveTodos(
 
   const parsed = safeParse(ListActiveTodosInputSchema, input);
   if (!parsed.ok) {
-    logActionResult({ action: "listActiveTodos", outcome: "error", errorCode: "INVALID_INPUT", durationMs: Date.now() - start, requestId });
+    logActionResult({
+      action: "listActiveTodos",
+      outcome: "error",
+      errorCode: "INVALID_INPUT",
+      durationMs: Date.now() - start,
+      requestId,
+    });
     return parsed;
   }
 
   const session = await resolveUser();
   if (!session.ok) {
-    logActionResult({ action: "listActiveTodos", outcome: "error", errorCode: "UNAUTHENTICATED", durationMs: Date.now() - start, requestId });
+    logActionResult({
+      action: "listActiveTodos",
+      outcome: "error",
+      errorCode: "UNAUTHENTICATED",
+      durationMs: Date.now() - start,
+      requestId,
+    });
     return session.result;
   }
 
@@ -193,7 +233,14 @@ export async function listActiveTodos(
   const durationMs = Date.now() - start;
 
   if (!result.ok) {
-    logActionResult({ action: "listActiveTodos", outcome: "error", errorCode: result.error.code, userId, durationMs, requestId });
+    logActionResult({
+      action: "listActiveTodos",
+      outcome: "error",
+      errorCode: result.error.code,
+      userId,
+      durationMs,
+      requestId,
+    });
     return result;
   }
 
@@ -214,13 +261,25 @@ export async function updateTodo(input: unknown): Promise<Result<Todo>> {
 
   const parsed = safeParse(UpdateTodoInputSchema, input);
   if (!parsed.ok) {
-    logActionResult({ action: "updateTodo", outcome: "error", errorCode: "INVALID_INPUT", durationMs: Date.now() - start, requestId });
+    logActionResult({
+      action: "updateTodo",
+      outcome: "error",
+      errorCode: "INVALID_INPUT",
+      durationMs: Date.now() - start,
+      requestId,
+    });
     return parsed;
   }
 
   const session = await resolveUser();
   if (!session.ok) {
-    logActionResult({ action: "updateTodo", outcome: "error", errorCode: "UNAUTHENTICATED", durationMs: Date.now() - start, requestId });
+    logActionResult({
+      action: "updateTodo",
+      outcome: "error",
+      errorCode: "UNAUTHENTICATED",
+      durationMs: Date.now() - start,
+      requestId,
+    });
     return session.result;
   }
 
@@ -237,7 +296,15 @@ export async function updateTodo(input: unknown): Promise<Result<Todo>> {
   const durationMs = Date.now() - start;
 
   if (!result.ok) {
-    logActionResult({ action: "updateTodo", outcome: "error", errorCode: result.error.code, userId, todoId: parsed.value.id, durationMs, requestId });
+    logActionResult({
+      action: "updateTodo",
+      outcome: "error",
+      errorCode: result.error.code,
+      userId,
+      todoId: parsed.value.id,
+      durationMs,
+      requestId,
+    });
     return result;
   }
 
@@ -248,7 +315,14 @@ export async function updateTodo(input: unknown): Promise<Result<Todo>> {
     // A21: only first 100 chars of new text in payload — no full content exposure
     payload: { text_preview: parsed.value.text.slice(0, 100) },
   });
-  logActionResult({ action: "updateTodo", outcome: "success", userId, todoId: result.value.id, durationMs, requestId });
+  logActionResult({
+    action: "updateTodo",
+    outcome: "success",
+    userId,
+    todoId: result.value.id,
+    durationMs,
+    requestId,
+  });
 
   return result;
 }
@@ -277,13 +351,25 @@ export async function completeTodo(input: unknown): Promise<Result<Todo>> {
 
   const parsed = safeParse(CompleteTodoInputSchema, input);
   if (!parsed.ok) {
-    logActionResult({ action: "completeTodo", outcome: "error", errorCode: "INVALID_INPUT", durationMs: Date.now() - start, requestId });
+    logActionResult({
+      action: "completeTodo",
+      outcome: "error",
+      errorCode: "INVALID_INPUT",
+      durationMs: Date.now() - start,
+      requestId,
+    });
     return parsed;
   }
 
   const session = await resolveUser();
   if (!session.ok) {
-    logActionResult({ action: "completeTodo", outcome: "error", errorCode: "UNAUTHENTICATED", durationMs: Date.now() - start, requestId });
+    logActionResult({
+      action: "completeTodo",
+      outcome: "error",
+      errorCode: "UNAUTHENTICATED",
+      durationMs: Date.now() - start,
+      requestId,
+    });
     return session.result;
   }
 
@@ -299,12 +385,27 @@ export async function completeTodo(input: unknown): Promise<Result<Todo>> {
   const durationMs = Date.now() - start;
 
   if (!result.ok) {
-    logActionResult({ action: "completeTodo", outcome: "error", errorCode: result.error.code, userId, todoId: parsed.value.id, durationMs, requestId });
+    logActionResult({
+      action: "completeTodo",
+      outcome: "error",
+      errorCode: result.error.code,
+      userId,
+      todoId: parsed.value.id,
+      durationMs,
+      requestId,
+    });
     return result;
   }
 
   await writeTodoEvent({ kind: "complete", actorUserId: userId, todoId: result.value.id });
-  logActionResult({ action: "completeTodo", outcome: "success", userId, todoId: result.value.id, durationMs, requestId });
+  logActionResult({
+    action: "completeTodo",
+    outcome: "success",
+    userId,
+    todoId: result.value.id,
+    durationMs,
+    requestId,
+  });
 
   return result;
 }
@@ -320,13 +421,25 @@ export async function uncompleteTodo(input: unknown): Promise<Result<Todo>> {
 
   const parsed = safeParse(UncompleteTodoInputSchema, input);
   if (!parsed.ok) {
-    logActionResult({ action: "uncompleteTodo", outcome: "error", errorCode: "INVALID_INPUT", durationMs: Date.now() - start, requestId });
+    logActionResult({
+      action: "uncompleteTodo",
+      outcome: "error",
+      errorCode: "INVALID_INPUT",
+      durationMs: Date.now() - start,
+      requestId,
+    });
     return parsed;
   }
 
   const session = await resolveUser();
   if (!session.ok) {
-    logActionResult({ action: "uncompleteTodo", outcome: "error", errorCode: "UNAUTHENTICATED", durationMs: Date.now() - start, requestId });
+    logActionResult({
+      action: "uncompleteTodo",
+      outcome: "error",
+      errorCode: "UNAUTHENTICATED",
+      durationMs: Date.now() - start,
+      requestId,
+    });
     return session.result;
   }
 
@@ -342,12 +455,27 @@ export async function uncompleteTodo(input: unknown): Promise<Result<Todo>> {
   const durationMs = Date.now() - start;
 
   if (!result.ok) {
-    logActionResult({ action: "uncompleteTodo", outcome: "error", errorCode: result.error.code, userId, todoId: parsed.value.id, durationMs, requestId });
+    logActionResult({
+      action: "uncompleteTodo",
+      outcome: "error",
+      errorCode: result.error.code,
+      userId,
+      todoId: parsed.value.id,
+      durationMs,
+      requestId,
+    });
     return result;
   }
 
   await writeTodoEvent({ kind: "uncomplete", actorUserId: userId, todoId: result.value.id });
-  logActionResult({ action: "uncompleteTodo", outcome: "success", userId, todoId: result.value.id, durationMs, requestId });
+  logActionResult({
+    action: "uncompleteTodo",
+    outcome: "success",
+    userId,
+    todoId: result.value.id,
+    durationMs,
+    requestId,
+  });
 
   return result;
 }
@@ -365,13 +493,25 @@ export async function deleteTodo(input: unknown): Promise<Result<{ deletedAt: st
 
   const parsed = safeParse(DeleteTodoInputSchema, input);
   if (!parsed.ok) {
-    logActionResult({ action: "deleteTodo", outcome: "error", errorCode: "INVALID_INPUT", durationMs: Date.now() - start, requestId });
+    logActionResult({
+      action: "deleteTodo",
+      outcome: "error",
+      errorCode: "INVALID_INPUT",
+      durationMs: Date.now() - start,
+      requestId,
+    });
     return parsed;
   }
 
   const session = await resolveUser();
   if (!session.ok) {
-    logActionResult({ action: "deleteTodo", outcome: "error", errorCode: "UNAUTHENTICATED", durationMs: Date.now() - start, requestId });
+    logActionResult({
+      action: "deleteTodo",
+      outcome: "error",
+      errorCode: "UNAUTHENTICATED",
+      durationMs: Date.now() - start,
+      requestId,
+    });
     return session.result;
   }
 
@@ -382,12 +522,27 @@ export async function deleteTodo(input: unknown): Promise<Result<{ deletedAt: st
   const durationMs = Date.now() - start;
 
   if (!result.ok) {
-    logActionResult({ action: "deleteTodo", outcome: "error", errorCode: result.error.code, userId, todoId: parsed.value.id, durationMs, requestId });
+    logActionResult({
+      action: "deleteTodo",
+      outcome: "error",
+      errorCode: result.error.code,
+      userId,
+      todoId: parsed.value.id,
+      durationMs,
+      requestId,
+    });
     return result;
   }
 
   await writeTodoEvent({ kind: "delete", actorUserId: userId, todoId: parsed.value.id });
-  logActionResult({ action: "deleteTodo", outcome: "success", userId, todoId: parsed.value.id, durationMs, requestId });
+  logActionResult({
+    action: "deleteTodo",
+    outcome: "success",
+    userId,
+    todoId: parsed.value.id,
+    durationMs,
+    requestId,
+  });
 
   // Return ISO string so it's serializable across the server/client boundary
   return { ok: true, value: { deletedAt: result.value.deletedAt.toISOString() } };
