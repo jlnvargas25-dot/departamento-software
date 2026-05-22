@@ -3,9 +3,40 @@
 > **Propósito**: handoff táctico post-T1.6→T2 ejecutados (planning-phase only).
 > Stallen DIFERIDO hasta que el Framework esté maduro.
 
-**Última actualización**: 2026-05-21 PM continuación 5 — post Sprint 2 sesión 1 (Phase 1 ADR-011 implementada + M1 validado N=1)
+**Última actualización**: 2026-05-22 (post Sprint 2 sesión 2 — Phase 2 ADR-011 PRD-ready, build en Sprint 3)
 **Cliente recomendado próxima sesión**: **Claude Code CLI** dentro de `C:\DEPARTAMENTO-SOFTWARE\` (skills speckit-* + ecc:* + claude-mem:* + sdd-* + superpowers:* todos cargados)
-**Versión**: 6.2 (post Phase 1 ADR-011 ejecutada — Sprint 2 sesión 1 cerrada, Sprint 2 sesión 2 apunta a N≥2 o iniciar Phase 2 Sprint 3)
+**Versión**: 6.3 (post Phase 2 ADR-011 PRD-ready — 6 artefactos planning + audit R01-R15 PASS con 3 warnings tracked; Sprint 3 = build classifier)
+
+---
+
+## ✅ SPRINT 2 SESIÓN 2 CERRADA (2026-05-22)
+
+**Phase 2 ADR-011 (trinidad correctiva) PRD-ready** — Pasos 1-5 del PROTOCOLO-CONSTRUCCION-CODIGO ejecutados sobre el primer componente: `sigma:finding-classifier` (front-end de la trinidad).
+
+**Scope decidido en sesión**: extensible (GGA + slots R/G/FG futuros), no solo GGA. Evita retrabajo Sprint 4+.
+
+Artefactos creados:
+- `docs/prd/PRD-sigma-finding-classifier.md` — DRAFT v0.1 (Paso 1)
+- `docs/dominio/findings-taxonomy.md` — DRAFT v0.1 (Paso 2 — 27 reglas curadas 15A/7B/5C, distribución 55.6/25.9/18.5%)
+- `docs/dominio/sigma-classifier-rules.yaml.draft` — DRAFT v0.1 (Paso 2 — YAML declarativo extensible)
+- `docs/arquitectura/ARQUITECTURA-sigma-finding-classifier.md` — DRAFT v0.1 (Paso 3 — Python+pyyaml, A20 hexagonal)
+- `docs/stories/STORIES-sigma-finding-classifier.md` — DRAFT v0.1 (Paso 4 — 7 stories S-1..S-7, 10hs total, DAG sin ciclos)
+- `auditoria/audit-plan-classifier-2026-05-21.json` — DONE (Paso 5 — R01-R15)
+
+**Audit R01-R15 verdict**: `READY_FOR_BUILD_WITH_DEUDAS_TRACKED` (0 críticos, 3 warnings con acción documentada).
+
+3 warnings tracked (precondición de Sprint 3 build):
+1. **R07** — S-8 nuevo (construir fixture `sprint1-iteracion3.json` + medir distribución) antes de promover ADR-011 v1.0.
+2. **R08** — anotar `emit_calibration_log()` en S-3 al iniciar build (o crear S-3b sub-tarea).
+3. **R10** — construir fixture antes de S-6 (precondición ineludible).
+
+**ADR-011 bumpeado**: PROPOSED v0.5 PARTIAL → **PROPOSED v0.7 PARTIAL** con sección "Phase 2 PRD-ready" anexada + cleanup duplicación "Evidencia empírica Phase 1".
+
+**Lecciones candidatas 35-37**: siguen N=1 (no promovidas). Esperan N=2 al cerrar la próxima corrida empírica.
+
+**Pendientes Sprint 3 (build)**: ~10 hs en 7 stories ÷ 2 sesiones (5 hs cada una). Pasos 6-12 del PROTOCOLO.
+
+**Repo state al cierre**: working tree con 6 archivos nuevos + 2 archivos modificados (ADR-011 y SIGUIENTE-SESION.md). Sin commit pendiente — el usuario decide cuándo commitear.
 
 ---
 

@@ -1,8 +1,8 @@
 # ADR-011: Capa Correctiva Determinística + Scope-Aware Verification
 
-**Status**: PROPOSED v0.1
-**Date**: 2026-05-21 (cierre Sprint 1)
-**Sprint**: Sprint 2 — Capa correctiva del Framework
+**Status**: PROPOSED v0.7 PARTIAL
+**Date**: 2026-05-21 (Sprint 2 sesión 1 cierre + Sprint 2 sesión 2 Phase 2 PRD-ready)
+**Sprint**: Sprint 2 — Capa correctiva del Framework (Phase 1 cerrada; Phase 2 PRD-ready, build en Sprint 3)
 **Related**: ADR-006 (Niveles + SOLID), ADR-009 ACCEPTED v1.0 (Stack ecosystem), ADR-010 PROPOSED (Skill Routing via Foreman)
 
 ---
@@ -314,47 +314,76 @@ Promover este ADR a **PROPOSED v0.5 PARTIAL**. Phase 1 evidenced. Phase 2 (Tier 
 
 ---
 
-## Evidencia empírica Phase 1 (2026-05-21)
+## Phase 2 PRD-ready (2026-05-21 — Sprint 2 sesión 2)
 
-### Setup
+Sprint 2 sesión 2 completó los pasos 1-5 del PROTOCOLO-CONSTRUCCION-CODIGO sobre el primer componente de la trinidad correctiva: `sigma:finding-classifier` (front-end de la trinidad — sin él, los handlers Tier A/B/C no componen).
 
-- **Caso bajo prueba**: `stash@{0}` del repo raíz — "GGA round 4 cleanup deferido a Sprint 2" — 5 archivos del sandbox-stack:
-  - `projects/sandbox-stack/src/adapters/supabase/client.ts`
-  - `projects/sandbox-stack/src/app/actions/auth.ts`
-  - `projects/sandbox-stack/src/app/actions/todos.ts`
-  - `projects/sandbox-stack/src/middleware.ts`
-  - `projects/sandbox-stack/supabase/functions/purge-expired-todos/index.ts`
-- **Baseline (Sprint 1, sin Phase 1)**: GGA requirió 4 rounds + bypass humano (`--no-verify`) sobre estos mismos archivos.
-- **Con Phase 1 activo**: `FRAMEWORK_SCOPE=sandbox` exportado, hook wrapper invoca `.gga` swap (`RULES_FILE=AGENTS.md` → `RULES_FILE=AGENTS-sandbox.md`), corre `gga run`, restaura `.gga`.
+### Decisión de scope tomada en sesión
 
-### Resultado
+A pedido del operador (2026-05-21), el classifier se diseña con **universo extensible**: cubre GGA v2.8.1 hoy + slots reservados para validadores futuros R01-R15, G1-G33, FG1-FG14. Evita retrabajo cuando Sprint 4+ construya validadores propios del Framework.
 
-- **Exit code GGA**: 0 (PASSED).
-- **Rounds**: 1 (un solo run, sin findings BLOQUEANTES).
-- **Output GGA**: review detallado regla-por-regla, **reconoció explícitamente los downgrades del sandbox**:
-  - `client.ts:79` — `console.warn` acepta como sandbox G-6 WARN (no bloqueante).
-  - `purge-expired-todos/index.ts:99` — `console.log(JSON.stringify(...))` acepta con ADR-SB-002 referenciado (Deno → no pino).
-  - Type casts estructurales `as Parameters<typeof X>[0]` reconocidos como bridging zod-validated inputs, no `as any`.
-- **Cache invalidation funcionó**: `[Cache invalidated (rules or config changed)]` cuando swap ocurrió → no contaminó el run.
-- **Trap restoration funcionó**: `.gga` post-run quedó en `RULES_FILE="AGENTS.md"` (production-default).
+### Artefactos producidos (Pasos 1-5)
 
-### Aprendizajes (N=1, no concluyentes)
+| Paso | Artefacto | Path | Status |
+|------|-----------|------|--------|
+| 1 | PRD `sigma:finding-classifier` | `docs/prd/PRD-sigma-finding-classifier.md` | DRAFT v0.1 |
+| 2 | Dominio: taxonomía findings | `docs/dominio/findings-taxonomy.md` | DRAFT v0.1 |
+| 2 | Dominio: YAML esqueleto declarativo | `docs/dominio/sigma-classifier-rules.yaml.draft` | DRAFT v0.1 |
+| 3 | Arquitectura técnica | `docs/arquitectura/ARQUITECTURA-sigma-finding-classifier.md` | DRAFT v0.1 |
+| 4 | Stories ejecutables (S-1..S-7) | `docs/stories/STORIES-sigma-finding-classifier.md` | DRAFT v0.1 |
+| 5 | Audit R01-R15 sobre el plan | `auditoria/audit-plan-classifier-2026-05-21.json` | DONE |
 
-1. **El modelo AI de GGA respeta la semántica WARN vs BLOQUEANTE del Markdown** — disipa la preocupación documentada en `docs/SCOPE-AWARENESS.md` sobre granularidad. Iteraciones futuras pueden confiar en anotaciones explícitas del archivo de reglas.
-2. **Plan B (RULES_FILE swap declarativo) es viable y más simple que Plan A (wrapping con parser de output)** — usa mecanismo nativo de gga, archivos versionables, sin brittleness al provider AI específico.
-3. **El swap + trap restore es robusto** — `.gga.scope-aware.bak` no quedó huérfano post-run.
-4. **La hipótesis del ADR se cumplió con margen amplio**: M1 esperaba ≤2 rounds, se observó 1 round. El gap entre 4 (baseline) y 1 (con Phase 1) sugiere que el ruido en sandbox era proporcionalmente mucho mayor al 60-70% estimado a priori — probablemente >80% en este caso.
+### Veredicto del audit Paso 5
 
-### Limitaciones del experimento
+**`READY_FOR_BUILD_WITH_DEUDAS_TRACKED`** — 0 críticos, 3 warnings con acción documentada:
 
-- **N=1**: una sola corrida sobre un solo sandbox. M1 requiere N≥3 sobre proyectos distintos antes de generalizar.
-- **Los archivos del stash ya habían pasado 3 rounds de fixes parciales** — su estado de partida en Phase 1 no es el mismo que el estado inicial de Sprint 1. La comparación 4 rounds → 1 round es indicativa, no estrictamente equivalente.
-- **GGA cache estuvo poblado parcialmente** — Phase 1 invalidó el cache (rules changed) y re-corrió fresh, pero esto es ruido menor.
-- **Provider=claude** — el comportamiento de respeto a anotaciones WARN vs BLOQUEANTE puede ser diferente con otros providers (gemini, codex, ollama). Calibrar empíricamente.
+1. **R07 (AC2 sin story explícita)** → crear S-8 fixture + medición antes de promover ADR-011 v1.0.
+2. **R08 (`emit_calibration_log()` implicit en S-3)** → anotar al iniciar build o crear S-3b.
+3. **R10 (fixture `sprint1-iteracion3.json` no creado)** → primera tarea de Sprint 3 (precondición de S-6).
 
-### Recomendación
+R12 PASS con caveat: cross-check N=2 contra transcript real recomendado antes de build (deuda documentada en taxonomía).
 
-Promover este ADR a **PROPOSED v0.5 PARTIAL**. Phase 1 evidenced. Phase 2 (Tier A) sigue siendo prerrequisito para ACCEPTED v1.0 plena.
+### Cobertura del dominio
+
+- Catálogo curado: 27 reglas (15 Tier A + 7 Tier B + 5 Tier C).
+- Distribución empírica: 55.6 / 25.9 / 18.5% — encaja en rango AC2 del PRD (60/30/10 ±15%).
+- Hipótesis ADR-011 original (60/30/10) validada al primer corte; Tier C aparece +8.5% por encima por inferencia de 2 reglas no anticipadas (`ARCH-HEXAGONAL-VIOLATION`, `DEPENDENCY-CYCLE`).
+
+### Pendientes para Sprint 3 (no este Sprint)
+
+- Paso 6: Construir código del classifier (~10 hs en 7 stories — 2 sesiones).
+- Paso 7: Auditar código (G1-G33 + FG1-FG14 + SOLID + zero-trust).
+- Paso 8: Tests adversariales (11 tests definidos en arquitectura sección 10).
+- Cerrar las 3 deudas warning identificadas en audit.
+- Construir fixture `sprint1-iteracion3.json` poblado para AC2 + S-6.
+
+### Bump rationale (v0.5 PARTIAL → v0.7 PARTIAL)
+
+| Criterio | Antes (v0.5) | Después (v0.7) |
+|----------|-------------|----------------|
+| Phase 1 implementada | ✅ Sí | ✅ Sí |
+| Phase 1 evidencia M1 N≥1 | ✅ Sí (1 round vs 4 baseline) | ✅ Sí |
+| Phase 2 diseño formalizado | 🟡 sketch en ADR | ✅ PRD + dominio + arq + stories + audit |
+| Phase 2 build ejecutado | ❌ No | ❌ No (Sprint 3) |
+| M2 medido (distribución empírica) | ❌ Sin curar | 🟡 Curado a priori (55.6/25.9/18.5); medición real pendiente fixture |
+| M3 medido (Tier A auto-fix ≥90%) | ❌ No | ❌ No (requiere `auto-fix-mechanic`) |
+
+No corresponde v1.0 ACCEPTED hasta:
+- Phase 2 build completo (al menos classifier + Tier A `auto-fix-mechanic` operativos).
+- M1 N≥3 sobre proyectos distintos.
+- M3 medido empíricamente.
+
+### Cleanup colateral
+
+Se eliminó la duplicación del bloque "Evidencia empírica Phase 1" (versiones previas tenían dos copias casi idénticas — sólo se conserva la primera, más concisa).
+
+### Lecciones candidatas (siguen N=1, NO promovidas)
+
+- LECCIÓN 35 candidata: *"reviewer adversarial sin auto-fix + sin scope-awareness asintotiza al infinito"*.
+- LECCIÓN 36 candidata: *"calibración de scope antes que capa correctiva — scope es cura barata, correctiva es cura cara"*.
+- LECCIÓN 37 candidata: *"scope awareness y capa correctiva son ortogonales y complementarias — el orden importa"*.
+
+Esperan N=2 (cierre sesión con segundo caso empírico) antes de promoverse a lecciones del Framework.
 
 ---
 

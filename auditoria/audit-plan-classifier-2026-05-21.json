@@ -1,0 +1,113 @@
+{
+  "audit_id": "audit-plan-classifier-2026-05-21",
+  "audit_date": "2026-05-21",
+  "auditor": "operador-manual (sigma:plan-auditor no construido aun)",
+  "sprint": "Sprint 2 sesion 2",
+  "component_under_audit": "sigma:finding-classifier (Phase 2 ADR-011)",
+  "protocolo_step": "Paso 5 PROTOCOLO-CONSTRUCCION-CODIGO.md",
+  "audited_artifacts": [
+    "docs/prd/PRD-sigma-finding-classifier.md",
+    "docs/dominio/findings-taxonomy.md",
+    "docs/dominio/sigma-classifier-rules.yaml.draft",
+    "docs/arquitectura/ARQUITECTURA-sigma-finding-classifier.md",
+    "docs/stories/STORIES-sigma-finding-classifier.md"
+  ],
+  "validators": {
+    "R01_ancestros_validos": {
+      "status": "PASS",
+      "notes": "Plan ancla en ADR-011 PROPOSED v0.5 PARTIAL (referencia explicita en todos los 5 artefactos). 7 principios rectores citados como ancestros conceptuales."
+    },
+    "R02_referencias_coherentes": {
+      "status": "PASS",
+      "notes": "Cross-references entre PRD <-> taxonomy <-> arquitectura <-> stories matchean (verificado manualmente). Cada doc cita los hermanos por path relativo."
+    },
+    "R03_detectar_ciclos": {
+      "status": "PASS",
+      "notes": "DAG de stories: S-1 -> (S-2, S-3) -> (S-4, S-5) -> (S-6, S-7). Sin ciclos. Dependencias documentadas en seccion 'Resumen del backlog' de stories."
+    },
+    "R04_deps_fuera_de_scope": {
+      "status": "PASS",
+      "notes": "Stack del classifier: Python 3.10+ stdlib + pyyaml. Sin deps externas en su path. Adapter normalizer es explicitamente out-of-scope (responsabilidad del integrador)."
+    },
+    "R05_naming_conventions": {
+      "status": "PASS",
+      "notes": "rule_ids: UPPERCASE-KEBAB-CASE consistente. action_hints: lowercase-kebab-case. Python: snake_case (functions), PascalCase (dataclasses). Sin colisiones detectadas."
+    },
+    "R06_colisiones_de_tablas": {
+      "status": "N/A",
+      "notes": "Componente no introduce schema de DB. Solo files YAML y JSON in-memory."
+    },
+    "R07_plan_vs_grafo_consistency": {
+      "status": "WARN",
+      "notes": "Cobertura AC -> stories al 6/7 (AC2 'distribucion 60/30/10' no tiene story explicita; documentado como gap conocido en stories 'ACs del PRD vs cobertura'). AC2 requiere fixture poblado (DEUDA-FIXTURE-SPRINT1). No bloqueante para build, si para promocion ADR-011 v1.0.",
+      "action_required": "Crear S-8 'Construir fixture sprint1-iteracion3.json y medir distribucion' antes de promover ADR-011 a v1.0 ACCEPTED."
+    },
+    "R08_funciones_declaradas_no_creadas": {
+      "status": "WARN",
+      "notes": "Arquitectura declara emit_calibration_log() en seccion 5 (algoritmo) pero ninguna story lo menciona explicitamente. Implicitamente cubierto por S-3 (default tier C + log structured) pero no nombrado.",
+      "action_required": "Anotar en S-3 que tambien construye emit_calibration_log(); o crear S-3b como sub-tarea."
+    },
+    "R09_aislamiento_de_scope": {
+      "status": "PASS",
+      "notes": "Classifier solo lee filesystem (YAML + opcional --input). No muta. Sin acceso a network. C4 del PRD verifica esto. S-4 cubre --input flag (lectura) sin escritura."
+    },
+    "R10_stubs_necesarios": {
+      "status": "WARN",
+      "notes": "Fixture sprint1-iteracion3.json mencionado en arquitectura y stories pero no creado en esta sesion. Identificado como DEUDA-FIXTURE-SPRINT1 desde stories. R10 PASS si la deuda se materializa antes del build S-6 (que la consume).",
+      "action_required": "Construir fixture antes de Sprint 3 build (o como primera tarea del Sprint 3)."
+    },
+    "R11_tamano_de_thread": {
+      "status": "PASS",
+      "notes": "7 stories totalizan 10 hs estimadas. Sprint 3 dividido en 2 sesiones ~5 hs cada una. Dentro de capacidad realista de sesion."
+    },
+    "R12_cobertura_de_dominio": {
+      "status": "PASS_WITH_CAVEAT",
+      "notes": "27 reglas curadas vs ~25 observadas. Sobre-cobertura por inferencia razonable de 2 reglas adicionales (ARCH-HEXAGONAL-VIOLATION, DEPENDENCY-CYCLE). Distribucion 55.6/25.9/18.5% encaja en rango AC2 (60/30/10 +/-15%).",
+      "caveat": "Cross-check N=2 contra transcript real de Iteracion 3 recomendado antes de build. Capturado como deuda en findings-taxonomy.md seccion 9."
+    },
+    "R13_cobertura_de_modulos": {
+      "status": "PASS",
+      "notes": "Arquitectura define 7 archivos en framework/sigma/finding-classifier/. Stories cubren la totalidad (cli.py via S-4, classifier.py via S-2/S-3, models.py via S-1/S-2, loader.py via S-1, rules.yaml via S-1/S-7, tests/ via cada story, README implicito)."
+    },
+    "R14": {
+      "status": "N/A",
+      "notes": "R14 no aparece en la lista del PROTOCOLO-CONSTRUCCION-CODIGO.md linea 265-279. Probablemente reservado o consolidado en otra regla. No aplicable."
+    },
+    "R15_deps_transitivas": {
+      "status": "PASS",
+      "notes": "Deps directas: stdlib + pyyaml. pyyaml a su vez no agrega deps transitivas problematicas (libyaml C-binding opcional pero pure-Python fallback existe). Sin cascadas profundas."
+    }
+  },
+  "summary": {
+    "criticals": 0,
+    "warnings": 3,
+    "passes": 10,
+    "passes_with_caveat": 1,
+    "n_a": 2
+  },
+  "warnings_breakdown": [
+    {
+      "validator": "R07",
+      "title": "AC2 sin story explicita",
+      "action": "S-8 nuevo (construir fixture + medir distribucion) antes de promover ADR-011 v1.0"
+    },
+    {
+      "validator": "R08",
+      "title": "emit_calibration_log() implicit en S-3",
+      "action": "Anotar explicitamente en S-3 al iniciar build, o crear S-3b sub-tarea"
+    },
+    {
+      "validator": "R10",
+      "title": "Fixture sprint1-iteracion3.json no existe",
+      "action": "Construir fixture en primera tarea Sprint 3 (precondicion de S-6)"
+    }
+  ],
+  "verdict": "READY_FOR_BUILD_WITH_DEUDAS_TRACKED",
+  "verdict_rationale": "0 criticos. 3 warnings TODOS con accion documentada y tracking de deuda. PASS_WITH_CAVEAT en R12 mitigado por cross-check N=2 capturado como deuda. Plan apto para entrar a Sprint 3 build siempre que las 3 acciones se completen como prerequisito de las stories que dependen de ellas.",
+  "next_step": "Bump ADR-011 PROPOSED v0.5 PARTIAL -> v0.7 PARTIAL anexando los 5 artefactos como Phase 2 PRD-ready, ademas de cleanup del bloque duplicado 'Evidencia empirica Phase 1' (lineas 273-313 vs 317-357 son identicas).",
+  "principio_rector_audit_self_check": {
+    "1_python_verifica": "Audit hecho manualmente por operador (sigma:plan-auditor existira en Sprint 4+). Operador-instruido cubre el gap como en Sprint 1.",
+    "2_3_capas": "Audit es la encarnacion de la capa VERIFICABLE aplicada al propio plan (meta-verificacion).",
+    "6_descubrir_antes_de_ejecutar": "R12 contrasto cobertura curada (27) vs observada (~25). Gap documentado, no oculto."
+  }
+}
