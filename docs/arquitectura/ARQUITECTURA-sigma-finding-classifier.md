@@ -235,7 +235,7 @@ def classify(findings: list[Finding], rules: ClassifierRules) -> list[Classified
 ## 6. Estructura de archivos del componente
 
 ```
-framework/sigma/finding-classifier/        ← Sprint 3 build location (canónico)
+framework/sigma/finding_classifier/        ← Sprint 3 build location (canónico)
 ├── __init__.py
 ├── cli.py                                  ← argparse, stdin/stdout, exit codes
 ├── classifier.py                           ← algoritmo (función pura classify)
@@ -254,6 +254,8 @@ framework/sigma/finding-classifier/        ← Sprint 3 build location (canónic
         └── bench_50_findings.py            ← AC4 performance benchmark
 ```
 
+> **Naming**: `finding_classifier` (snake_case) — Python no permite hyphens en module names. Correción aplicada al iniciar Sprint 3 sobre el draft v0.1 original (`finding-classifier`). Documentada como deuda del audit Paso 7 del propio Sprint 3.
+
 **Ubicación durante este PRD (Sprint 2 sesión 2)**: solo `docs/dominio/sigma-classifier-rules.yaml.draft` existe. El resto se crea en Sprint 3 build.
 
 ---
@@ -262,19 +264,19 @@ framework/sigma/finding-classifier/        ← Sprint 3 build location (canónic
 
 ```bash
 # Caso happy path (stdin/stdout):
-gga run --json | python -m sigma.finding-classifier > classified.json
+gga run --json | python -m sigma.finding_classifier > classified.json
 
 # Con archivo:
-python -m sigma.finding-classifier --input findings.json --output classified.json
+python -m sigma.finding_classifier --input findings.json --output classified.json
 
 # Audit mode (tier counts a stderr):
-python -m sigma.finding-classifier --audit < findings.json > classified.json
+python -m sigma.finding_classifier --audit < findings.json > classified.json
 
 # Custom rules path:
-python -m sigma.finding-classifier --rules /path/to/custom-rules.yaml < findings.json
+python -m sigma.finding_classifier --rules /path/to/custom-rules.yaml < findings.json
 
 # Strict mode (futuro, exit 2 si hay unknown rules):
-python -m sigma.finding-classifier --strict < findings.json
+python -m sigma.finding_classifier --strict < findings.json
 ```
 
 ---
@@ -296,7 +298,7 @@ GGA_EXIT="${GGA_EXIT:-0}"
 # === Phase 2: classifier (NUEVO en Sprint 3) ===
 if [ "$GGA_EXIT" -ne 0 ]; then
   echo "$GGA_OUTPUT" \
-    | python -m sigma.finding-classifier --audit \
+    | python -m sigma.finding_classifier --audit \
     > .gga-classified.json \
     2> .gga-unknown-rules.log
 

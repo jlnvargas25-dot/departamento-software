@@ -1,0 +1,239 @@
+# sigma-classifier-rules.yaml — PRODUCTIVO v0.1.0
+#
+# Status: v0.1.0 (Sprint 3 sesion 1 build — copia del draft v0.1 curado en Sprint 2 sesion 2)
+# Owner: Departamento de Software
+# Source curado: docs/dominio/findings-taxonomy.md
+# Consumer: sigma.finding_classifier (Python package)
+# Related: PRD-sigma-finding-classifier.md, ADR-011 PROPOSED v0.7 PARTIAL
+#
+# Este archivo es la fuente declarativa que el classifier carga al arrancar.
+# Es VERSIONABLE: cambios pasan por git review, no por mutacion runtime.
+
+version: "0.1.0"
+
+metadata:
+  created: "2026-05-21"
+  promoted_to_productive: "2026-05-22"
+  source_transcript: "projects/sandbox-stack — Iteracion 3 (4 rounds GGA, Sprint 1)"
+  curator_notes: "Curacion empirica inicial sobre ~25 findings observados. R/G/FG: slots reservados."
+
+# ----------------------------------------------------------------------------
+# Tier A — Mecanicas (auto-fix sin LLM)
+# Subtotal: 15 reglas (55.6% del catalogo Sprint 1)
+# ----------------------------------------------------------------------------
+
+rules:
+
+  TS-1:
+    tier: A
+    source: GGA
+    severity: ALTA
+    action_hint: eslint-fix
+    description: "TypeScript strict mode violations (prefer-const, no-var, etc.)"
+
+  TS-NON-NULL-ASSERTION:
+    tier: A
+    source: GGA
+    severity: MEDIA
+    action_hint: non-null-to-optional
+    description: "Operador x! evitable — convertir a optional chaining o guard explicito"
+
+  A21-OBS-1-CONSOLE-LOG:
+    tier: A
+    source: GGA
+    severity: ALTA
+    action_hint: console-to-logger
+    description: "console.log/error/warn en lugar de logger estructurado (Node)"
+
+  A21-OBS-1b-DENO-CONSOLE:
+    tier: A
+    source: GGA
+    severity: MEDIA
+    action_hint: console-to-json-structured
+    description: "console.log en Edge Functions Deno — formato JSON estructurado aceptado"
+
+  NO-VAR:
+    tier: A
+    source: GGA
+    severity: MEDIA
+    action_hint: eslint-fix
+    description: "var x cuando const/let aplica"
+
+  VAR-TO-CONST:
+    tier: A
+    source: GGA
+    severity: BAJA
+    action_hint: eslint-fix
+    description: "let x sin reassignment debe ser const"
+
+  MIGRATION-NAMING:
+    tier: A
+    source: GGA
+    severity: MEDIA
+    action_hint: rename-migration-timestamp
+    description: "Migrations 0001_*.sql -> YYYYMMDDHHmm_*.sql (custom codemod)"
+
+  TYPE-CAST-AS-ANY:
+    tier: A
+    source: GGA
+    severity: ALTA
+    action_hint: infer-type-from-context
+    description: "as any cuando AST puede resolver tipo; fallback a Tier C si codemod no resuelve"
+
+  PGSQL-MISSING-VOLATILE:
+    tier: A
+    source: GGA
+    severity: MEDIA
+    action_hint: add-volatile-marker
+    description: "Funciones SQL como set_updated_at sin VOLATILE explicito"
+
+  LET-WITHOUT-REASSIGN:
+    tier: A
+    source: GGA
+    severity: BAJA
+    action_hint: eslint-fix
+    description: "let nunca reasignado"
+
+  UNUSED-IMPORT:
+    tier: A
+    source: GGA
+    severity: BAJA
+    action_hint: eslint-fix
+    description: "Import declarado sin uso"
+
+  TRAILING-WHITESPACE:
+    tier: A
+    source: GGA
+    severity: BAJA
+    action_hint: prettier-format
+    description: "Whitespace trailing"
+
+  MISSING-SEMI:
+    tier: A
+    source: GGA
+    severity: BAJA
+    action_hint: prettier-format
+    description: "Punto y coma faltante (proyectos con convencion semi)"
+
+  IMPORT-ORDER:
+    tier: A
+    source: GGA
+    severity: BAJA
+    action_hint: eslint-fix
+    description: "Orden de imports no canonico"
+
+  OBJECT-SHORTHAND:
+    tier: A
+    source: GGA
+    severity: BAJA
+    action_hint: eslint-fix
+    description: "{foo: foo} -> {foo}"
+
+  # ----------------------------------------------------------------------------
+  # Tier B — Convencionales (template + contexto)
+  # Subtotal: 7 reglas (25.9% del catalogo Sprint 1)
+  # ----------------------------------------------------------------------------
+
+  A21-OBS-2-SILENT-CATCH:
+    tier: B
+    source: GGA
+    severity: ALTA
+    action_hint: inject-logger-with-request-id
+    description: "catch (err) { /* ... */ } sin log estructurado. Respeta marker // @intentional-silent"
+
+  A22-MISSING-ADR:
+    tier: B
+    source: GGA
+    severity: BLOQUEANTE
+    action_hint: generate-adr-stub
+    description: "Excepcion a regla sin ADR — generar stub con metadata + alternativas"
+
+  A21-OBS-3-REQUEST-ID-MISSING:
+    tier: B
+    source: GGA
+    severity: ALTA
+    action_hint: inject-request-id-through-stack
+    description: "request_id no se propaga end-to-end (middleware -> handler -> log)"
+
+  CONSOLE-FALLBACK:
+    tier: B
+    source: GGA
+    severity: MEDIA
+    action_hint: wrap-fallback-in-feature-flag
+    description: "Fallback a console.* envuelto en feature flag declarado"
+
+  MISSING-RLS-POLICY:
+    tier: B
+    source: GGA
+    severity: ALTA
+    action_hint: generate-rls-policy-stub
+    description: "Tabla nueva sin RLS policy declarada en 001_security.sql"
+
+  MISSING-ZOD-VALIDATION:
+    tier: B
+    source: GGA
+    severity: ALTA
+    action_hint: generate-zod-schema-for-input
+    description: "Server Action recibe input sin validacion zod"
+
+  MISSING-AUTH-CHECK:
+    tier: B
+    source: GGA
+    severity: BLOQUEANTE
+    action_hint: inject-auth-check-with-tenant-scope
+    description: "Endpoint protegido sin auth check explicito; debe incluir tenant scope (A5)"
+
+  # ----------------------------------------------------------------------------
+  # Tier C — Decisivas (NUNCA auto-fix)
+  # Subtotal: 5 reglas (18.5% del catalogo Sprint 1)
+  # ----------------------------------------------------------------------------
+
+  CSP-UNSAFE-EVAL:
+    tier: C
+    source: GGA
+    severity: CRITICA
+    action_hint: adr-draft-with-cwe-link
+    description: "Content-Security-Policy con unsafe-eval; bloquea commit + abre ADR draft con link a CWE-95"
+
+  CSP-UNSAFE-INLINE:
+    tier: C
+    source: GGA
+    severity: ALTA
+    action_hint: adr-draft-with-cwe-link
+    description: "CSP con unsafe-inline; bloquea commit + abre ADR draft"
+
+  ARCH-HEXAGONAL-VIOLATION:
+    tier: C
+    source: GGA
+    severity: ALTA
+    action_hint: flag-for-arch-review
+    description: "Adapter llama directamente a otro adapter (deberia ir via puerto)"
+
+  SCOPE-DEFERRAL-DECISION:
+    tier: C
+    source: GGA
+    severity: MEDIA
+    action_hint: flag-for-product-decision
+    description: "Feature parcialmente implementada — decision de scope v1.0 vs v1.1"
+
+  DEPENDENCY-CYCLE:
+    tier: C
+    source: GGA
+    severity: ALTA
+    action_hint: flag-for-arch-review
+    description: "Ciclo de dependencia detectado entre modulos"
+
+  # ----------------------------------------------------------------------------
+  # SLOTS RESERVADOS — validadores futuros (Sprint 4+)
+  # ----------------------------------------------------------------------------
+  # R01-* ... R15-* (sigma:plan-auditor)         — Sprint 4+
+  # G01-* ... G33-* (sigma:code-gates)            — Sprint 4+
+  # FG01-* ... FG14-* (sigma:feature-gates)       — Sprint 4+
+
+# ----------------------------------------------------------------------------
+# Defaults: politica ante regla NO presente
+# ----------------------------------------------------------------------------
+
+defaults:
+  unknown_rule_tier: C
+  unknown_rule_action_hint: unknown-rule-log-for-calibration

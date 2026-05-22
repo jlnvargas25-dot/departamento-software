@@ -1,0 +1,213 @@
+[
+  {
+    "rule_id": "TS-1",
+    "file": "projects/sandbox-stack/src/app/actions/auth.ts",
+    "line": 42,
+    "severity": "ALTA",
+    "message": "Prefer const over let — variable 'sessionData' is never reassigned",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "TS-1",
+    "file": "projects/sandbox-stack/src/app/actions/todos.ts",
+    "line": 87,
+    "severity": "ALTA",
+    "message": "Prefer const over let — variable 'result' is never reassigned",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "TS-NON-NULL-ASSERTION",
+    "file": "projects/sandbox-stack/src/lib/rate-limit.ts",
+    "line": 18,
+    "severity": "MEDIA",
+    "message": "Non-null assertion (process.env.UPSTASH_REDIS_REST_URL!) — use requireEnv helper instead",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "TS-NON-NULL-ASSERTION",
+    "file": "projects/sandbox-stack/src/repositories/TodoRepository.ts",
+    "line": 134,
+    "severity": "MEDIA",
+    "message": "Non-null assertion in softDelete return — guard with runtime validation",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "A21-OBS-1-CONSOLE-LOG",
+    "file": "projects/sandbox-stack/src/app/actions/auth.ts",
+    "line": 156,
+    "severity": "ALTA",
+    "message": "console.error used instead of structured logger (pino)",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "A21-OBS-1-CONSOLE-LOG",
+    "file": "projects/sandbox-stack/src/middleware.ts",
+    "line": 23,
+    "severity": "ALTA",
+    "message": "console.log used in middleware path — use logger.info with request_id context",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "A21-OBS-1b-DENO-CONSOLE",
+    "file": "projects/sandbox-stack/supabase/functions/purge-expired-todos/index.ts",
+    "line": 99,
+    "severity": "MEDIA",
+    "message": "console.log in Edge Function — refactor to structured JSON output (no pino available in Deno)",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "NO-VAR",
+    "file": "projects/sandbox-stack/src/lib/rate-limit.ts",
+    "line": 45,
+    "severity": "MEDIA",
+    "message": "Use let or const instead of var",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "VAR-TO-CONST",
+    "file": "projects/sandbox-stack/src/app/page.tsx",
+    "line": 12,
+    "severity": "BAJA",
+    "message": "let 'routeTarget' never reassigned — should be const",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "MIGRATION-NAMING",
+    "file": "projects/sandbox-stack/supabase/migrations/0001_security.sql",
+    "line": 1,
+    "severity": "MEDIA",
+    "message": "Migration filename uses 4-digit sequence — convert to timestamp YYYYMMDDHHmm_security.sql",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "TYPE-CAST-AS-ANY",
+    "file": "projects/sandbox-stack/src/app/actions/todos.ts",
+    "line": 201,
+    "severity": "ALTA",
+    "message": "Cast 'as any' — AST can resolve concrete type from zod schema",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "PGSQL-MISSING-VOLATILE",
+    "file": "projects/sandbox-stack/supabase/migrations/0001_security.sql",
+    "line": 89,
+    "severity": "MEDIA",
+    "message": "Trigger function set_updated_at missing explicit VOLATILE marker",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "LET-WITHOUT-REASSIGN",
+    "file": "projects/sandbox-stack/src/repositories/TodoRepository.ts",
+    "line": 67,
+    "severity": "BAJA",
+    "message": "let 'querySnapshot' never reassigned",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "UNUSED-IMPORT",
+    "file": "projects/sandbox-stack/src/adapters/supabase/SupabaseAuthProvider.ts",
+    "line": 4,
+    "severity": "BAJA",
+    "message": "Imported 'cookies' from next/headers is unused",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "IMPORT-ORDER",
+    "file": "projects/sandbox-stack/src/app/layout.tsx",
+    "line": 1,
+    "severity": "BAJA",
+    "message": "Imports not in canonical order (external before internal)",
+    "source": "GGA"
+  },
+
+  {
+    "rule_id": "A21-OBS-2-SILENT-CATCH",
+    "file": "projects/sandbox-stack/src/app/actions/auth.ts",
+    "line": 178,
+    "severity": "ALTA",
+    "message": "Silent catch block in writeAuthEvent helper — log structured event with request_id",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "A21-OBS-2-SILENT-CATCH",
+    "file": "projects/sandbox-stack/src/app/actions/todos.ts",
+    "line": 245,
+    "severity": "ALTA",
+    "message": "Silent catch block in writeTodoEvent helper — log structured event with request_id",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "A21-OBS-2-SILENT-CATCH",
+    "file": "projects/sandbox-stack/src/repositories/TodoRepository.ts",
+    "line": 102,
+    "severity": "ALTA",
+    "message": "Silent catch in listActive — log with request_id and tenant scope",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "A22-MISSING-ADR",
+    "file": "projects/sandbox-stack/next.config.ts",
+    "line": 34,
+    "severity": "BLOQUEANTE",
+    "message": "CSP unsafe-inline exception lacks ADR — generate stub in decisions/",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "A21-OBS-3-REQUEST-ID-MISSING",
+    "file": "projects/sandbox-stack/src/middleware.ts",
+    "line": 58,
+    "severity": "ALTA",
+    "message": "request_id generated but not propagated to downstream handler logs",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "MISSING-RLS-POLICY",
+    "file": "projects/sandbox-stack/supabase/migrations/0001_security.sql",
+    "line": 145,
+    "severity": "ALTA",
+    "message": "Table 'audit_events' created without RLS policy in same migration",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "MISSING-ZOD-VALIDATION",
+    "file": "projects/sandbox-stack/src/app/actions/todos.ts",
+    "line": 56,
+    "severity": "ALTA",
+    "message": "Server Action createTodo accepts FormData without zod schema validation",
+    "source": "GGA"
+  },
+
+  {
+    "rule_id": "CSP-UNSAFE-EVAL",
+    "file": "projects/sandbox-stack/next.config.ts",
+    "line": 28,
+    "severity": "CRITICA",
+    "message": "Content-Security-Policy includes 'unsafe-eval' — requires ADR + CWE-95 link",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "CSP-UNSAFE-INLINE",
+    "file": "projects/sandbox-stack/next.config.ts",
+    "line": 30,
+    "severity": "ALTA",
+    "message": "Content-Security-Policy includes style-src 'unsafe-inline' — deferred to pre-production remediation",
+    "source": "GGA"
+  },
+  {
+    "rule_id": "ARCH-HEXAGONAL-VIOLATION",
+    "file": "projects/sandbox-stack/src/repositories/TodoRepository.ts",
+    "line": 12,
+    "severity": "ALTA",
+    "message": "Repository imports SupabaseClient directly instead of injecting via port",
+    "source": "GGA"
+  },
+
+  {
+    "rule_id": "UNDOCUMENTED-NEW-PATTERN-Z42",
+    "file": "projects/sandbox-stack/src/lib/something-new.ts",
+    "line": 1,
+    "severity": "MEDIA",
+    "message": "Pattern emitted by hypothetical future reviewer — not in curated YAML; expected to fallback to Tier C with calibration log",
+    "source": "GGA"
+  }
+]

@@ -85,6 +85,7 @@ Las stories están ordenadas por dependencia (S-1 primero, S-7 última).
 - **Estimación**: 1.5 hs
 - **Bloquea**: S-4, S-7
 - **Bloqueado por**: S-1
+- **Componentes construidos**: `classify()` extendido con default branch + `emit_calibration_log()` (declarado en ARQUITECTURA sección 5; anotado explícitamente acá tras audit R08 del Paso 5).
 
 **Given** un `Finding{rule_id="UNKNOWN-RULE-XYZ", ...}` y `ClassifierRules` sin esa entrada
 **When** se invoca `classify`
@@ -94,9 +95,14 @@ Las stories están ordenadas por dependencia (S-1 primero, S-7 última).
 **When** se invoca con stdin/stdout
 **Then** stderr contiene línea JSON: `{"event":"unknown_rule","rule_id":"UNKNOWN-RULE-XYZ","file":"<path>","line":<n>}` y exit code es 0 (no es error fatal).
 
+**Given** un batch con `N` findings cuyo `rule_id` repite (mismo unknown N veces) y otros con unknown distintos
+**When** se invoca `classify` (que delega a `emit_calibration_log(unknown_rule_ids: set[str])`)
+**Then** `emit_calibration_log` emite a stderr **una línea JSON por rule_id único** (dedup vía set), con el conteo agregado por rule_id si se invoca con `--audit`.
+
 **Adversariales**:
 - Múltiples findings con el mismo unknown rule_id → log se emite UNA sola vez (deduplicado) con el conteo agregado.
 - 100 findings unknown distintos → exit 0, 100 líneas de log a stderr (cap razonable, sin truncar).
+- `emit_calibration_log` invocada con `set()` vacío → no emite nada (no-op silencioso).
 
 ---
 
@@ -189,20 +195,52 @@ unknown_rules: 0
 
 ---
 
+## S-8 — Medir distribución empírica del clasificador sobre fixture Sprint 1
+
+- **AC vinculado**: AC2 (distribución 60/30/10 ±15%) + métrica M2 del ADR-011
+- **Estimación**: 1 h
+- **Bloquea**: promoción ADR-011 v0.7 PARTIAL → v1.0 ACCEPTED
+- **Bloqueado por**: S-2, S-3, S-4 (necesita el classifier funcional + CLI)
+- **Origen**: cerrar warning R07 del audit Paso 5 (`auditoria/audit-plan-classifier-2026-05-21.json`).
+
+**Given** el fixture `framework/sigma/finding-classifier/tests/fixtures/sprint1-iteracion3.json` (poblado con findings reales del transcript Sprint 1 Iteración 3, ver DEUDA-FIXTURE-SPRINT1 cerrada en precondición R10 del Sprint 3)
+**When** se invoca el classifier sobre el fixture con `--audit` y se calcula la distribución `tier → count / total`
+**Then** se obtienen tres porcentajes (Tier A %, Tier B %, Tier C %) y se verifica que cada uno cae dentro de `[hipótesis ADR-011 ± 15 pp]` — i.e. A ∈ [45-75]%, B ∈ [15-45]%, C ∈ [0-25]%.
+
+**Given** la distribución medida
+**When** se compara contra la hipótesis ADR-011 original (60/30/10)
+**Then** se documenta el delta empírico vs hipótesis en `auditoria/m2-empirical-distribution-{date}.json` con campos `{tier, observed_pct, hypothesis_pct, delta_pp, within_band: bool}`.
+
+**Given** distribución medida que cae fuera del rango AC2 (±15pp)
+**When** se evalúa la promoción del ADR-011 a v1.0
+**Then** el ADR-011 NO se promueve a ACCEPTED; se redacta sub-decisión en `decisions/` documentando la divergencia y recalibrando la hipótesis o el clasificador.
+
+**Adversariales**:
+- Fixture con <10 findings totales → exit 0 pero el reporte M2 marca `low_sample_warning: true` (no se puede inferir distribución con N pequeño).
+- Todos los findings caen a Tier C (unknown rule overflow) → la distribución refleja problema del fixture, no del clasificador; reporte M2 marca `coverage_warning: true` con cobertura MC1 < 95%.
+- Re-correr el classifier sobre el mismo fixture en 10 corridas seguidas → distribución idéntica las 10 veces (MC2 estabilidad inter-corrida).
+
+**Notas**:
+- Esta story NO bloquea el build de S-1..S-7. Se ejecuta una vez S-4 (CLI) esté operativo.
+- El reporte M2 alimenta la promoción del ADR-011 — sin este reporte la promoción queda bloqueada por el propio criterio de aceptación del ADR.
+
+---
+
 ## Resumen del backlog
 
 | Story | AC | Estimación | Dep. |
 |-------|----|------------|------|
 | S-1 Cargar YAML | AC5, AC6 | 2 h | — |
 | S-2 Clasificar known | AC1, AC6 | 2 h | S-1 |
-| S-3 Default unknown | AC3 | 1.5 h | S-1 |
+| S-3 Default unknown + emit_calibration_log | AC3 | 1.5 h | S-1 |
 | S-4 CLI stdin/stdout | AC6 | 2 h | S-1, S-2, S-3 |
 | S-5 Flag --audit | AC7 | 1 h | S-2, S-3 |
 | S-6 Performance | AC4 | 0.5 h | S-4 |
 | S-7 Extensibilidad | AC5 | 1 h | S-1..S-5 |
-| **Total estimado** | — | **10 h** | — |
+| S-8 Distribución empírica (M2) | AC2 | 1 h | S-2, S-3, S-4 |
+| **Total estimado** | — | **11 h** | — |
 
-**Capacidad de sesión**: 10 hs de build cabe en 2 sesiones de Sprint 3 (~5 hs cada una). MC2 (idempotencia) cubierta transversalmente por todas las stories.
+**Capacidad de sesión**: 11 hs de build cabe en 2 sesiones de Sprint 3 (~5-6 hs cada una). MC2 (idempotencia) cubierta transversalmente por todas las stories. S-8 cierra el warning R07 del audit Paso 5 y desbloquea la promoción del ADR-011 a v1.0 ACCEPTED.
 
 ---
 
@@ -211,14 +249,14 @@ unknown_rules: 0
 | AC PRD | Stories que lo cubren |
 |--------|----------------------|
 | AC1 — Clasificación determinística | S-2 |
-| AC2 — Distribución 60/30/10 | (no story — se mide vía AC1+AC2 en post-build cuando hay fixture real Sprint 1) |
+| AC2 — Distribución 60/30/10 | S-8 (medición empírica post-build sobre fixture real) |
 | AC3 — Default conservador | S-3 |
 | AC4 — Performance <100ms | S-6 |
 | AC5 — Extensibilidad sin reescritura | S-1, S-7 |
 | AC6 — Output estructurado | S-2, S-4 |
 | AC7 — Audit | S-5 |
 
-**Gap identificado**: AC2 requiere fixture poblado del catálogo Sprint 1 (curación de `findings-taxonomy.md` sección 3 → `sprint1-iteracion3.json`). Esta curación se hace **antes** de S-6/S-7 y es DEUDA-FIXTURE-SPRINT1.
+**DEUDA-FIXTURE-SPRINT1 cerrada**: fixture `framework/sigma/finding-classifier/tests/fixtures/sprint1-iteracion3.json` poblado como **precondición R10** al iniciar Sprint 3 (con 26 findings reales del transcript Iteración 3 + 1 unknown para AC3). Habilita S-6 (performance), S-7 (extensibilidad) y S-8 (distribución).
 
 ---
 
