@@ -3,21 +3,49 @@
 > **Propósito**: handoff táctico post-T1.6→T2 ejecutados (planning-phase only).
 > Stallen DIFERIDO hasta que el Framework esté maduro.
 
-**Última actualización**: 2026-05-21 PM continuación 4 — post ADR-011 PROPOSED (capa correctiva + scope-aware)
-**Cliente recomendado próxima sesión**: **Claude Code CLI** dentro de `projects/sandbox-stack/` (skills speckit-* + ecc:* + claude-mem:* + sdd-* + superpowers:* todos cargados)
-**Versión**: 6.1 (post ADR-011 PROPOSED — Sprint 2 redirigido a capa correctiva + scope-aware)
+**Última actualización**: 2026-05-21 PM continuación 5 — post Sprint 2 sesión 1 (Phase 1 ADR-011 implementada + M1 validado N=1)
+**Cliente recomendado próxima sesión**: **Claude Code CLI** dentro de `C:\DEPARTAMENTO-SOFTWARE\` (skills speckit-* + ecc:* + claude-mem:* + sdd-* + superpowers:* todos cargados)
+**Versión**: 6.2 (post Phase 1 ADR-011 ejecutada — Sprint 2 sesión 1 cerrada, Sprint 2 sesión 2 apunta a N≥2 o iniciar Phase 2 Sprint 3)
 
 ---
 
-## ⚠️ CAMBIO DE DIRECCIÓN — Sprint 2 redirigido (2026-05-21 PM continuación 4)
+## ✅ SPRINT 2 SESIÓN 1 CERRADA (2026-05-21 PM continuación 5)
+
+**Phase 1 ADR-011 (`sigma:gga-scope-aware`) IMPLEMENTADA vía Plan B** (RULES_FILE swap declarativo en `.gga`, sin parser de output).
+
+Artefactos creados:
+- `AGENTS-sandbox.md` — subset relaxed de reglas para scope sandbox
+- `.git/hooks/pre-commit` — wrapper scope-aware con backup/swap/restore + trap (vive en `.git/hooks/`, no versionado)
+- `docs/SCOPE-AWARENESS.md` — operacional con M1 + reversión + limitaciones
+- `decisions/ADR-011-*.md` bumped PROPOSED v0.1 → **PROPOSED v0.5 PARTIAL** con evidencia empírica Phase 1
+
+**M1 CUMPLIDO N=1**: GGA cerró en **1 round** sobre el stash de Sprint 1 (vs 4 rounds baseline). Margen amplio sobre umbral ≤2.
+
+**Commits Sprint 2 sesión 1** (pusheados a origin/main):
+- `6c0a71c` feat(framework): Sprint 2 Phase 1 ADR-011 - scope-aware verification
+- `fe3ed57` fix(sandbox-stack): GGA round 4 cleanup - 5 archivos (ex-stash@{0})
+
+**Stash@{0} dropped** post-cleanup commiteado.
+
+---
+
+## ⚠️ CAMBIO DE DIRECCIÓN — Sprint 2 redirigido (cont. 4) + Phase 1 cerrada (cont. 5)
 
 Tras análisis del **loop asintótico de GGA observado en Iteración 3** (4 rounds, bypass humano final), el Sprint 2 se redirigió:
 
 - **Antes** (en versión 6.0): build 4 sigma MVP (`operationalize-constitution`, `enforce-constitution-check`, `multi-tenant-isolation-checker`, `dependency-cycle-detector`).
-- **Ahora** (versión 6.1): **scope-aware verification primero** (Phase 1, cura barata), **trinidad correctiva después** (Sprint 3, cura estructural). Ver `decisions/ADR-011-capa-correctiva-y-scope-aware.md` PROPOSED v0.1.
+- **Ahora** (versión 6.2): **scope-aware verification ✅ Phase 1 cerrada** (Plan B implementado + M1 N=1 OK), **trinidad correctiva → Sprint 3** (cura estructural — Tier A/B/C).
 - **Las 4 sigma MVP originales no se descartan**, pero quedan diferidas a Sprint 4+ hasta validar empíricamente que la capa correctiva + scope-aware resuelven el dolor observado.
 
-**Razón del cambio**: el dolor empírico de Sprint 1 fue *"GGA loop sin auto-fix + sin scope awareness"*, no *"falta de skills sigma para Constitution Check enforcement"*. ADR-011 ataca el problema real observado.
+**Razón del cambio**: el dolor empírico de Sprint 1 fue *"GGA loop sin auto-fix + sin scope awareness"*, no *"falta de skills sigma para Constitution Check enforcement"*. ADR-011 ataca el problema real observado y **Phase 1 lo confirmó empíricamente con N=1**.
+
+## Próximas opciones Sprint 2 sesión 2
+
+**Opción A — Validación N≥2** (Recommended): aplicar Phase 1 a otro caso (un commit nuevo de sandbox-stack o aplicar a Stallen). Solo entonces promover ADR-011 a v1.0 ACCEPTED con evidencia N≥2.
+
+**Opción B — Arrancar Phase 2 Sprint 3** (trinidad correctiva): `sigma:finding-classifier` + `sigma:auto-fix-mechanic` Tier A. Más caro estructural pero apunta a cierre completo del ciclo.
+
+**Opción C — Aplicar workflow a Stallen** con stack validado + Phase 1 activa. Mayor evidencia de producción.
 
 ---
 
