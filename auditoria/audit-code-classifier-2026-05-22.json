@@ -1,0 +1,172 @@
+{
+  "audit_metadata": {
+    "audit_id": "audit-code-classifier-2026-05-22",
+    "protocolo_paso": 7,
+    "scope": "framework/sigma/finding_classifier/*.py",
+    "files_audited": [
+      "framework/sigma/finding_classifier/__init__.py",
+      "framework/sigma/finding_classifier/models.py",
+      "framework/sigma/finding_classifier/loader.py",
+      "framework/sigma/finding_classifier/classifier.py"
+    ],
+    "rule_sets_applied": [
+      "G1-G33 (backend hardening — solo aplican G7-G8 input validation)",
+      "FG1-FG14 (frontend — N/A, codigo es backend Python puro)",
+      "SOLID estructural (SRP, OCP, LSP, ISP, DIP)",
+      "Zero-Trust (auth/SQL/secrets — solo secrets aplica)",
+      "Silent errors (except: pass, missing return paths)"
+    ],
+    "auditor": "Claude Opus 4.7 (manual analysis siguiendo PROTOCOLO-CONSTRUCCION-CODIGO.md seccion PASO 7)",
+    "baseline_commit": "06493bc",
+    "date": "2026-05-22",
+    "sprint": "Sprint 3 sesion 2"
+  },
+  "solid_audit": {
+    "srp": {
+      "verdict": "PASS",
+      "evidence": {
+        "max_function_lines": 27,
+        "max_class_lines": 25,
+        "thresholds": {"function_limit": 50, "class_limit": 300},
+        "functions_audited": [
+          {"name": "loader.load_rules", "lines": 22, "responsibility": "parse+validate YAML"},
+          {"name": "loader._parse_rules", "lines": 27, "responsibility": "validate rules section"},
+          {"name": "loader._parse_defaults", "lines": 18, "responsibility": "validate defaults section"},
+          {"name": "classifier.classify", "lines": 24, "responsibility": "pure tier assignment"},
+          {"name": "classifier.unknown_rule_ids", "lines": 4, "responsibility": "set of unmatched ids"},
+          {"name": "classifier.emit_calibration_log", "lines": 24, "responsibility": "stderr aggregation+emit"}
+        ]
+      }
+    },
+    "ocp": {
+      "verdict": "PASS",
+      "evidence": "Agregar reglas requiere solo edicion YAML, ningun cambio Python. Validado en S-7 story. Tier taxonomy locked por ADR-011 (Literal[A,B,C]) — extension via YAML, no via codigo."
+    },
+    "lsp": {
+      "verdict": "N/A",
+      "evidence": "Cero herencia. Modelado por composicion (dataclasses frozen). Ningun override a verificar."
+    },
+    "isp": {
+      "verdict": "PASS",
+      "evidence": "Maxima superficie publica de modulo: 3 funciones (classifier). Dataclasses tienen 0 metodos publicos. Threshold >7 metodos publicos no se cruza."
+    },
+    "dip": {
+      "verdict": "PASS",
+      "evidence": {
+        "injected_dependencies": [
+          {"function": "classify", "injects": "ClassifierRules (no carga interna)"},
+          {"function": "emit_calibration_log", "injects": "stream: IO[str] | None (testeable con StringIO)"}
+        ],
+        "concrete_imports_in_logic": "Solo en load_rules (yaml.safe_load) — adapter pattern correcto, sin abstraction overkill para libreria stdlib-like."
+      }
+    }
+  },
+  "zero_trust_audit": {
+    "secrets_in_code": {
+      "verdict": "PASS",
+      "evidence": "Scan sobre 4 archivos: cero strings que matcheen patrones secret (API keys, tokens, passwords, connection strings). Solo constantes data publica (_VALID_TIERS, _REQUIRED_TOP_LEVEL_KEYS)."
+    },
+    "input_validation": {
+      "verdict": "PASS",
+      "evidence": "loader.py valida fail-fast: top-level keys obligatorias (line 38-42), rules mapping (line 55), per-rule tier en _VALID_TIERS (line 69), source string non-empty (line 76), defaults.unknown_rule_tier en _VALID_TIERS (line 97). Cumple G7-G8 (campos obligatorios)."
+    },
+    "output_sanitization": {
+      "verdict": "PASS",
+      "evidence": "emit_calibration_log usa json.dumps con ensure_ascii=False (UTF-8 preserved) + sort_keys=True (determinismo de output). No string concatenation, no template injection vectors."
+    },
+    "auth_decorators": {"verdict": "N/A", "evidence": "Codigo no expone endpoints."},
+    "sql_injection": {"verdict": "N/A", "evidence": "Codigo no toca DB ni SQL."}
+  },
+  "silent_error_audit": {
+    "verdict": "PASS",
+    "evidence": {
+      "bare_except_count": 0,
+      "except_pass_count": 0,
+      "except_clauses_total": 1,
+      "except_clauses_detail": [
+        {
+          "location": "loader.py:27",
+          "pattern": "except yaml.YAMLError as exc: raise SchemaError(...) from exc",
+          "verdict": "PASS",
+          "rationale": "Re-raise tipado con causa preservada (from exc). Cero swallow, cero perdida de contexto."
+        }
+      ],
+      "implicit_returns": 0,
+      "all_functions_have_explicit_return_or_none": true
+    }
+  },
+  "structural_audit": {
+    "file_sizes_lines": {
+      "models.py": 59,
+      "loader.py": 109,
+      "classifier.py": 99,
+      "__init__.py": 22
+    },
+    "all_files_under_300_lines": true,
+    "max_function_lines": 27,
+    "max_class_lines": 25,
+    "circular_imports": "NONE (verified: models imports nothing project, loader imports models, classifier imports models, __init__ re-exports models)",
+    "type_hints_coverage": "100% (all public functions and dataclasses typed)"
+  },
+  "findings": {
+    "critical": [],
+    "warning": [
+      {
+        "id": "W-01",
+        "category": "configuration",
+        "location": "framework/pyproject.toml:21",
+        "description": "project.scripts declara sigma-classify = sigma.finding_classifier.cli:main, pero framework/sigma/finding_classifier/cli.py NO existe todavia.",
+        "impact": "Bajo. Solo afectaria pip install -e (no se ejecuta hoy). S-4 creara cli.py y este script entry point pasara a ser funcional. No bloquea Paso 7.",
+        "remediation": "Construir S-4 (cli.py con funcion main()) — ya planificado en sesion 2.",
+        "blocks_advance": false
+      }
+    ],
+    "suggestion": [
+      {
+        "id": "S-01",
+        "category": "type-safety",
+        "location": "classifier.py:93",
+        "description": "Uso de # type: ignore[arg-type] sobre dict[str, object] aggregated entries para incrementar count.",
+        "impact": "Cosmetico. Se podria reemplazar dict[str, object] por TypedDict con int count para tipado exacto.",
+        "remediation_optional": "Definir CalibrationLogEntry = TypedDict y eliminar el ignore. Estimacion: 5 min. NO bloquea.",
+        "blocks_advance": false
+      },
+      {
+        "id": "S-02",
+        "category": "behavior-documentation",
+        "location": "classifier.py:45",
+        "description": "rules.defaults.unknown_rule_action_hint or None colapsa empty string a None. Comportamiento intencional (loader linea 105-107 default a '' si missing) pero no documentado explicitamente en docstring de classify().",
+        "impact": "Bajo. Es behavior coherente pero un desarrollador nuevo podria confundirse con la cascada '' -> None.",
+        "remediation_optional": "Documentar en docstring de classify() la regla de coalescing. Estimacion: 2 min. NO bloquea.",
+        "blocks_advance": false
+      }
+    ]
+  },
+  "polinizacion_radar": {
+    "patterns_detected_for_propagation": [
+      {
+        "pattern": "Dependency injection de IO[str] stream para testabilidad sin filesystem ni captura via pipes",
+        "current_location": "classifier.emit_calibration_log",
+        "candidate_propagation": "Cualquier futura skill sigma:* que emita logs estructurados — usar mismo patron (stream: IO[str] | None = sys.stderr default)."
+      },
+      {
+        "pattern": "fail-fast schema validation antes de retornar dataclass frozen",
+        "current_location": "loader.load_rules + _parse_rules + _parse_defaults",
+        "candidate_propagation": "Cualquier loader de YAML/JSON de configuracion en el framework — replicar pattern para evitar errores deferidos."
+      }
+    ]
+  },
+  "criteria_done": {
+    "zero_critical_findings": true,
+    "zero_solid_violations": true,
+    "zero_zero_trust_issues": true,
+    "zero_silent_errors": true,
+    "auto_fixes_logged": "N/A (no auto-fixes aplicados — codigo limpio en primera pasada)"
+  },
+  "verdict": {
+    "status": "PASS",
+    "blocks_paso_8": false,
+    "can_advance_to_construccion_s4_s8": true,
+    "summary": "Codigo finding_classifier pasa Paso 7 formal sin findings criticos. 2 warnings menores (W-01 cli.py inexistente — esperado para S-4) y 2 sugerencias opcionales (S-01 typed dict + S-02 docstring coalescing). Polinizacion radar identifica 2 patrones candidatos a propagar al resto del framework sigma."
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "report_metadata": {
+    "report_id": "m2-empirical-distribution-2026-05-22",
+    "ac_vinculado": "AC2 (PRD-sigma-finding-classifier)",
+    "metric": "M2 (ADR-011)",
+    "story_origen": "S-8",
+    "fixture_path": "framework/sigma/finding_classifier/tests/fixtures/sprint1-iteracion3.json",
+    "fixture_source": "Sprint 1 Iteracion 3 transcript (R10 precondition closed)",
+    "fixture_findings_total": 26,
+    "rules_yaml_path": "framework/sigma/finding_classifier/rules.yaml",
+    "rules_yaml_version": "0.1.0",
+    "date": "2026-05-22",
+    "sprint": "Sprint 3 sesion 2",
+    "commit_baseline": "06493bc + sesion 2 WIP (S-4..S-8 + Paso 7 audit)"
+  },
+  "hypothesis_adr011": {
+    "tier_A_pct": 60,
+    "tier_B_pct": 30,
+    "tier_C_pct": 10,
+    "tolerance_pp": 15,
+    "bands": {
+      "tier_A": [45, 75],
+      "tier_B": [15, 45],
+      "tier_C": [0, 25]
+    }
+  },
+  "empirical": [
+    {
+      "tier": "A",
+      "count": 15,
+      "observed_pct": 57.7,
+      "hypothesis_pct": 60.0,
+      "delta_pp": -2.3,
+      "within_band": true,
+      "band": [45, 75]
+    },
+    {
+      "tier": "B",
+      "count": 7,
+      "observed_pct": 26.9,
+      "hypothesis_pct": 30.0,
+      "delta_pp": -3.1,
+      "within_band": true,
+      "band": [15, 45]
+    },
+    {
+      "tier": "C",
+      "count": 4,
+      "observed_pct": 15.4,
+      "hypothesis_pct": 10.0,
+      "delta_pp": 5.4,
+      "within_band": true,
+      "band": [0, 25]
+    }
+  ],
+  "coverage": {
+    "unknown_count": 1,
+    "unknown_pct": 3.8,
+    "mc1_coverage_pct": 96.2,
+    "mc1_threshold_pct": 95.0,
+    "mc1_pass": true,
+    "low_sample_warning": false,
+    "coverage_warning": false
+  },
+  "verdict": {
+    "ac2_within_band": true,
+    "all_tiers_within_pm_15pp": true,
+    "ready_for_adr011_promotion": true,
+    "summary": "Las tres tiers caen dentro del band ±15pp definido en AC2. Tier A delta -2.3pp, Tier B delta -3.1pp, Tier C delta +5.4pp. Cobertura MC1 96.2% supera threshold 95%. Distribucion empirica valida la hipotesis ADR-011 sobre fixture Sprint 1 Iteracion 3 (N=26)."
+  },
+  "limitations": {
+    "sample_size": 26,
+    "sample_size_caveat": "N=26 es muestra chica para inferencia estadistica robusta. Resultado es indicativo, no concluyente. Recomendacion: re-medir con fixture Sprint 2/3 (N>=100) antes de cerrar ADR-011 a v1.0 ACCEPTED.",
+    "fixture_bias": "Fixture refleja solo findings de Iteracion 3 (proyecto sandbox-stack). Otros proyectos pueden tener distribucion distinta.",
+    "rule_catalog_completeness": "27 reglas en rules.yaml v0.1.0; ampliarlo cambiara la distribucion empirica futura."
+  },
+  "adr011_promotion_recommendation": {
+    "current_state": "PROPOSED v0.7 PARTIAL",
+    "target_state": "PROPOSED v0.9 PARTIAL",
+    "evidence_for_promotion": [
+      "M2 measured empirically, all tiers within ±15pp band",
+      "MC1 coverage 96.2% > 95% threshold",
+      "MC2 stability validated via test_re_running_cli_on_same_input_consistent (S-7)"
+    ],
+    "blockers_for_v1_0_ACCEPTED": [
+      "Sample size N=26 (insufficient for production-grade statistical inference)",
+      "M3 (mechanic mass-fix) NO esta construido todavia — pendiente Sprint posterior",
+      "Re-medicion sobre 2do fixture (proyecto distinto) recomendada para validar generalizacion"
+    ]
+  }
+}
