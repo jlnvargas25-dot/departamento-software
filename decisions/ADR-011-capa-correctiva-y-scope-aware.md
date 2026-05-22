@@ -191,9 +191,9 @@ Este clasificador NO usa LLM. Es Python puro, declarativo, versionable como cual
 ## Plan de implementación
 
 ### Sprint 2 (1-2 sesiones)
-- [ ] `sigma:gga-scope-aware` (Phase 1) — alternativa rápida: env var + threshold map hardcoded en hook
-- [ ] Aplicar scope-aware al sandbox-stack y re-medir cuántos rounds de GGA se evitan
-- [ ] Documentar en `docs/SCOPE-AWARENESS.md`
+- [x] `sigma:gga-scope-aware` (Phase 1) — implementado vía Plan B (RULES_FILE swap declarativo en `.gga`, sin parser de output). Cura barata con cura limpia. Ver `docs/SCOPE-AWARENESS.md`.
+- [x] Aplicar scope-aware al sandbox-stack y re-medir cuántos rounds de GGA se evitan — **cerró en 1 round vs 4 baseline** (ver sección "Evidencia empírica Phase 1").
+- [x] Documentar en `docs/SCOPE-AWARENESS.md`
 
 ### Sprint 3 (3-5 sesiones)
 - [ ] `sigma:finding-classifier` (~100 LOC Python + YAML)
@@ -247,7 +247,7 @@ Este clasificador NO usa LLM. Es Python puro, declarativo, versionable como cual
 
 ## Métricas de éxito (para promoción PROPOSED → ACCEPTED)
 
-- [ ] **M1**: aplicar scope-aware a sandbox-stack y verificar que GGA cierra en ≤2 rounds (vs 4 observados en Sprint 1).
+- [x] **M1**: aplicar scope-aware a sandbox-stack y verificar que GGA cierra en ≤2 rounds (vs 4 observados en Sprint 1). **Cumplido N=1: cerró en 1 round (2026-05-21).** Ver sección "Evidencia empírica Phase 1".
 - [ ] **M2**: clasificar empíricamente ~50 findings de proyectos reales (sandbox + Stallen) y verificar distribución ~60% Tier A / ~30% Tier B / ~10% Tier C.
 - [ ] **M3**: auto-fix Tier A debe cerrar ≥90% de los findings clasificados como A sin intervención humana.
 - [ ] **M4**: sub-agente Tier B debe cerrar ≥70% de findings B con un solo patch (no requerir múltiples iteraciones).
@@ -257,15 +257,104 @@ Este clasificador NO usa LLM. Es Python puro, declarativo, versionable como cual
 
 ## Pendiente para promoción a ACCEPTED
 
-Para promover este ADR de PROPOSED v0.1 a ACCEPTED v1.0:
+Para promover este ADR de PROPOSED v0.5 PARTIAL a ACCEPTED v1.0:
 
-- [ ] Implementar Phase 1 (scope-aware) y aplicarlo al sandbox-stack.
-- [ ] Re-medir rounds de GGA con scope-aware activo.
+- [x] Implementar Phase 1 (scope-aware) y aplicarlo al sandbox-stack.
+- [x] Re-medir rounds de GGA con scope-aware activo. **1 round (N=1).**
 - [ ] Implementar al menos `sigma:finding-classifier` + `sigma:auto-fix-mechanic` Tier A.
-- [ ] Aplicar a un commit real con findings y validar M1 + M3.
+- [ ] Aplicar a un commit real con findings y validar M3 (≥90% Tier A auto-fix).
 - [ ] Documentar la matriz Tier A/B/C definitiva con evidencia empírica.
+- [ ] N≥3 corridas de M1 sobre proyectos distintos (sandbox-stack ya cubierto; Stallen + un tercer caso pendientes).
 
-**Si las métricas M1 y M3 no se cumplen** → este ADR baja a REJECTED + redacción de ADR-011-bis con un diseño alternativo.
+**Si las métricas M1 (N≥3) y M3 no se cumplen** → este ADR baja a REJECTED + redacción de ADR-011-bis con un diseño alternativo.
+
+---
+
+## Evidencia empírica Phase 1 (2026-05-21)
+
+### Setup
+
+- **Caso bajo prueba**: `stash@{0}` del repo raíz — "GGA round 4 cleanup deferido a Sprint 2" — 5 archivos del sandbox-stack:
+  - `projects/sandbox-stack/src/adapters/supabase/client.ts`
+  - `projects/sandbox-stack/src/app/actions/auth.ts`
+  - `projects/sandbox-stack/src/app/actions/todos.ts`
+  - `projects/sandbox-stack/src/middleware.ts`
+  - `projects/sandbox-stack/supabase/functions/purge-expired-todos/index.ts`
+- **Baseline (Sprint 1)**: GGA requirió 4 rounds + bypass humano (`--no-verify`).
+- **Con Phase 1**: `FRAMEWORK_SCOPE=sandbox`, hook hace swap `.gga` (`RULES_FILE=AGENTS.md` → `RULES_FILE=AGENTS-sandbox.md`), corre `gga run`, restaura `.gga` con trap.
+
+### Resultado
+
+- **Exit code**: 0 (PASSED).
+- **Rounds**: 1 (un solo run, sin findings BLOQUEANTES).
+- **Downgrades reconocidos por el modelo AI**:
+  - `client.ts:79` — `console.warn` aceptado como sandbox G-6 WARN.
+  - `purge-expired-todos/index.ts:99` — `console.log(JSON.stringify(...))` aceptado con ADR-SB-002 referenciado (Deno → no pino).
+  - Casts estructurales `as Parameters<typeof X>[0]` reconocidos como bridging zod-validated inputs, no `as any`.
+- **Cache invalidation funcionó**: gga detectó `Cache invalidated (rules or config changed)` al swap.
+- **Trap restoration funcionó**: `.gga` post-run quedó `RULES_FILE="AGENTS.md"`.
+
+### Aprendizajes (N=1, no concluyentes)
+
+1. **El modelo AI de GGA respeta la semántica WARN vs BLOQUEANTE del Markdown** — disipa la preocupación documentada en `docs/SCOPE-AWARENESS.md` sobre granularidad.
+2. **Plan B (RULES_FILE swap declarativo) es viable y más simple que Plan A (wrapping con parser de output)** — usa mecanismo nativo, archivos versionables, sin brittleness al provider AI.
+3. **El swap + trap es robusto** — `.gga.scope-aware.bak` no quedó huérfano post-run.
+4. **La hipótesis se cumplió con margen amplio**: M1 esperaba ≤2 rounds, se observó 1. El gap 4→1 sugiere que el ruido en sandbox era proporcionalmente mucho mayor al 60-70% estimado a priori — probablemente >80% en este caso.
+
+### Limitaciones del experimento
+
+- **N=1**: una sola corrida sobre un solo sandbox.
+- **Estado de partida**: los archivos del stash ya habían pasado 3 rounds parciales de fixes — su estado en Phase 1 no es estrictamente el mismo que el inicial de Sprint 1. La comparación 4→1 es indicativa, no estrictamente equivalente.
+- **GGA cache**: poblado parcialmente; Phase 1 lo invalidó automáticamente al cambiar rules.
+- **Provider=claude**: comportamiento de respeto a anotaciones puede ser diferente con otros providers (gemini, codex, ollama). Calibrar empíricamente.
+
+### Recomendación
+
+Promover este ADR a **PROPOSED v0.5 PARTIAL**. Phase 1 evidenced. Phase 2 (Tier A) sigue siendo prerrequisito para ACCEPTED v1.0 plena.
+
+---
+
+## Evidencia empírica Phase 1 (2026-05-21)
+
+### Setup
+
+- **Caso bajo prueba**: `stash@{0}` del repo raíz — "GGA round 4 cleanup deferido a Sprint 2" — 5 archivos del sandbox-stack:
+  - `projects/sandbox-stack/src/adapters/supabase/client.ts`
+  - `projects/sandbox-stack/src/app/actions/auth.ts`
+  - `projects/sandbox-stack/src/app/actions/todos.ts`
+  - `projects/sandbox-stack/src/middleware.ts`
+  - `projects/sandbox-stack/supabase/functions/purge-expired-todos/index.ts`
+- **Baseline (Sprint 1, sin Phase 1)**: GGA requirió 4 rounds + bypass humano (`--no-verify`) sobre estos mismos archivos.
+- **Con Phase 1 activo**: `FRAMEWORK_SCOPE=sandbox` exportado, hook wrapper invoca `.gga` swap (`RULES_FILE=AGENTS.md` → `RULES_FILE=AGENTS-sandbox.md`), corre `gga run`, restaura `.gga`.
+
+### Resultado
+
+- **Exit code GGA**: 0 (PASSED).
+- **Rounds**: 1 (un solo run, sin findings BLOQUEANTES).
+- **Output GGA**: review detallado regla-por-regla, **reconoció explícitamente los downgrades del sandbox**:
+  - `client.ts:79` — `console.warn` acepta como sandbox G-6 WARN (no bloqueante).
+  - `purge-expired-todos/index.ts:99` — `console.log(JSON.stringify(...))` acepta con ADR-SB-002 referenciado (Deno → no pino).
+  - Type casts estructurales `as Parameters<typeof X>[0]` reconocidos como bridging zod-validated inputs, no `as any`.
+- **Cache invalidation funcionó**: `[Cache invalidated (rules or config changed)]` cuando swap ocurrió → no contaminó el run.
+- **Trap restoration funcionó**: `.gga` post-run quedó en `RULES_FILE="AGENTS.md"` (production-default).
+
+### Aprendizajes (N=1, no concluyentes)
+
+1. **El modelo AI de GGA respeta la semántica WARN vs BLOQUEANTE del Markdown** — disipa la preocupación documentada en `docs/SCOPE-AWARENESS.md` sobre granularidad. Iteraciones futuras pueden confiar en anotaciones explícitas del archivo de reglas.
+2. **Plan B (RULES_FILE swap declarativo) es viable y más simple que Plan A (wrapping con parser de output)** — usa mecanismo nativo de gga, archivos versionables, sin brittleness al provider AI específico.
+3. **El swap + trap restore es robusto** — `.gga.scope-aware.bak` no quedó huérfano post-run.
+4. **La hipótesis del ADR se cumplió con margen amplio**: M1 esperaba ≤2 rounds, se observó 1 round. El gap entre 4 (baseline) y 1 (con Phase 1) sugiere que el ruido en sandbox era proporcionalmente mucho mayor al 60-70% estimado a priori — probablemente >80% en este caso.
+
+### Limitaciones del experimento
+
+- **N=1**: una sola corrida sobre un solo sandbox. M1 requiere N≥3 sobre proyectos distintos antes de generalizar.
+- **Los archivos del stash ya habían pasado 3 rounds de fixes parciales** — su estado de partida en Phase 1 no es el mismo que el estado inicial de Sprint 1. La comparación 4 rounds → 1 round es indicativa, no estrictamente equivalente.
+- **GGA cache estuvo poblado parcialmente** — Phase 1 invalidó el cache (rules changed) y re-corrió fresh, pero esto es ruido menor.
+- **Provider=claude** — el comportamiento de respeto a anotaciones WARN vs BLOQUEANTE puede ser diferente con otros providers (gemini, codex, ollama). Calibrar empíricamente.
+
+### Recomendación
+
+Promover este ADR a **PROPOSED v0.5 PARTIAL**. Phase 1 evidenced. Phase 2 (Tier A) sigue siendo prerrequisito para ACCEPTED v1.0 plena.
 
 ---
 
