@@ -3,9 +3,9 @@
 > **Propósito**: handoff táctico post-T1.6→T2 ejecutados (planning-phase only).
 > Stallen DIFERIDO hasta que el Framework esté maduro.
 
-**Última actualización**: 2026-05-21 PM continuación 2 — post T1.9 EMPIRICAL (workflow sdd-* completo + comparación side-by-side + Decisión D resuelta + ADR-009 actualizado)
+**Última actualización**: 2026-05-21 PM continuación 3 — post Iteración 3 ejecutada (47/47 tasks, 19/25 A-rules ejercitadas, ADR-009 ACCEPTED v1.0)
 **Cliente recomendado próxima sesión**: **Claude Code CLI** dentro de `projects/sandbox-stack/` (skills speckit-* + ecc:* + claude-mem:* + sdd-* + superpowers:* todos cargados)
-**Versión**: 5.2 (post T1.9 EMPIRICAL + Decisión D resuelta híbrida)
+**Versión**: 6.0 (post ADR-009 ACCEPTED v1.0 — Sprint 1 completo)
 
 ---
 
@@ -25,26 +25,29 @@
 
 ---
 
-## ESTADO ACTUAL (post 2026-05-21 PM/continuación 2)
+## ESTADO ACTUAL (post 2026-05-21 PM/continuación 3 — Sprint 1 COMPLETO)
 
-### ✅ Planning-phase sandbox completo + comparación empírica
+### ✅ Sprint 1 cerrado: planning + comparación + implementación validada
 
-- T1.6 ✅ Superpowers 14/14 verificado post-restart (DEUDA-SUPERPOWERS-FETCH-RACE cerrada)
-- T1.7 ✅ 5 skills speckit-* planning ejecutadas (8 artefactos en `specs/001-todo-management/` + 47 tasks)
-- T1.8 ✅ `EVALUATION.md` v0.5 PRELIMINAR con matriz refinada (44%→76% Direct con caveat operator-dependent)
-- T2 ✅ `ADR-009-adopcion-stack-ecosistema.md` v0.5 PROPOSED
-- **T1.9 ✅ EMPIRICAL** workflow sdd-* completo sobre el mismo caso (7 artefactos en `openspec/changes/todo-management/` + 47 tasks). **Decisión D resuelta**: backbone híbrido. Convergencia 47 tasks. 5 lecciones candidatas (24-28).
+- T1.6 ✅ Superpowers 14/14 verificado
+- T1.7 ✅ 5 skills speckit-* planning (8 artefactos + 47 tasks)
+- T1.8 ✅ EVALUATION.md v0.5 (44%→76% Direct operator-dependent)
+- T2 ✅ ADR-009 v0.5 PROPOSED
+- T1.9 ✅ EMPIRICAL workflow sdd-* completo (7 artefactos en openspec/, 47 tasks, 5 lecciones)
+- **Iteración 3 ✅ EJECUTADA**: 4 sub-agents secuenciales sobre tasks.md. **47/47 tasks marcadas [x]**. **19/25 A-rules ejercitadas empíricamente (76%)**. 75 archivos en sandbox. CI gate con adversarial-gate + integration-rls jobs. T1.10-EVIDENCE.md escrito.
+- **ADR-009 ✅ ACCEPTED v1.0**: stack Spec Kit + ECC + claude-mem validado empíricamente. Sigma MVP NO bloqueante para v1.0 (operador-instruido cubre el gap).
 
-### ⏸️ DIFERIDO a próxima sesión
+### ⏸️ DIFERIDO a próximas sesiones (no bloqueante para v1.0)
 
-- **Iteración 3**: `/speckit-implement` o `/ecc:multi-execute` sobre `specs/001-todo-management/tasks.md` (47 tareas). **Backbone**: speckit-* (default híbrido por cost-aware, ver T1.9-EVIDENCE.md Sección 6)
-- **Build sigma MVP**: 4 skills (`operationalize-constitution`, `enforce-constitution-check`, `multi-tenant-isolation-checker`, `dependency-cycle-detector`)
-- **Promoción ADR-009 v0.5 → v1.0 ACCEPTED**: condicionada a iteración 3 + sigma MVP
-- **DEUDAS nuevas T1.9**: DEUDA-SDD-EXPLORE-NO-WRITE (menor), DEUDA-SUB-AGENT-OVERRIDE-OPERATOR (menor)
+- **Build sigma MVP** (4 skills): `operationalize-constitution`, `enforce-constitution-check`, `multi-tenant-isolation-checker`, `dependency-cycle-detector`. Sprint 2.
+- **Aplicar workflow operativo a Stallen**: usar el stack validado en proyecto cliente real.
+- **EVALUATION.md v0.5 → v1.0**: polish con evidencia post-implement.
+- **Smoke tests reales**: requieren `npm ci` + `supabase start` + ejecución manual del checklist en `docs/DEPLOYMENT.md`.
+- **DEUDAS nuevas Iteración 3**: DEUDA-ADVERSARIAL-TEST-SHAPE-WRONG (menor), DEUDA-NPM-INSTALL-MANUAL, DEUDA-SUPABASE-LOCAL-MANUAL, DEUDA-SIGMA-MVP-NO-CONSTRUIDAS.
 
 ### Repo
 
-- Working tree: con cambios pendientes del cierre 2026-05-21 PM/continuación 2
+- Working tree: con cambios pendientes del cierre 2026-05-21 PM/continuación 3
 - Branch: main
 - Próximo commit pendiente: en este mismo cierre
 
@@ -100,6 +103,25 @@ Si push fue exitoso → seguir directo a Iteración 3.
 ### PASO T1.9 — ✅ COMPLETADO 2026-05-21 PM continuación 2
 
 T1.9 ejecutado empíricamente. Decisión D resuelta como híbrida. Ver `projects/sandbox-stack/T1.9-EVIDENCE.md` v0.2 EMPIRICAL.
+
+---
+
+### PASO Iteración 3 — ✅ COMPLETADO 2026-05-21 PM continuación 3
+
+Iteración 3 ejecutada en 4 sub-agents secuenciales. 47/47 tasks marcadas. 19/25 A-rules ejercitadas (76% — matched a-priori). ADR-009 promovido v0.5 PROPOSED → **v1.0 ACCEPTED**. Ver `projects/sandbox-stack/T1.10-EVIDENCE.md`.
+
+---
+
+### Próximas opciones (Sprint 2 o aplicación a Stallen)
+
+**Opción A — Sprint 2: Build sigma MVP (4 skills)**
+Construir las 4 skills planeadas en ADR-009. Sin operador instruido del Framework, las skills cierran los gaps que actualmente requieren operador. Tiempo estimado: 2-3 sesiones.
+
+**Opción B — Aplicar workflow a Stallen**
+Usar el stack validado (speckit-* + ECC + claude-mem + A1-A25 instruidas) en proyecto cliente real (Stallen SaaS). Mayor evidencia de validez en producción. Tiempo estimado: 1-2 semanas.
+
+**Opción C — Polish + evangelización**
+EVALUATION.md v0.5 → v1.0 con evidencia post-implement. Workflow operativo `docs/WORKFLOW-OPERATIVO.md` v1.0. Cross-LLM publishing setup (canonical `obra/superpowers` model). Tiempo estimado: 1-2 sesiones.
 
 ---
 

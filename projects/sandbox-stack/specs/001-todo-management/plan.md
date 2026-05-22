@@ -118,7 +118,7 @@ tests/
 
 supabase/
 └── migrations/
-    └── 0001_initial.sql       # todos table + RLS + indexes
+    └── 202605211900_initial.sql       # todos table + RLS + indexes
 ```
 
 **Structure Decision**: Single Next.js full-stack project under repo root. Hexagonal split inside `src/` (domain → ports → adapters) enforces A20. Tests organized by scope (unit / integration / e2e). Supabase migrations versioned alongside code.

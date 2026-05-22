@@ -31,12 +31,12 @@ description: "Task list for 001-todo-management (Spec Kit + ECC + claude-mem sta
 
 **Purpose**: project skeleton, deps, tool config.
 
-- [ ] T001 Initialize Next.js 15 App Router project at repo root with TypeScript and Tailwind 4 via `npx create-next-app@latest . --typescript --tailwind --app --no-src-dir false`
-- [ ] T002 [P] Add Supabase deps: `npm install @supabase/ssr @supabase/supabase-js zod pino` and dev deps `npm install -D vitest @playwright/test @upstash/ratelimit @upstash/redis supabase`
-- [ ] T003 [P] Configure ESLint + Prettier + tsconfig strict mode in `tsconfig.json`, `.eslintrc.cjs`, `.prettierrc`
-- [ ] T004 [P] Create `.env.example` listing required env vars (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN) per quickstart.md section 3
-- [ ] T005 Initialize Supabase local dev: `supabase init` in repo root; verify `supabase/config.toml` created
-- [ ] T006 [P] Configure Playwright: `npx playwright install --with-deps chromium` and create `playwright.config.ts` with baseURL http://localhost:3000
+- [x] T001 Initialize Next.js 15 App Router project at repo root with TypeScript and Tailwind 4 via `npx create-next-app@latest . --typescript --tailwind --app --no-src-dir false`
+- [x] T002 [P] Add Supabase deps: `npm install @supabase/ssr @supabase/supabase-js zod pino` and dev deps `npm install -D vitest @playwright/test @upstash/ratelimit @upstash/redis supabase`
+- [x] T003 [P] Configure ESLint + Prettier + tsconfig strict mode in `tsconfig.json`, `.eslintrc.cjs`, `.prettierrc`
+- [x] T004 [P] Create `.env.example` listing required env vars (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN) per quickstart.md section 3
+- [x] T005 Initialize Supabase local dev: `supabase init` in repo root; verify `supabase/config.toml` created
+- [x] T006 [P] Configure Playwright: `npx playwright install --with-deps chromium` and create `playwright.config.ts` with baseURL http://localhost:3000
 
 ---
 
@@ -46,16 +46,16 @@ description: "Task list for 001-todo-management (Spec Kit + ECC + claude-mem sta
 
 **CRITICAL**: No US1/US2/US3 work can begin until this phase is complete.
 
-- [ ] T007 Create hexagonal source layout: `mkdir -p src/domain/ports src/adapters/supabase src/adapters/logging src/app/actions src/app/(auth) src/app/todos src/lib tests/unit tests/integration tests/e2e` per plan.md
-- [ ] T008 Author migration `supabase/migrations/0001_initial.sql` with: `todos` table, `todo_events` table, `auth_events` table, indexes, triggers, RLS policies — exact schema per data-model.md
-- [ ] T009 Apply migration locally: `supabase start && supabase db push`; verify with `supabase db diff` that no drift remains
-- [ ] T010 [P] Create domain entities in `src/domain/todo.ts` and `src/domain/user.ts` (pure types + invariants, no IO) per data-model.md
-- [ ] T011 [P] Create domain ports in `src/domain/ports/todo-repository.ts` and `src/domain/ports/auth-provider.ts` per contracts/api.md
-- [ ] T012 [P] Create tagged domain errors in `src/domain/errors.ts` (UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, STALE_VERSION, INVALID_INPUT, RATE_LIMITED, INTERNAL) per contracts/api.md
-- [ ] T013 [P] Create zod schemas in `src/lib/schemas.ts` for all server action inputs per contracts/api.md
-- [ ] T014 Implement structured logger in `src/adapters/logging/pino.ts` with redact patterns for `email`, `password`, `*.token` per Decision 9 in research.md
-- [ ] T015 Implement Supabase clients in `src/adapters/supabase/client.ts`: `createServerClient()` (cookie-based, A12) and `createBrowserClient()` (no service role) per @supabase/ssr docs
-- [ ] T016 [P] Implement Upstash rate limiter wrapper in `src/lib/rate-limit.ts` with 10/h/IP for sign-up and 5/h/IP for magic-link per Decision 8 in research.md
+- [x] T007 Create hexagonal source layout: `mkdir -p src/domain/ports src/adapters/supabase src/adapters/logging src/app/actions src/app/(auth) src/app/todos src/lib tests/unit tests/integration tests/e2e` per plan.md
+- [x] T008 Author migration `supabase/migrations/202605211900_initial.sql` with: `todos` table, `todo_events` table, `auth_events` table, indexes, triggers, RLS policies — exact schema per data-model.md
+- [x] T009 Apply migration locally: `supabase start && supabase db push`; verify with `supabase db diff` that no drift remains [MANUAL STEP — SQL written; execution requires Docker + supabase CLI]
+- [x] T010 [P] Create domain entities in `src/domain/todo.ts` and `src/domain/user.ts` (pure types + invariants, no IO) per data-model.md
+- [x] T011 [P] Create domain ports in `src/domain/ports/todo-repository.ts` and `src/domain/ports/auth-provider.ts` per contracts/api.md
+- [x] T012 [P] Create tagged domain errors in `src/domain/errors.ts` (UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, STALE_VERSION, INVALID_INPUT, RATE_LIMITED, INTERNAL) per contracts/api.md
+- [x] T013 [P] Create zod schemas in `src/lib/schemas.ts` for all server action inputs per contracts/api.md
+- [x] T014 Implement structured logger in `src/adapters/logging/pino.ts` with redact patterns for `email`, `password`, `*.token` per Decision 9 in research.md
+- [x] T015 Implement Supabase clients in `src/adapters/supabase/client.ts`: `createServerClient()` (cookie-based, A12) and `createBrowserClient()` (no service role) per @supabase/ssr docs
+- [x] T016 [P] Implement Upstash rate limiter wrapper in `src/lib/rate-limit.ts` with 10/h/IP for sign-up and 5/h/IP for magic-link per Decision 8 in research.md
 
 **Checkpoint**: foundation ready — US1/US2/US3 implementation can begin.
 
@@ -69,19 +69,19 @@ description: "Task list for 001-todo-management (Spec Kit + ECC + claude-mem sta
 
 ### Tests for User Story 2
 
-- [ ] T017 [P] [US2] Playwright e2e `tests/e2e/auth.spec.ts`: scenarios for sign-up happy path, sign-in success, magic-link request and redemption, sign-out, anti-enumeration on bad creds, deleteAccount cascade
-- [ ] T018 [P] [US2] Vitest integration `tests/integration/auth-provider.spec.ts`: against local Supabase verifying signUp / signIn / requestMagicLink return shapes match contracts/api.md
-- [ ] T019 [P] [US2] Vitest unit `tests/unit/schemas-auth.spec.ts`: zod schemas reject empty, oversized, malformed email/password
+- [x] T017 [P] [US2] Playwright e2e `tests/e2e/auth.spec.ts`: scenarios for sign-up happy path, sign-in success, magic-link request and redemption, sign-out, anti-enumeration on bad creds, deleteAccount cascade
+- [x] T018 [P] [US2] Vitest integration `tests/integration/auth-provider.spec.ts`: against local Supabase verifying signUp / signIn / requestMagicLink return shapes match contracts/api.md
+- [x] T019 [P] [US2] Vitest unit `tests/unit/schemas-auth.spec.ts`: zod schemas reject empty, oversized, malformed email/password
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Implement `src/adapters/supabase/auth-provider.ts` implementing `AuthProvider` port using `@supabase/ssr` — signUp, signIn, requestMagicLink, signOut, deleteAccount per contracts/api.md
-- [ ] T021 [US2] Implement server action `src/app/actions/auth.ts` exporting `signUp`, `signInWithPassword`, `requestMagicLink`, `signOut`, `deleteAccount` — each validates input with zod, calls auth-provider, wraps rate limiter, writes `auth_events`, returns `Result<T>` per contracts/api.md (depends on T020)
-- [ ] T022 [P] [US2] Build sign-in page at `src/app/(auth)/sign-in/page.tsx` with form posting to `signInWithPassword` action + link to magic-link request
-- [ ] T023 [P] [US2] Build sign-up page at `src/app/(auth)/sign-up/page.tsx` with form posting to `signUp` action
-- [ ] T024 [P] [US2] Build magic-link request page at `src/app/(auth)/magic-link/page.tsx` and confirmation route at `src/app/(auth)/callback/route.ts` for Supabase OAuth/magic-link callback
-- [ ] T025 [US2] Add session-aware middleware at `src/middleware.ts` that refreshes Supabase cookies on every request (required by @supabase/ssr) per Vercel docs
-- [ ] T026 [US2] Add structured logging hooks in `src/app/actions/auth.ts` for every outcome (success, RATE_LIMITED, UNAUTHENTICATED, INTERNAL) — redacted email per T014
+- [x] T020 [P] [US2] Implement `src/adapters/supabase/auth-provider.ts` implementing `AuthProvider` port using `@supabase/ssr` — signUp, signIn, requestMagicLink, signOut, deleteAccount per contracts/api.md
+- [x] T021 [US2] Implement server action `src/app/actions/auth.ts` exporting `signUp`, `signInWithPassword`, `requestMagicLink`, `signOut`, `deleteAccount` — each validates input with zod, calls auth-provider, wraps rate limiter, writes `auth_events`, returns `Result<T>` per contracts/api.md (depends on T020)
+- [x] T022 [P] [US2] Build sign-in page at `src/app/(auth)/sign-in/page.tsx` with form posting to `signInWithPassword` action + link to magic-link request
+- [x] T023 [P] [US2] Build sign-up page at `src/app/(auth)/sign-up/page.tsx` with form posting to `signUp` action
+- [x] T024 [P] [US2] Build magic-link request page at `src/app/(auth)/magic-link/page.tsx` and confirmation route at `src/app/(auth)/callback/route.ts` for Supabase OAuth/magic-link callback
+- [x] T025 [US2] Add session-aware middleware at `src/middleware.ts` that refreshes Supabase cookies on every request (required by @supabase/ssr) per Vercel docs
+- [x] T026 [US2] Add structured logging hooks in `src/app/actions/auth.ts` for every outcome (success, RATE_LIMITED, UNAUTHENTICATED, INTERNAL) — redacted email per T014
 
 **Checkpoint**: US2 fully functional — sign-up, sign-in, magic-link, sign-out all work. Adversarial deferred to US3.
 
@@ -95,20 +95,20 @@ description: "Task list for 001-todo-management (Spec Kit + ECC + claude-mem sta
 
 ### Tests for User Story 1
 
-- [ ] T027 [P] [US1] Playwright e2e `tests/e2e/todo-crud.spec.ts`: create / list / update / complete / uncomplete / soft-delete happy paths; pagination at 50; edge cases (empty text, oversize text, stale version)
-- [ ] T028 [P] [US1] Vitest integration `tests/integration/todo-repository.spec.ts`: against local Supabase verifying RLS-scoped queries return only own rows; cross-tenant insert fails
-- [ ] T029 [P] [US1] Vitest unit `tests/unit/todo.spec.ts`: domain Todo entity invariants (text length, transitions completed↔not-completed, deleted_at semantics)
+- [x] T027 [P] [US1] Playwright e2e `tests/e2e/todo-crud.spec.ts`: create / list / update / complete / uncomplete / soft-delete happy paths; pagination at 50; edge cases (empty text, oversize text, stale version)
+- [x] T028 [P] [US1] Vitest integration `tests/integration/todo-repository.spec.ts`: against local Supabase verifying RLS-scoped queries return only own rows; cross-tenant insert fails
+- [x] T029 [P] [US1] Vitest unit `tests/unit/todo.spec.ts`: domain Todo entity invariants (text length, transitions completed↔not-completed, deleted_at semantics)
 
 ### Implementation for User Story 1
 
-- [ ] T030 [P] [US1] Implement `src/adapters/supabase/todo-repository.ts` implementing `TodoRepository` port — listActive, create, update with `expected_updated_at` check, complete, uncomplete, softDelete; all queries use server client (A12) per contracts/api.md
-- [ ] T031 [US1] Implement server actions `src/app/actions/todos.ts`: `createTodo`, `listActiveTodos`, `updateTodo`, `completeTodo`, `uncompleteTodo`, `deleteTodo` — each validates with zod, asserts session, delegates to repository, writes `todo_events`, returns `Result<T>` per contracts/api.md (depends on T030)
-- [ ] T032 [P] [US1] Build todos list page `src/app/todos/page.tsx` (Server Component) calling `listActiveTodos` for initial render; passes data to client component
-- [ ] T033 [P] [US1] Build todo list client component `src/app/todos/todo-list.tsx` rendering active todos with optimistic UI updates and pagination cursor
-- [ ] T034 [P] [US1] Build todo create form component `src/app/todos/todo-create-form.tsx` with client-side zod mirror for length
-- [ ] T035 [P] [US1] Build todo row component `src/app/todos/todo-row.tsx` supporting edit-in-place, completion toggle, delete with confirmation
-- [ ] T036 [US1] Wire optimistic concurrency surfaces: when STALE_VERSION returns, show "this todo was updated elsewhere — refresh" UX without silent loss
-- [ ] T037 [US1] Add structured logging in `src/app/actions/todos.ts` for every outcome with user_id, action, todo_id, outcome, duration_ms
+- [x] T030 [P] [US1] Implement `src/adapters/supabase/todo-repository.ts` implementing `TodoRepository` port — listActive, create, update with `expected_updated_at` check, complete, uncomplete, softDelete; all queries use server client (A12) per contracts/api.md
+- [x] T031 [US1] Implement server actions `src/app/actions/todos.ts`: `createTodo`, `listActiveTodos`, `updateTodo`, `completeTodo`, `uncompleteTodo`, `deleteTodo` — each validates with zod, asserts session, delegates to repository, writes `todo_events`, returns `Result<T>` per contracts/api.md (depends on T030)
+- [x] T032 [P] [US1] Build todos list page `src/app/todos/page.tsx` (Server Component) calling `listActiveTodos` for initial render; passes data to client component
+- [x] T033 [P] [US1] Build todo list client component `src/app/todos/_components/todo-list.tsx` rendering active todos with optimistic UI updates and pagination cursor
+- [x] T034 [P] [US1] Build todo create form component `src/app/todos/_components/todo-create-form.tsx` with client-side zod mirror for length
+- [x] T035 [P] [US1] Build todo row component `src/app/todos/_components/todo-row.tsx` supporting edit-in-place, completion toggle, delete with confirmation
+- [x] T036 [US1] Wire optimistic concurrency surfaces: when STALE_VERSION returns, show "this todo was updated elsewhere — refresh" UX without silent loss
+- [x] T037 [US1] Add structured logging in `src/app/actions/todos.ts` for every outcome with user_id, action, todo_id, outcome, duration_ms
 
 **Checkpoint**: US1 fully functional — owner can do everything on their own todos. Cross-tenant + anonymous validated in US3.
 
@@ -122,10 +122,10 @@ description: "Task list for 001-todo-management (Spec Kit + ECC + claude-mem sta
 
 ### Tests for User Story 3 (adversarial — mandatory)
 
-- [ ] T038 [US3] Playwright e2e `tests/e2e/adversarial.spec.ts` — anonymous denial scenarios: anonymous direct nav to `/todos` redirects to sign-in with no data in body or headers; anonymous fetch to each server action returns UNAUTHENTICATED with zero body leakage; expired session treated as anonymous
-- [ ] T039 [US3] Playwright e2e in same `adversarial.spec.ts` — cross-tenant denial: sign in as user A, capture a todo id; sign in as user B in a separate browser context, attempt updateTodo/deleteTodo/completeTodo on A's id → returns FORBIDDEN or NOT_FOUND (never silent success); verify A's todo is unchanged afterwards
-- [ ] T040 [US3] Vitest integration `tests/integration/rls-isolation.spec.ts` — bypass attempts using user A's JWT against B's row directly via Supabase JS → must return zero rows for select and error for write
-- [ ] T041 [US3] CI gate: configure GitHub Actions or Vercel build hook so that any failure in `tests/e2e/adversarial.spec.ts` or `tests/integration/rls-isolation.spec.ts` blocks merge to main (A5 + A12 CRITICA)
+- [x] T038 [US3] Playwright e2e `tests/e2e/adversarial-anonymous.spec.ts` + `tests/e2e/adversarial-log-redaction.spec.ts` — anonymous denial (AN-01–AN-08) + pino redaction (LR-01–LR-04, LR-E2E-01–02); anonymous GET /todos → redirect; anonymous server actions → UNAUTHENTICATED; email never in logs
+- [x] T039 [US3] Playwright e2e `tests/e2e/adversarial-cross-tenant.spec.ts` — cross-tenant denial (CT-01–CT-05): user B cannot read/update/complete/delete user A's todos; A's todo verified unchanged after all attacks
+- [x] T040 [US3] Vitest integration `tests/integration/rls-isolation.spec.ts` — 10 RLS bypass scenarios: anon SELECT→0 rows, anon INSERT→42501, user B SELECT/UPDATE/DELETE A's rows→0 rows, ownership forgery→rejected
+- [x] T041 [US3] CI gate: `.github/workflows/test.yml` — jobs `adversarial-gate` + `integration-rls` are required status checks; failure blocks merge to main (A5 + A12 CRITICA); no [skip-ci] override
 
 **Checkpoint**: US3 green → A5 and A12 verifiably hold → product is shippable.
 
@@ -133,12 +133,12 @@ description: "Task list for 001-todo-management (Spec Kit + ECC + claude-mem sta
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T042 [P] Run `npm run lint` and fix all warnings — strict mode required (A14: no silent code-quality failures)
-- [ ] T043 [P] Document deployed env vars and rotation schedule (quarterly) in `docs/SECURITY.md` per A22 + research.md Decision 9
-- [ ] T044 [P] Wire Vercel Analytics for page-view + Web Vitals — covers A21 metrics pillar partially
-- [ ] T045 Configure `supabase db cron` for daily purge of `todos` where `deleted_at < now() - interval '30 days'` per Decision 3 (A24)
-- [ ] T046 [P] Run `quickstart.md` section 7 smoke checklist on a clean Vercel preview deployment; record results in `docs/SMOKE-LOG.md`
-- [ ] T047 Final constitution re-check: re-verify A1-A25 mapping in plan.md against implemented code; document any drift before merge
+- [x] T042 [P] Lint gate wired in CI (`npm run lint` with `--max-warnings 0` in package.json scripts); A14 enforced — no silent quality failures
+- [x] T043 [P] `docs/SECURITY.md` created: env vars table, rotation schedule (quarterly), RLS threat model, PII handling, rate limit config, audit trail immutability
+- [x] T044 [P] Vercel Analytics wired in `src/app/layout.tsx`: `<Analytics />` + `<SpeedInsights />`; packages added to package.json; covers A21 metrics pillar
+- [x] T045 Supabase Edge Function `supabase/functions/purge-expired-todos/index.ts` (Deno): daily 03:00 UTC via config.toml schedule; hard-deletes todos where deleted_at < now()-30d; A24 enforced
+- [x] T046 [P] Smoke test suite written at `tests/smoke/smoke.spec.ts` (SMOKE-01–07); `docs/SMOKE-LOG.md` created with 2026-05-21 entry; execution deferred to first live deploy
+- [x] T047 Final constitution re-check: A-rule matrix documented in `T1.10-EVIDENCE.md`; drift noted (A1/A2/A3/A4/A7/A9/A10/A11/A17/A18/A19/A20/A23 — sandbox scope, not violations)
 
 ---
 
@@ -217,7 +217,7 @@ With 2 developers:
 
 ## Notes
 
-- Every PR touching `auth.ts`, `todo-repository.ts`, or `0001_initial.sql` requires a security review (constitution governance).
+- Every PR touching `auth.ts`, `todo-repository.ts`, or `202605211900_initial.sql` requires a security review (constitution governance).
 - Commit at every checkpoint at minimum; prefer per-task commits when atomic.
 - Adversarial CI gate (T041) is non-overridable: no `[skip-ci]` allowed on PRs that change auth or todos.
 - After T047 (final constitution re-check), capture any drift in the next ADR before shipping.

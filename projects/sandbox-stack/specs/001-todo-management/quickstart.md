@@ -21,7 +21,7 @@ npm ci
 
 ```bash
 supabase start             # boots local Postgres + Auth + Studio at default ports
-supabase db push           # applies supabase/migrations/0001_initial.sql
+supabase db push           # applies supabase/migrations/202605211900_initial.sql
 ```
 
 Take note of the `anon key`, `service role key`, and `API URL` printed by `supabase start`.
