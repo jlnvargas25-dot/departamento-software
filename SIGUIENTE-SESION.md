@@ -3,9 +3,21 @@
 > **Propósito**: handoff táctico post-T1.6→T2 ejecutados (planning-phase only).
 > Stallen DIFERIDO hasta que el Framework esté maduro.
 
-**Última actualización**: 2026-05-21 PM continuación 3 — post Iteración 3 ejecutada (47/47 tasks, 19/25 A-rules ejercitadas, ADR-009 ACCEPTED v1.0)
+**Última actualización**: 2026-05-21 PM continuación 4 — post ADR-011 PROPOSED (capa correctiva + scope-aware)
 **Cliente recomendado próxima sesión**: **Claude Code CLI** dentro de `projects/sandbox-stack/` (skills speckit-* + ecc:* + claude-mem:* + sdd-* + superpowers:* todos cargados)
-**Versión**: 6.0 (post ADR-009 ACCEPTED v1.0 — Sprint 1 completo)
+**Versión**: 6.1 (post ADR-011 PROPOSED — Sprint 2 redirigido a capa correctiva + scope-aware)
+
+---
+
+## ⚠️ CAMBIO DE DIRECCIÓN — Sprint 2 redirigido (2026-05-21 PM continuación 4)
+
+Tras análisis del **loop asintótico de GGA observado en Iteración 3** (4 rounds, bypass humano final), el Sprint 2 se redirigió:
+
+- **Antes** (en versión 6.0): build 4 sigma MVP (`operationalize-constitution`, `enforce-constitution-check`, `multi-tenant-isolation-checker`, `dependency-cycle-detector`).
+- **Ahora** (versión 6.1): **scope-aware verification primero** (Phase 1, cura barata), **trinidad correctiva después** (Sprint 3, cura estructural). Ver `decisions/ADR-011-capa-correctiva-y-scope-aware.md` PROPOSED v0.1.
+- **Las 4 sigma MVP originales no se descartan**, pero quedan diferidas a Sprint 4+ hasta validar empíricamente que la capa correctiva + scope-aware resuelven el dolor observado.
+
+**Razón del cambio**: el dolor empírico de Sprint 1 fue *"GGA loop sin auto-fix + sin scope awareness"*, no *"falta de skills sigma para Constitution Check enforcement"*. ADR-011 ataca el problema real observado.
 
 ---
 
@@ -13,15 +25,21 @@
 
 1. `CLAUDE.md` (constitución global del Framework, ~5 min)
 2. `auditoria/sesion-activa.md` — addendum 2026-05-21 PM/continuación 2 (T1.9 EMPIRICAL, ~10 min)
-3. Este archivo — plan iteración 3 + decisiones pendientes actualizadas (~5 min)
-4. `projects/sandbox-stack/T1.9-EVIDENCE.md` v0.2 EMPIRICAL — matriz F1-F10 + 5 lecciones candidatas (~10 min)
-5. `projects/sandbox-stack/EVALUATION.md` v0.5 — matriz speckit-* + 2 lecciones candidatas T1.7 (~10 min, opcional)
-6. `projects/sandbox-stack/T1.7-EVIDENCE.md` — findings por skill speckit-* (~10 min, opcional)
-7. `decisions/ADR-009-adopcion-stack-ecosistema.md` v0.5 PROPOSED + addendum T1.9 (~5 min)
-8. `projects/sandbox-stack/openspec/changes/todo-management/` (7 artefactos sdd-*, opcional para foco arquitectónico)
-9. `projects/sandbox-stack/specs/001-todo-management/` (8 artefactos speckit-*, opcional)
-10. (Opcional) `NORTE.md` v0.1 — visión Framework
-11. (Opcional) `architecture/PRINCIPIOS-ARQUITECTURA.md` v1.3 — A1-A25
+3. Este archivo — plan Sprint 2 actualizado con ADR-011 (~5 min)
+4. **`decisions/ADR-011-capa-correctiva-y-scope-aware.md` PROPOSED v0.1** (~10 min) — **NUEVA prioridad Sprint 2**
+5. `projects/sandbox-stack/T1.9-EVIDENCE.md` v0.2 EMPIRICAL — matriz F1-F10 + 5 lecciones candidatas (~10 min)
+6. `projects/sandbox-stack/EVALUATION.md` v0.5 — matriz speckit-* + 2 lecciones candidatas T1.7 (~10 min, opcional)
+7. `projects/sandbox-stack/T1.7-EVIDENCE.md` — findings por skill speckit-* (~10 min, opcional)
+8. `decisions/ADR-009-adopcion-stack-ecosistema.md` ACCEPTED v1.0 (~5 min)
+9. `decisions/ADR-010-skill-routing-foreman.md` PROPOSED (~5 min, contexto)
+10. `projects/sandbox-stack/openspec/changes/todo-management/` (7 artefactos sdd-*, opcional)
+11. `projects/sandbox-stack/specs/001-todo-management/` (8 artefactos speckit-*, opcional)
+12. (Opcional) `NORTE.md` v0.1 — visión Framework
+13. (Opcional) `architecture/PRINCIPIOS-ARQUITECTURA.md` v1.3 — A1-A25
+
+## Pendientes operativos cierre cont. 4
+
+- **`git stash@{0}`** activo: GGA round 4 cleanup deferido a Sprint 2 (5 archivos). Recuperar con `git stash pop` al arrancar Sprint 2.
 
 ---
 
