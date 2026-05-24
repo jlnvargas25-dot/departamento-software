@@ -1,0 +1,17 @@
+action_hint: inject-logger-with-request-id
+prompt_template: |
+  Replace the empty or comment-only catch block at line {{line}} with a
+  structured logger call. Use {{logger}} (import from "{{logger_import}}").
+  Include the error object and requestId from {{request_id_source}}.
+
+  Pattern to produce:
+  ```
+  catch (err) {
+    logger.warn({ err, requestId: {{request_id_source}} }, "Error in {{function_name}}");
+  }
+  ```
+
+  Return ONLY the replacement catch block content (inside the braces).
+verification_pattern: "logger\\.(warn|error)\\("
+opt_out_marker: "// @intentional-silent"
+creates_file: false

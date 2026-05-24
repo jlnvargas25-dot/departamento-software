@@ -1,0 +1,24 @@
+action_hint: generate-rls-policy-stub
+prompt_template: |
+  Generate RLS (Row Level Security) policies for table {{table_name}}.
+  Use tenant scope field: {{tenant_scope_field}}.
+
+  Pattern to produce:
+  ```sql
+  ALTER TABLE {{table_name}} ENABLE ROW LEVEL SECURITY;
+
+  CREATE POLICY "{{table_name}}_select_own"
+    ON {{table_name}}
+    FOR SELECT
+    USING ({{tenant_scope_field}} = auth.jwt() ->> '{{tenant_scope_field}}');
+
+  CREATE POLICY "{{table_name}}_insert_own"
+    ON {{table_name}}
+    FOR INSERT
+    WITH CHECK ({{tenant_scope_field}} = auth.jwt() ->> '{{tenant_scope_field}}');
+  ```
+
+  Return ONLY the SQL statements.
+verification_pattern: "CREATE POLICY.*ON"
+creates_file: false
+target_file_override: "{{rls_migration_file}}"

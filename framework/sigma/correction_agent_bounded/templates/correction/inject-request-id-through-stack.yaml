@@ -1,0 +1,15 @@
+action_hint: inject-request-id-through-stack
+prompt_template: |
+  Add request ID extraction at the beginning of the handler/function at line {{line}}.
+  Use this pattern:
+  ```
+  const requestId = {{request_id_source}} || crypto.randomUUID();
+  ```
+  If the file uses Next.js Server Actions, use:
+  ```
+  const requestId = headers().get('x-request-id') || crypto.randomUUID();
+  ```
+
+  Return ONLY the lines to insert at the top of the function body.
+verification_pattern: "request.?[Ii]d"
+creates_file: false

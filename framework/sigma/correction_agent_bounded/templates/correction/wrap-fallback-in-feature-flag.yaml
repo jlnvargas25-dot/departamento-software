@@ -1,0 +1,15 @@
+action_hint: wrap-fallback-in-feature-flag
+prompt_template: |
+  Wrap the console.* fallback at line {{line}} in a feature flag check.
+  Use the config reference: {{feature_flag_config}}.
+
+  Pattern to produce:
+  ```
+  if (config.enableConsoleFallback) {
+    console.warn(msg);
+  }
+  ```
+
+  Return ONLY the wrapped code block.
+verification_pattern: "if.*config.*[Cc]onsole"
+creates_file: false

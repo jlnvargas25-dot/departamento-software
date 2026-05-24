@@ -1,0 +1,22 @@
+action_hint: inject-auth-check-with-tenant-scope
+prompt_template: |
+  Add authentication and tenant scope check at the beginning of the
+  handler/endpoint at line {{line}}.
+  Auth library: {{auth_library}}.
+  Tenant scope field: {{tenant_scope_field}}.
+
+  For Supabase:
+  ```typescript
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    throw new Error("Unauthorized");
+  }
+  const userOrg = user.user_metadata?.{{tenant_scope_field}};
+  if (!userOrg) {
+    throw new Error("Missing tenant scope");
+  }
+  ```
+
+  Return ONLY the auth check code block to insert at the function start.
+verification_pattern: "(getUser|getSession).*{{tenant_scope_field}}"
+creates_file: false

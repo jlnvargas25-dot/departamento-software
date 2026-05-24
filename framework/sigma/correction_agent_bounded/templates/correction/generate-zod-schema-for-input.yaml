@@ -1,0 +1,21 @@
+action_hint: generate-zod-schema-for-input
+prompt_template: |
+  Add Zod validation to the Server Action at line {{line}}.
+  Import from "{{zod_import}}".
+
+  Analyze the function parameters and formData usage to infer the schema fields.
+
+  Pattern to produce:
+  ```typescript
+  import { z } from "{{zod_import}}";
+
+  const inputSchema = z.object({
+    // fields inferred from function params / formData
+  });
+
+  const validated = inputSchema.parse(input);
+  ```
+
+  Return ONLY the import + schema definition + parse call.
+verification_pattern: "z\\.object.*\\.parse"
+creates_file: false

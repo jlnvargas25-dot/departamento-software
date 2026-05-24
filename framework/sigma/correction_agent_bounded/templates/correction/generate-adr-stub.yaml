@@ -1,0 +1,34 @@
+action_hint: generate-adr-stub
+prompt_template: |
+  Generate an ADR stub file for a rule exception. The finding is:
+  Rule: {{rule_id}}
+  File: {{file}}
+  Line: {{line}}
+  Description: {{description}}
+
+  Use this structure:
+  ```markdown
+  # ADR-{{next_number}}: {{title}}
+
+  **Status**: PROPOSED
+  **Date**: {{today}}
+  **Related**: {{rule_id}}
+
+  ## Context
+  {{finding_description}}
+
+  ## Decision
+  [PENDING — requires human decision]
+
+  ## Alternatives
+  - Option A: fix the violation
+  - Option B: document exception with rationale
+
+  ## Consequences
+  [PENDING]
+  ```
+
+  Return ONLY the markdown content for the ADR file.
+verification_pattern: "## Decision"
+creates_file: true
+target_file_override: "{{adr_directory}}/ADR-{{next_number}}-{{slug}}.md"
