@@ -77,8 +77,8 @@ estructuralmente el costo de la capa verifiable (GGA + reviewers adversariales).
   hecha. Si falta, ejecutar antes de iniciar Paso 6.
 
 **Cross-references**:
-- `decisions/ADR-011-capa-correctiva-y-scope-aware.md` v0.9 PARTIAL (sección
-  "Phase 2 BUILD ejecutado") — evidencia detallada de los 2 commits.
+- `decisions/ADR-011-capa-correctiva-y-scope-aware.md` v1.0 ACCEPTED (sección
+  "Phase 2 BUILD + AUDITS completos") — evidencia consolidada classifier + mechanic.
 - `PROTOCOLO-CONSTRUCCION-CODIGO.md` pasos 1-5 — el procedimiento que L38
   valida empíricamente.
 - `auditoria/audit-code-classifier-2026-05-22.json` — audit Paso 7 sobre

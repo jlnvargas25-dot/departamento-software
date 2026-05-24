@@ -1,489 +1,204 @@
 # INSTRUCCIONES SIGUIENTE SESIÓN — Departamento de Software (Framework)
 
-> **Propósito**: handoff táctico post-Sprint 3 sesión 3 (BLOQUE 1 sync completado + BLOQUE 2 pasos 1-5 de `sigma:auto-fix-mechanic`).
+> **Propósito**: handoff táctico post-Sprint 3 COMPLETO.
 > Stallen DIFERIDO hasta que el Framework esté maduro.
 
-**Última actualización**: 2026-05-24 (Sprint 3 sesión 6 cerrada — Paso 7+8 audits PASS, polish 3 advisories cerradas, 194 tests PASS)
+**Última actualización**: 2026-05-24 (Sprint 3 sesión 7 — Paso 12 cierre formal + ADR-011 ACCEPTED v1.0)
 **Cliente recomendado próxima sesión**: **Claude Code CLI** dentro de `C:\DEPARTAMENTO-SOFTWARE\` (skills speckit-* + ecc:* + claude-mem:* + sdd-* + superpowers:* todos cargados)
-**Versión**: 7.3 (post Sprint 3 sesión 6 — mechanic operativo + auditado; ADR-011 v0.9 → v1.0 ACCEPTED candidato en sesión 7)
+**Versión**: 8.0 (Sprint 3 COMPLETO — classifier + mechanic operativos + auditados; ADR-011 v1.0 ACCEPTED)
 
 ---
 
-## ✅ SPRINT 3 SESIÓN 6 CERRADA (2026-05-24)
+## ✅ SPRINT 3 COMPLETO (2026-05-24)
 
-**Audit Paso 7 + Paso 8 PASS + Polish 3 advisories cerradas**. Mechanic E2E pasa la disciplina completa del PROTOCOLO-CONSTRUCCION-CODIGO. Solo falta promotion arquitectónica de ADR-011 (sesión 7 dedicada).
+### Paso 12 PROTOCOLO — Cierre formal
 
-### Bloques completados
+**Scope completado**: Phase 2 ADR-011 parcial — 2 de 4 componentes de la trinidad correctiva operativos y auditados.
 
-| Bloque | Output | Status |
-|--------|--------|--------|
-| Polish-1 (advisory GGA #1) | Comment inline G-3 en `infer_type_from_context.js` catch escalation | ✅ |
-| Polish-2 (advisory GGA #2) | Comment inline `# fall through to wall-clock fallback` en `rename_migration_timestamp.py` | ✅ |
-| Polish-3 (advisory GGA #3) | Extract helper `applyToParent()` en `non_null_to_optional.js` (main reducida de ~50 a ~30 LOC) | ✅ |
-| Audit Paso 7 | `auditoria/audit-code-mechanic-2026-05-24.json` con verdict **PASS** (0 críticos, 0 warnings, 17 gates PASS, 3 N/A) | ✅ |
-| Audit Paso 8 | `tests/test_adversarial.py` con 15 categorías cubiertas (13 tests nuevos + cross-references a tests existentes) | ✅ |
+| Componente | Status | Tests | LOC prod | Sesiones |
+|------------|--------|-------|----------|----------|
+| `sigma:finding_classifier` (front-end) | ✅ OPERATIVO | 73 PASS | 294 | Sprint 3 ses 1-2 |
+| `sigma:auto_fix_mechanic` (Tier A) | ✅ OPERATIVO | 194 PASS (incl. 73 classifier) | ~1600 + ~720 codemods | Sprint 3 ses 3-6 |
+| `sigma:correction_agent_bounded` (Tier B) | ⏳ diferido Sprint 4 | — | — | — |
+| `sigma:correction_adr_draft` (Tier C) | ⏳ diferido Sprint 4 | — | — | — |
 
-### Métricas finales sesión 6
+**Métricas consolidadas Sprint 3**:
+- **194 tests PASS + 1 skip en 5.69s** (baseline final)
+- **~1894 LOC producción + ~1839 LOC tests** (classifier + mechanic combinados)
+- **7 sesiones** (2 classifier build + 1 mechanic planning + 2 mechanic build + 1 audits + 1 cierre)
+- **L38 N=5**: 5 commits consecutivos pasaron GGA en 1 round sin bypass
+- **ADR-011**: PROPOSED v0.1 → v0.5 → v0.7 → v0.9 → **ACCEPTED v1.0**
 
-- **194 tests PASS + 1 skip en 5.87s** (73 classifier + 108 mechanic core/E2E + 13 adversarial)
-- 1 skip = `test_cat7_file_read_only` (Windows POSIX chmod no portable)
-- 0 críticos + 0 warnings en Audit Paso 7
-- 15/15 categorías adversariales del arquitectura sec 9.1 cubiertas
+### Commits Sprint 3
 
-### Estado de la disciplina del PROTOCOLO sobre auto-fix-mechanic
+| Sesión | Commit | Contenido |
+|--------|--------|-----------|
+| 1 | `06493bc` | classifier S-1..S-3 (36 tests) |
+| 2 | `2322e4a` | classifier S-4..S-8 (73 tests) + audit Paso 7+8 |
+| 3 | `3049039` | ADR-011 v0.9 + L38 formal + LECCIONES.md + mechanic planning |
+| 3 | `e142933` | SIGUIENTE-SESION v7.0 refresh |
+| 4 | `3701463` | mechanic S-1..S-5 core (163 tests) |
+| 4 | `f8f78e6` | L38 N=2→N=3 |
+| 5 | `797772f` | mechanic S-6+S-7+S-8 E2E (181 tests) |
+| 5 | `bf67805` | L38 N=3→N=4 |
+| 6 | `d35c3f0` | Audit Paso 7+8 PASS + polish 3 advisories (194 tests) |
+| 6 | `e82f1da` | L38 N=4→N=5 |
+| 7 | (pendiente) | ADR-011 v1.0 ACCEPTED + Paso 12 cierre |
 
-| Paso PROTOCOLO | Status |
-|----------------|--------|
-| 1 — PRD | ✅ DRAFT v0.1 (sesión 3) |
-| 2 — Dominio | ✅ YAML + toolbox (sesión 3) |
-| 3 — Arquitectura | ✅ con decisión wrapper sigma (sesión 3) |
-| 4 — Stories | ✅ S-1..S-8 (sesión 3) |
-| 5 — Audit plan | ✅ READY_FOR_BUILD (sesión 3) |
-| 6 — Build código | ✅ sesiones 4+5 (181 tests core/E2E) |
-| 7 — Audit código | ✅ **PASS sesión 6** (audit JSON + 2 GGA reviews automáticos previos) |
-| 8 — Tests adversariales | ✅ **PASS sesión 6** (13 tests + cross-refs a 70+ tests existentes) |
-| 9 — Validación seguridad | 🟡 cubierta parcialmente en Paso 7 (zero-trust gate); validación formal opcional |
-| 10 — Deploy seguro | N/A (sigma skill, no app productiva) |
-| 11 — Verificación post-deploy | N/A |
-| 12 — Cierre + polinización | ⏳ sesión 7 (incluye promotion ADR-011) |
+### Pasos del PROTOCOLO ejecutados sobre auto-fix-mechanic
 
-### L38 N=5 implícita
-
-Cuando la sesión 6 commit pase GGA en 1 round (esperado, dado el patrón N=4), L38 acumula N=5 — sigue intra-proyecto pero refuerza robustez.
-
-### Deudas resueltas / tracking
-
-- ✅ 3 advisories GGA sesión 5 CERRADAS (polish-1/2/3)
-- 🟡 DEUDA-CODEMODS-NO-PYTEST-AUTOMATED: sigue diferida (no bloqueante; smoke tests manuales funcionales)
-- 🟡 DEUDA-M3-REAL-NOT-MEASURED: sigue diferida (requiere stack TS en proyecto target)
-
-### Próxima sesión (Sprint 3 sesión 7)
-
-**Promotion arquitectónica + cierre Sprint 3**:
-1. Promover **ADR-011 PROPOSED v0.9 PARTIAL → ACCEPTED v1.0** (al menos para classifier + mechanic; Tier B/C → v1.1)
-   - Evidencia consolidada: 4 commits PROTOCOLO+audit PASS GGA 1 round (L38 N=4+), Audit Paso 7 PASS, Audit Paso 8 PASS, M3 medible (~70% en sandbox; ≥90% real diferido a stack TS)
-   - Header v0.9 PARTIAL → v1.0 ACCEPTED + sección nueva "Phase 2 BUILD + AUDITS completos" con evidencia
-   - Bump rationale table v0.5 → v0.7 → v0.9 → v1.0
-2. Paso 12 PROTOCOLO formal: cierre Sprint 3 + radar polinización + lecciones operativas
-3. Opcional: cerrar DEUDA-CODEMODS-NO-PYTEST-AUTOMATED con `test_codemods_smoke.py` + `pytest.mark.skipif(not_node)`
-4. (Sprint 4): arrancar Tier B (`sigma:correction-agent-bounded`) o pivotar a aplicación operativa en Stallen
+| Paso | Status | Sesión |
+|------|--------|--------|
+| 1 — PRD | ✅ | 3 |
+| 2 — Dominio | ✅ | 3 |
+| 3 — Arquitectura | ✅ (wrapper sigma propio, NO wholesale ECC) | 3 |
+| 4 — Stories | ✅ S-1..S-8 | 3 |
+| 5 — Audit plan | ✅ READY_FOR_BUILD_WITH_DEUDAS_TRACKED | 3 |
+| 6 — Build código | ✅ | 4-5 |
+| 7 — Audit código | ✅ PASS (17 gates PASS, 0 críticos) | 6 |
+| 8 — Tests adversariales | ✅ PASS (15/15 categorías) | 6 |
+| 9 — Validación seguridad | ✅ parcial (zero-trust en Paso 7) | 6 |
+| 10 — Deploy | N/A (sigma skill, no app) | — |
+| 11 — Verificación post-deploy | N/A | — |
+| 12 — Cierre + polinización | ✅ **ESTA SESIÓN** | 7 |
 
 ---
 
-## ✅ SPRINT 3 SESIÓN 5 CERRADA (2026-05-24)
+## 🔄 RADAR DE POLINIZACIÓN — Sprint 3 (R-4 obligatorio)
 
-**`sigma:auto_fix_mechanic` BUILD END-TO-END COMPLETO** — pasos 6 del PROTOCOLO ejecutado sobre la segunda mitad del plan auditado. Trinidad correctiva ya tiene 2/3 componentes operativos. Codemods custom funcionales con smoke tests; audits Paso 7+8 diferidos a sesión 6.
+> 5° principio rector: *"Un patrón de dolor descubierto en un subsistema es candidato a propagarse a los demás estructuralmente similares."*
 
-### Stories completadas
+### Patrones candidatos a propagación
 
-| Story | Descripción | Tests | LOC prod |
-|-------|-------------|-------|----------|
-| S-6.1 | Codemod `non_null_to_optional.js` (ts-morph, contextual PropertyAccess/ElementAccess) | smoke | ~110 |
-| S-6.2 | Codemod `console_to_logger.js` (ts-morph, console.* → logger.*, inject import) | smoke | ~110 |
-| S-6.3 | Codemod `console_to_json_structured.js` Deno (Edge Functions scope, `serializeErr` helper inline → **R08 CERRADA**) | smoke | ~170 |
-| S-6.4 | Codemod `infer_type_from_context.js` (conservador, type checker inference, escalation if unresolvable) | smoke | ~80 |
-| S-7 | Codemods Python: `rename_migration_timestamp.py` (git log priority, DRY-RUN, rollback log) + `add_volatile_marker.py` (regex SQL, idempotente) | smoke | ~250 |
-| S-8 | CLI `sigma-mechanic` (stdin/stdout, --metrics MM1-MM5) + 9 tests CLI + 3 M3 empirical + 3 idempotency + 3 extensibility | 18 | ~150 |
+| # | Patrón descubierto | Origen | Candidato a propagarse a | Acción |
+|---|-------------------|--------|--------------------------|--------|
+| P1 | **PROTOCOLO + audit Paso 5 → GGA 1 round** (L38 N=5) | classifier + mechanic builds | Tier B/C builds, Stallen, cualquier futuro módulo sigma | Ya operacionalizado. Cross-proyecto pendiente. |
+| P2 | **Wrapper sigma propio > wholesale ECC para tareas determinísticas** | mechanic Paso 3 decisión | Futuros componentes 100% determinísticos del Framework | Documentado en ARQUITECTURA mechanic. ECC sigue útil para tareas con LLM. |
+| P3 | **Audit Paso 7 consolida evidencia GGA automática + agrega dimensiones manuales** | mechanic sesión 6 | Todos los futuros audits de código del Framework | Patrón reduce trabajo + mejora trazabilidad. Documentar en PROTOCOLO. |
+| P4 | **Cross-reference testing para categorías adversariales ya cubiertas** | mechanic sesión 6 (10/15 cross-refs) | Cualquier test_adversarial.py futuro | Evita duplicación sin perder trazabilidad. |
+| P5 | **M3 sandbox con stub handlers + threshold reducido (≥0.5 vs ≥0.9)** | mechanic S-8 | Futuras métricas empíricas medidas sin stack real | Patrón "medir lo que se puede ahora, real diferido a integración". |
+| P6 | **Commit-per-session** (no per-story ni per-block) | Precedente Sprint 3 ses 4-6 | Cualquier build multi-sesión | Mantiene git history limpio + GGA verificable por sesión. |
 
-### Métricas finales sesión 5
+### Patrones NO propagables (contexto-específicos)
 
-- **181 tests PASS en 5.4s** (73 classifier + 90 mechanic S-1..S-5 sesión 4 + 18 mechanic S-8 sesión 5)
-- ~870 LOC adicionales (~150 Python CLI + ~720 codemods) → total mechanic ~1600 LOC prod + ~1100 tests
-- 6 codemods funcionales validados via smoke tests manuales (ts-morph 22.0.0 + Python stdlib)
-- Toolbox completo: 8 eslint + 2 prettier + 4 ts-morph + 2 python = 16 tools cubriendo 15 rule_ids Tier A
-- **R08 audit Paso 5 CERRADA**: `serializeErr()` helper inline en `console_to_json_structured.js`
+| Patrón | Razón de no-propagación |
+|--------|------------------------|
+| ts-morph local en codemods/ (sin tocar deps Python) | Específico a codemods JS; otros módulos son Python puro |
+| `threading.Lock` intra-process (no cross-process) | Decisión scoped a Sprint 3; cross-process si surge necesidad real en Sprint 5+ |
+| `shlex.split(posix=True)` para Windows-compat | Workaround Windows paths; no aplica a otros OS |
 
-### Smoke tests manuales ejecutados (validación funcional)
+### Lecciones operativas Sprint 3 (candidatas N=1)
 
-- `non_null_to_optional` sobre `non_null.ts`: applied=4 remaining=1 (1 standalone `user!.email!` escala correctamente)
-- `console_to_logger` sobre `console_logger.ts`: applied=4 remaining=0, import injectado `@/lib/logger`
-- `console_to_json_structured` sobre `supabase/functions/.../index.ts`: applied=3 remaining=0, `serializeErr` helper presente, error case con `msg + err` separados correctamente
-- `infer_type_from_context` sobre `type_cast.ts`: applied=2 (literal shape + ApiResponse), escalated=1 (`value as any` con value:unknown)
-- `add_volatile_marker` sobre `missing_volatile.sql`: applied=2, control STABLE preservado, verify exit 0
-- `rename_migration_timestamp` sobre `0001_initial.sql`: DRY-RUN print mapping, apply renombra, verify exit 0
-
-### Decisiones de implementación tomadas
-
-- **ts-morph 22.0.0 instalado local en `codemods/`** (no global). `node_modules/` + `package-lock.json` gitignored.
-- **Apply-mode siempre exit 0**: si un codemod escala parcialmente, no causa rollback inmediato; verify-mode posterior detecta residuo y orchestrator decide. Alineado con patrón S-5 (atomicidad delegada a orchestrator via FileSnapshot).
-- **Scope guard por path heurística**: `console_to_logger` skip si file está en `supabase/functions/`; `console_to_json_structured` skip si file NO está en `supabase/functions/`. Ortogonal y declarativo.
-- **`infer_type_from_context` conservador**: skip si tipo inferido es `any`/`unknown`/`never` o >120 chars (legibilidad + brittleness).
-- **`serializeErr` inline** (no en file compartido): mantiene atomicidad por-file (cada codemod auto-contenido).
-- **M3 sandbox threshold ≥0.5** (vs ≥0.9 producción): tests usan handlers stub Python en lugar de stack TS real; M3 real >90% se medirá en E2E con stack instalado.
-
-### Deudas tracking
-
-- **R08** ✅ CERRADA en S-6.3.
-- **DEUDA-CODEMODS-NO-PYTEST-AUTOMATED** *(NUEVA, menor)*: smoke tests de codemods son manuales (Bash). Para integración CI, agregar `test_codemods_smoke.py` con `pytest.mark.skipif` cuando Node falta. Diferida a sesión 6 audit.
-- **DEUDA-M3-REAL-NOT-MEASURED**: M3 real (>90% sobre stack TS) requiere environment con ESLint/Prettier/ts-morph reales aplicables sobre proyecto target. Diferida a integración Stallen o sandbox-stack iteration 4.
-
-### Próxima sesión (Sprint 3 sesión 6)
-
-**Audit Paso 7 + Paso 8 + M3 real opcional**:
-- Audit Paso 7 (G1-G33 + FG1-FG14 + SOLID + zero-trust) sobre los 16 archivos del mechanic
-- Audit Paso 8 (15 categorías adversariales documentadas en arquitectura sec 9.1)
-- Si Paso 7 + 8 PASS sin críticos: ADR-011 candidato a **promover v0.9 PARTIAL → v1.0 ACCEPTED** (al menos para classifier + mechanic, dejando Tier B/C para v1.1)
-- (Opcional) M3 real sobre sandbox-stack si environment lo permite
-
-**Validación L38 N=4**: si commit final sesión 5 + commits sesión 6 pasan GGA en 1 round, L38 acumula evidencia adicional intra-proyecto.
+| ID | Enunciado | Evidencia |
+|----|-----------|-----------|
+| L39 | Audit manual que consolida evidencia de GGA automático previo reduce esfuerzo y mejora trazabilidad | Sprint 3 ses 6 — audit Paso 7 reusó 2 GGA reviews y cerró en <30 min |
+| L40 | Cross-reference testing (sanity import + docstring pointer) evita duplicación adversarial sin perder cobertura | Sprint 3 ses 6 — 10/15 categorías via cross-ref, 5 nuevas |
+| L41 | Commit-per-session en builds multi-story produce history limpio y permite GGA verify por sesión | Sprint 3 ses 4-6 — 3 commits, 3 GGA passes, 0 conflictos |
 
 ---
 
-## ✅ SPRINT 3 SESIÓN 4 CERRADA (2026-05-24)
+## ESTADO ACTUAL (post Sprint 3 — 2026-05-24)
 
-**`sigma:auto_fix_mechanic` S-1..S-5 core OPERATIVO** — pasos 6 del PROTOCOLO ejecutado sobre la mitad core del plan auditado en sesión 3. Build completo + commit + push pusheado a origin/main.
-
-### Stories completadas
-
-| Story | Descripción | Tests | LOC prod |
-|-------|-------------|-------|----------|
-| S-1 | Foundation: pyproject + models + loader + 8 fixtures (R10 cerrada) | 30 | ~150 |
-| S-2 | Pre-flight check toolbox (AM9) + Invoker (subprocess wrapper) | 18 | ~130 |
-| S-3 | Snapshot + rollback atómico (R-5 reversibilidad) + threading.Lock intra-process | 14 | ~110 |
-| S-4 | Verifier dispatcher 5 methods (re-run-eslint, prettier-check, ast-check, filename-regex, regex-grep) | 17 | ~160 |
-| S-5 | Orchestrator + escalation logic (4 casos del flow + AM7 idempotencia) | 11 | ~180 |
-
-**Métricas finales sesión 4**:
-- **90 tests mechanic PASS en 3.4s** (suite total 163: 73 classifier sin regresión + 90 mechanic)
-- ~730 LOC producción + ~1100 LOC tests (ratio 1.5:1)
-- 8 fixture files target con cobertura 15/15 rule_ids Tier A
-
-### Precondiciones audit cerradas durante el build
-
-- **R04 — filelock**: ✅ Cerrada via stdlib `threading.Lock` intra-process (cero dep externa, consistente con classifier). Cross-process (fcntl/msvcrt) diferido a Sprint 5+ si surge necesidad real.
-- **R08 — `serializeErr()` helper**: ⏳ Pospuesto a S-6 sesión 5 (codemod ts-morph `console_to_json_structured.ts` aún no construido).
-- **R10 — fixture target files**: ✅ Cerrada con 8 archivos sintéticos en `framework/sigma/auto_fix_mechanic/tests/fixtures/target_files/` cubriendo los 15 rule_ids.
-
-### Decisiones de implementación tomadas
-
-- **Lock cross-platform**: `threading.Lock` + dict global por path absoluto (intra-process suficiente para Sprint 3). Documentado en `snapshot.py` como diferimiento explícito.
-- **shlex.split**: `posix=True` (no `posix=False`) — Windows-compat con paths quotados (`"C:\Users\Windows 11\..."`); previene `[WinError 5]` por quotes literales en args.
-- **Reemplazo `<file>` POST-split**: paths con espacios en `tmp_path` (pytest) quedan como single arg sin necesidad de quote escaping.
-- **Verification timeout default 15s** (vs invocación 30s) — verify es más liviano (re-run del tool en modo check).
-- **Logging estructurado a stderr**: `[mechanic] event=<x> rule_id=<y> file=<z>:<n> reason=<r>` por finding — parseable, sin acoplar a logger framework específico.
-
-### Próxima sesión (Sprint 3 sesión 5)
-
-**S-6..S-8 + audits**:
-- S-6: 4 codemods ts-morph custom (non_null_to_optional, console_to_logger, console_to_json_structured con `serializeErr()` helper [R08 cerrada], infer_type_from_context) — ~4hs
-- S-7: 2 codemods Python custom (rename_migration_timestamp, add_volatile_marker) — ~1.5hs
-- S-8: CLI `sigma-mechanic` + M3 empirical measurement sobre fixture sprint1-iteracion3 — ~2hs
-- Audit Paso 7 (G1-G33 + FG1-FG14 + SOLID + zero-trust)
-- Audit Paso 8 (tests adversariales obligatorios — categorías 1-15 sección 9.1 arquitectura)
-
-**Validación L38 N=3**: si commit final sesión 5 pasa GGA en 1 round sin bypass → L38 alcanza N=3 estructural → puede graduar a regla A26 universal en `architecture/PRINCIPIOS-ARQUITECTURA.md`.
-
-**Si M3 ≥90% medido en S-8** → ADR-011 candidato a promover de PROPOSED v0.9 PARTIAL a ACCEPTED v1.0.
-
----
-
-## ✅ SPRINT 3 SESIÓN 3 CERRADA (2026-05-22)
-
-### BLOQUE 1 — Sincronización post sesiones 1+2
-
-1. **ADR-011 bumped**: PROPOSED v0.7 PARTIAL → **PROPOSED v0.9 PARTIAL**
-   - Header actualizado con fecha 2026-05-22 y Sprint 3 sesiones 1+2 cerradas
-   - Sección "Phase 2 BUILD ejecutado" anexada con evidencia detallada:
-     - 73 tests PASS en 0.32s, MC1=96.2%, 8 stories S-1..S-8 completas
-     - Paso 7 audit PASS (0 críticos) + Paso 8 adversariales PASS
-     - M2 empírico cumplido (A=57.7/B=26.9/C=15.4 dentro banda AC2 ±15pp)
-     - 3 deudas precondición resueltas (R07, R08, R10)
-   - Bump rationale table v0.5 → v0.7 → v0.9 anexada
-   - Sección "Pendiente para promoción a ACCEPTED" actualizada con marcadores parciales
-   - Sigue PARTIAL porque falta Tier A (`auto-fix-mechanic`) operativo
-
-2. **LECCIÓN 38 promovida a formal del Framework** (N=2 confirmada)
-   - Enunciado: *"código que sigue PROTOCOLO + audit Paso 5 previa pasa GGA en 1 round (vs 4 rounds + bypass sin auditar)"*
-   - Evidencia N=2: commits `06493bc` (Sprint 3 sesión 1) + `2322e4a` (Sprint 3 sesión 2)
-   - Contraejemplo baseline: Sprint 1 Iteración 3 (4 rounds + `--no-verify`)
-   - Cross-referenced en ADR-011 sección Conexiones y header
-
-3. **`architecture/LECCIONES.md` CREADO** — registry formal de lecciones N=2+
-   - Workflow formal: N=1 candidata (sesion-activa) → N=2 formal (LECCIONES.md) → N=3+ estructural (regla A26+ o anti-pattern AP-3.NN+)
-   - L38 como primera entry formal
-   - Inventario de L1-L37 candidatas N=1 vigentes
-   - Resuelve gap arquitectónico: hasta hoy las lecciones promovidas vivían distribuidas en ADRs sin índice canónico
-
-4. **`architecture/README.md` v1.2 → v1.3** — incorpora `LECCIONES.md` en tabla de contenido + sección "Inmutabilidad relativa" actualizada con workflow de promoción
-
-### BLOQUE 2 — sigma:auto-fix-mechanic Tier A (Pasos 1-5 PROTOCOLO) ✅ COMPLETO
-
-Pasos 1-5 ejecutados con plan apto para entrar a build (Sprint 3 sesión 4+). Artefactos producidos:
-
-| Paso | Artefacto | Status |
-|------|-----------|--------|
-| 1 | `docs/prd/PRD-sigma-auto-fix-mechanic.md` | DRAFT v0.1 — 15 secciones, 9 ACs (AM1-AM9), 10 constraints, M3 + MM1-MM5 metrics |
-| 2 | `docs/dominio/auto-fix-mechanic-rules.yaml.draft` | DRAFT v0.1 — 15/15 handlers para rule_ids Tier A v0.1.0 del classifier |
-| 2 | `docs/dominio/codemod-toolbox.md` | DRAFT v0.1 — catálogo 4 tools + evidencia ECC vs wrapper (sec 3) |
-| 3 | `docs/arquitectura/ARQUITECTURA-sigma-auto-fix-mechanic.md` | DRAFT v0.1 — 15 secciones con decisión clave resuelta + 5 alternativas rechazadas |
-| 4 | `docs/stories/STORIES-sigma-auto-fix-mechanic.md` | DRAFT v0.1 — 8 stories (S-1..S-8), 16hs en 2 sesiones, DAG sin ciclos |
-| 5 | `auditoria/audit-plan-auto-fix-mechanic-2026-05-22.json` | DONE — 0 críticos, 3 warnings tracked, veredicto `READY_FOR_BUILD_WITH_DEUDAS_TRACKED` |
-
-**Decisión arquitectónica clave RESUELTA (Paso 3)**: **wrapper sigma propio** (NO wholesale ECC).
-- Evidencia: ECC `build-fix` + `refactor-clean` tienen 0/15 cobertura directa de los 15 rule_ids Tier A; usan LLM (viola C1 PRD); no determinísticos (viola AM7 idempotencia). Ver `codemod-toolbox.md` sec 3 y `ARQUITECTURA` sec 2.
-- Toolbox: 4 tools cubren 15/15 — ESLint (8 rule_ids), Prettier (2-3), ts-morph custom (4), Python custom (2).
-- ECC sigue útil como composición lateral (operador puede invocarlo para casos fuera del classifier), no como backend wholesale del mechanic.
-- 5 alternativas rechazadas explícitas en ARQUITECTURA sec 2.2.
-
-**3 precondiciones audit Paso 5 a cerrar antes de S-1 build** (Sprint 3 sesión 4):
-1. **R04** — `filelock` nueva dep externa: confirmar install vs fallback stdlib (fcntl/msvcrt). Acción en S-3.
-2. **R08** — helper `serializeErr()` implícito en codemod `console_to_json_structured.ts`: anotar en S-6 al iniciar build.
-3. **R10** — fixture files target (.ts/.sql con patrones): agregar al DoD de S-1 (~15 archivos sintéticos pequeños por rule_id Tier A).
-
-**Métricas estimadas del build próximo**:
-- ~600-800 LOC Python prod
-- ~250-450 LOC codemods custom (4 ts-morph + 2 Python)
-- ~115 tests proyectados (ratio ~2:1 vs prod)
-- 2 sesiones de build: sesión 4 (S-1..S-5 core, ~8.5hs) + sesión 5 (S-6..S-8 codemods + integración, ~7.5hs)
-
-**Observación L38 N=3 esperada**: si el build sigue PROTOCOLO + este audit, expectativa GGA passes 1 round = N=3 que graduaría L38 a regla A26 universal en `PRINCIPIOS-ARQUITECTURA.md`.
-
----
-
-## ✅ SPRINT 3 SESIÓN 2 CERRADA (2026-05-22 — commit `2322e4a`)
-
-**`sigma:finding_classifier` BUILD COMPLETO** — pasos 6-12 PROTOCOLO ejecutados sobre stories S-4..S-8.
-
-Métricas finales:
-- **73 tests PASS en 0.32s** (49 al cerrar sesión 1 → 73 al cerrar sesión 2)
-- **MC1 = 96.2%** cobertura
-- **294 LOC producción + 739 LOC tests** (ratio 2.5:1)
-- **Paso 7 audit PASS** — 0 críticos en G1-G33 + FG1-FG14 + SOLID + zero-trust (`auditoria/audit-code-classifier-2026-05-22.json`)
-- **Paso 8 adversariales PASS** — 11 tests adversariales + tests remaining
-- **M2 empírico medido**: A=57.7% / B=26.9% / C=15.4% sobre fixture R10 (dentro banda AC2 ±15pp) — `auditoria/m2-empirical-distribution-2026-05-22.json`
-- **GGA pre-commit hook PASS en 1 round** (sin bypass humano)
-
-Stories completadas sesión 2:
-- S-4: CLI `sigma-classify` (stdin/stdout/exit codes)
-- S-5: `--audit` flag (tier→count summary)
-- S-6: Performance validation sobre fixture R10
-- S-7: Extensibility (slots R/G/FG futuros)
-- S-8: M2 empirical distribution measurement
-
----
-
-## ✅ SPRINT 3 SESIÓN 1 CERRADA (2026-05-22 — commit `06493bc`)
-
-**`sigma:finding_classifier` STORIES S-1..S-3 + PRECONDICIONES**
-
-- Precondiciones audit cerradas: R10/R07/R08 (fixture sprint1-iteracion3.json + S-8 + emit_calibration_log())
-- S-1: YAML loader + schema validation (PyYAML 6.0.3) — 15 tests
-- S-2: `classify()` deterministic algorithm — 11 tests
-- S-3: `emit_calibration_log()` con JSON aggregation + deduplicación — 13 tests
-- **36 tests PASS en 0.09s**
-- Python package infrastructure: `pyproject.toml` + `framework/sigma/finding_classifier/` (15 archivos)
-- GGA PASS en 1 round (N=1 de L38 candidata original)
-
----
-
-## ✅ SPRINT 2 SESIÓN 2 CERRADA (2026-05-21)
-
-**Phase 2 ADR-011 PRD-ready** — Pasos 1-5 PROTOCOLO sobre `sigma:finding_classifier` (artefactos en `docs/prd/`, `docs/dominio/`, `docs/arquitectura/`, `docs/stories/`, `auditoria/audit-plan-classifier-2026-05-21.json`). Veredicto: `READY_FOR_BUILD_WITH_DEUDAS_TRACKED` (3 warnings cerradas en Sprint 3 sesión 1).
-
-ADR-011 bumpeado v0.5 → v0.7 PARTIAL con sección "Phase 2 PRD-ready".
-
----
-
-## ✅ SPRINT 2 SESIÓN 1 CERRADA (2026-05-21 PM)
-
-**Phase 1 ADR-011 (`sigma:gga-scope-aware`) IMPLEMENTADA** vía Plan B (RULES_FILE swap declarativo en `.gga`).
-
-M1 CUMPLIDO N=1: GGA cerró en 1 round vs 4 baseline.
-
-Commits Sprint 2 sesión 1: `6c0a71c` + `fe3ed57` (pusheados a origin/main).
-
----
-
-## ESTADO ACTUAL (post Sprint 3 sesión 3 — 2026-05-22)
-
-### Trinidad correctiva (ADR-011 Phase 2)
+### Trinidad correctiva (ADR-011 ACCEPTED v1.0)
 
 | Componente | Status | Sprint |
 |------------|--------|--------|
-| **`sigma:finding_classifier` (front-end)** | ✅ DONE — operativo, 73 tests PASS, audit Paso 7+8 PASS, M2 medido | Sprint 3 sesiones 1+2 |
-| **`sigma:auto-fix-mechanic` (Tier A)** | 🟡 PRD-ready o BUILD-ready según cierre BLOQUE 2 de esta sesión | Sprint 3 sesión 3 (planning) → 4-5 (build) |
-| **`sigma:correction-agent-bounded` (Tier B)** | ⏳ pendiente | Sprint 4 |
-| **`sigma:correction-adr-draft` (Tier C)** | ⏳ pendiente | Sprint 4 |
-| **Integración E2E** (GGA → classifier → tier handler → patch/PR) | ⏳ pendiente | Sprint 4-5 |
+| `sigma:finding_classifier` (front-end) | ✅ DONE — 73 tests, audit PASS | Sprint 3 ses 1-2 |
+| `sigma:auto_fix_mechanic` (Tier A) | ✅ DONE — 194 tests, audit Paso 7+8 PASS | Sprint 3 ses 3-6 |
+| `sigma:correction_agent_bounded` (Tier B) | ⏳ pendiente | Sprint 4 |
+| `sigma:correction_adr_draft` (Tier C) | ⏳ pendiente | Sprint 4 |
+| Integración E2E (GGA → classifier → handler → patch) | ⏳ pendiente | Sprint 4 |
 
 ### Repo
 
 - **Branch**: main
-- **HEAD esperado al cierre sesión 3**: nuevo commit con BLOQUE 1 (ADR-011 v0.9 + LECCIONES.md + architecture/README v1.3 + SIGUIENTE-SESION v7.0) + BLOQUE 2 (artefactos planning auto-fix-mechanic)
+- **HEAD al cierre Sprint 3**: commit sesión 7 (este commit)
 - **Working tree esperado**: clean post commit
 
 ---
 
-## DECISIONES TOMADAS EN SESIÓN 2026-05-22 (Sprint 3 sesión 3)
+## QUÉ HACER EN LA PRÓXIMA SESIÓN (Sprint 4 sesión 1)
 
-- **ADR-011 v0.9 PARTIAL** — bump con evidencia BUILD ejecutado + M2 medido + L38 N=2.
-- **L38 promovida** — primera lección N=2 formal del Framework.
-- **`architecture/LECCIONES.md` creado** — registry canónico de lecciones N=2+ (resuelve gap arquitectónico).
-- **Decisión arquitectónica BLOQUE 2 Paso 3**: [PENDIENTE DOCUMENTAR al cerrar sesión] componer wholesale sobre ECC `build-fix` + `refactor-clean` vs construir wrapper sigma propio que invoca codemods directos.
+### Decisión de dirección (preguntar al operador)
 
----
+Sprint 4 tiene dos caminos posibles:
 
-## QUÉ HACER EN LA PRÓXIMA SESIÓN (Sprint 3 sesión 4)
+**(a) Continuar trinidad correctiva** — construir Tier B (`correction-agent-bounded`) + Tier C (`correction-adr-draft`) + integración E2E. Cerraría ADR-011 v1.1 FULL.
 
-### PASO T-1 — Verificación commit del cierre 2026-05-22 pusheado
+**(b) Pivotar a validación cross-proyecto** — aplicar workflow PROTOCOLO + audit sobre Stallen (o tercer proyecto) para validar L38 cross-proyecto y aspirar a regla A26 universal.
+
+**(c) Híbrido** — un sprint corto de Tier B (2 sesiones) + aplicar a Stallen para medir M3 real + M1 cross-proyecto.
+
+**Recomendación**: (c) — Tier B es el componente más valioso pendiente (semi-determinístico con LLM acotado); Stallen da evidencia cross-proyecto para L38 y M3 real.
+
+### PASO T-1 — Verificación commit cierre Sprint 3
 
 ```powershell
 cd C:\DEPARTAMENTO-SOFTWARE
 git log --oneline -5
-# Debería mostrar commit Sprint 3 sesión 3 (BLOQUE 1 sync + BLOQUE 2 planning)
 git status
-# Esperado: working tree clean
-git pull
-```
-
-### PASO Sprint 3 sesión 4 — `sigma:auto-fix-mechanic` BUILD pasos 6-12
-
-Aplicar PROTOCOLO-CONSTRUCCION-CODIGO pasos 6-12 al plan auditado en sesión 3:
-
-- **Paso 6**: Construir código (~10-15hs estimado, según decisión Paso 3 wholesale ECC vs wrapper sigma)
-- **Paso 7**: Audit código (G1-G33 + FG1-FG14 + SOLID + zero-trust)
-- **Paso 8**: Tests adversariales
-- **Paso 9**: Validación seguridad y configuración
-- **Paso 10**: Deploy seguro (skill registrado en sigma namespace)
-- **Paso 11**: Verificación post-deploy
-- **Paso 12**: Cierre + polinización
-
-**Validación de L38 N=3 implícita**: si este build pasa GGA en 1 round, L38 alcanza N=3 estructural y puede graduar a regla A26 universal en `PRINCIPIOS-ARQUITECTURA.md`. Si NO pasa, L38 vuelve a observación contextual sin promoción a A*.
-
-### PASO Sprint 3 sesión 5 — M3 validación empírica + ADR-011 v0.9 → v1.0 ACCEPTED candidato
-
-- Aplicar `auto-fix-mechanic` a un commit real con findings GGA reales
-- Validar M3 ≥90% Tier A auto-fix
-- Si M3 PASS + M1 N≥2 acumulado: ADR-011 promovido a ACCEPTED v1.0 (al menos para el subset classifier + auto-fix-mechanic)
-
-### PASOS PARALELOS DIFERIDOS (no bloqueantes Sprint 3)
-
-- **Sprint 4**: `sigma:correction-agent-bounded` Tier B + `sigma:correction-adr-draft` Tier C + integración E2E
-- **Sprint 5+**: aplicar workflow a Stallen para alcanzar M1 N≥3 + M2 N≥3 fixtures distintos
-- **Diferidos a Sprint 4+**: las 4 sigma MVP originales (`operationalize-constitution`, `enforce-constitution-check`, `multi-tenant-isolation-checker`, `dependency-cycle-detector`)
-
----
-
-## CONTEXTO RÁPIDO — leer EN ORDEN al arrancar próxima sesión
-
-1. `CLAUDE.md` (constitución, ~5 min)
-2. `auditoria/sesion-activa.md` — addendum Sprint 3 sesión 3 (~10 min)
-3. Este archivo — plan Sprint 3 sesión 4 (~5 min)
-4. `decisions/ADR-011-capa-correctiva-y-scope-aware.md` **PROPOSED v0.9 PARTIAL** — sección "Phase 2 BUILD ejecutado" + bump rationale (~10 min)
-5. `architecture/LECCIONES.md` v1.0 — L38 + workflow promoción (~5 min)
-6. `docs/prd/PRD-sigma-auto-fix-mechanic.md` (~5 min)
-7. `docs/arquitectura/ARQUITECTURA-sigma-auto-fix-mechanic.md` — decisión Paso 3 resuelta (~10 min)
-8. `docs/stories/STORIES-sigma-auto-fix-mechanic.md` (~5 min)
-9. `auditoria/audit-plan-auto-fix-mechanic-2026-05-22.json` (~3 min)
-10. (Opcional) `framework/sigma/finding_classifier/` — código del classifier como referencia de estilo
-
----
-
-## DEUDAS TÉCNICAS — estado tras Sprint 3 sesión 3
-
-### Deudas RESUELTAS esta sesión
-
-- **DEUDA-SIGUIENTE-SESION-STALE**: ✅ refresh v6.3 → v7.0 con estado real del disco.
-- **DEUDA-REGISTRY-LECCIONES**: ✅ `architecture/LECCIONES.md` creado.
-
-### Deudas precondición Sprint 3 (de audit Paso 5 v0.7) — RESUELTAS en sesión 1+2
-
-- **R07** ✅ S-8 creada con fixture R10 + medición M2 dentro banda AC2 ±15pp.
-- **R08** ✅ `emit_calibration_log()` implementada con coverage 100%.
-- **R10** ✅ Fixture `sprint1-iteracion3.json` construido y poblado.
-
-### Deudas ABIERTAS sin cambio
-
-- **DEUDA-ADVERSARIAL-TEST-SHAPE-WRONG** (Iteración 3) 🟡
-- **DEUDA-NPM-INSTALL-MANUAL** (Iteración 3) 🟢
-- **DEUDA-SUPABASE-LOCAL-MANUAL** (Iteración 3) 🟢
-- **DEUDA-SIGMA-MVP-NO-CONSTRUIDAS** — diferidas Sprint 4+
-- **DEUDA-CONSTITUTION-CHECK-ENFORCEMENT** — diferida
-- **DEUDA-TAXONOMIA-CLARIFY-INCOMPLETA** — diferida
-- **DEUDA-FACT-FORCING-GATE-EN-SANDBOX** (workaround documentado)
-- **DEUDA-CLAUDE-MEM-MANIFEST** (parche local persistente)
-- **DEUDA-PLUGIN-INSTALL-DOCS**
-- **DEUDA-WINDOWS-SETUP-CHECKLIST**
-- **DEUDA-SDD-EXPLORE-NO-WRITE** (menor)
-- **DEUDA-SUB-AGENT-OVERRIDE-OPERATOR** (menor)
-- **DEUDA-ADR-010-PROMOTE-TO-ACCEPTED**
-- **DEUDA-NORTE-FRAMEWORK-PLACEHOLDERS** (Q4-Q7)
-- **DEUDA-WORKFLOW-OPERATIVO**
-- **DEUDA-VISIÓN-D-NO-FORMALIZADA**
-- **DEUDA-REPLANTEAR-ROADMAP-POST-STACK**
-
----
-
-## PRE-FLIGHT próxima sesión
-
-```powershell
-cd C:\DEPARTAMENTO-SOFTWARE
-git status              # working tree esperado: clean post cierre sesión 3
-git pull
-git log --oneline -10
-
-# Verificar trinidad correctiva al día
-ls framework/sigma/             # deberían aparecer: finding_classifier/ + auto-fix-mechanic/ (si BLOQUE 2 build arrancó) o solo finding_classifier/ (si solo planning)
-cat decisions/ADR-011-*.md | head -10  # confirmar v0.9 PARTIAL en header
-cat architecture/LECCIONES.md | head -30  # confirmar L38 formal + workflow
-
-# Tests del classifier siguen verdes
+# Tests baseline
 cd framework
-python -m pytest sigma/finding_classifier/tests/ -q
-# Esperado: 73 passed in <1s
+python -m pytest sigma/ -q
+# Esperado: 194 passed, 1 skipped
 ```
 
 ---
 
-## REGLAS CRÍTICAS A RECORDAR (Sprint 3 sesión 4+)
+## DEUDAS TÉCNICAS — estado post Sprint 3
+
+### Deudas RESUELTAS en Sprint 3
+
+- ✅ R07 — AC2 sin story explícita → S-8 classifier
+- ✅ R08 — `serializeErr()` helper → S-6.3 mechanic (`console_to_json_structured.js`)
+- ✅ R10 — Fixture `sprint1-iteracion3.json` → construido y poblado
+
+### Deudas NUEVAS de Sprint 3
+
+- 🟡 **DEUDA-CODEMODS-NO-PYTEST-AUTOMATED**: smoke tests de codemods son manuales (Bash/Node). Para CI, agregar `test_codemods_smoke.py` con `pytest.mark.skipif`. No bloqueante.
+- 🟡 **DEUDA-M3-REAL-NOT-MEASURED**: M3 real (≥90% sobre stack TS) requiere environment con ESLint/Prettier/ts-morph reales. Diferida a integración Stallen.
+- 🟡 **DEUDA-ADR-011-V1.1**: Tier B + Tier C + M3 real + M1 cross-proyecto pendientes para ACCEPTED FULL.
+
+### Deudas ABIERTAS heredadas (sin cambio)
+
+- 🟡 DEUDA-ADVERSARIAL-TEST-SHAPE-WRONG (Iteración 3)
+- 🟢 DEUDA-NPM-INSTALL-MANUAL (Iteración 3)
+- 🟢 DEUDA-SUPABASE-LOCAL-MANUAL (Iteración 3)
+- 🟡 DEUDA-SIGMA-MVP-NO-CONSTRUIDAS — diferidas Sprint 4+
+- 🟡 DEUDA-CONSTITUTION-CHECK-ENFORCEMENT — diferida
+- 🟡 DEUDA-TAXONOMIA-CLARIFY-INCOMPLETA — diferida
+- 🟡 DEUDA-FACT-FORCING-GATE-EN-SANDBOX (workaround documentado)
+- 🟡 DEUDA-CLAUDE-MEM-MANIFEST (parche local persistente)
+- 🟢 DEUDA-PLUGIN-INSTALL-DOCS
+- 🟢 DEUDA-WINDOWS-SETUP-CHECKLIST
+- 🟢 DEUDA-SDD-EXPLORE-NO-WRITE (menor)
+- 🟢 DEUDA-SUB-AGENT-OVERRIDE-OPERATOR (menor)
+- 🟡 DEUDA-ADR-010-PROMOTE-TO-ACCEPTED
+- 🟡 DEUDA-NORTE-FRAMEWORK-PLACEHOLDERS (Q4-Q7)
+- 🟡 DEUDA-WORKFLOW-OPERATIVO
+- 🟡 DEUDA-VISIÓN-D-NO-FORMALIZADA
+- 🟡 DEUDA-REPLANTEAR-ROADMAP-POST-STACK
+
+---
+
+## REGLAS CRÍTICAS A RECORDAR (Sprint 4+)
 
 ### 7 Principios rectores (sin cambio)
 1. Python traza → IA recorre → Python verifica
-2. **3 capas: PREVENTIVA → VERIFICABLE → CORRECTIVA** ← L38 confirma empíricamente
+2. **3 capas: PREVENTIVA → VERIFICABLE → CORRECTIVA** ← L38 N=5 confirma empíricamente
 3. Dominio-first
-4. **Auto-fix > finding cuando inequívoco** ← `auto-fix-mechanic` operacionaliza
-5. Polinización cruzada
+4. **Auto-fix > finding cuando inequívoco** ← `auto-fix-mechanic` OPERACIONALIZA
+5. **Polinización cruzada** ← radar Sprint 3 ejecutado (6 patrones propagables)
 6. **Descubrir antes de ejecutar** (audit empírico)
 7. Meta-producto recursivo
 
-### Lecciones N=2+ formales (architecture/LECCIONES.md)
-- **L38**: PROTOCOLO + audit Paso 5 elimina loop GGA asintótico (N=2, primera promoción formal)
+### Lecciones formales (architecture/LECCIONES.md)
+- **L38 N=5**: PROTOCOLO + audit Paso 5 elimina loop GGA asintótico. Cross-proyecto pendiente para A26.
 
-### Lecciones N=1 vigentes (sesion-activa.md)
-- L35, L36, L37 (capa correctiva + scope-awareness — esperan N=2)
-- L29-L34 (Iteración 3 — cost hook, token budget, A-rule coverage, etc.)
-- L24-L28 (sdd-* vs speckit-* — T1.9 EMPIRICAL)
-- L22-L23 (planning a-priori vs ejecutable)
-- L16-L21 (sesiones 2026-05-20/21)
-
-### Insight Decisión A — VALIDADO 2 NIVELES (sin cambio)
-
-### Lecciones técnicas sticky
-- LECCIÓN 17: `edit_file` con array no atómico — preferir `write_file` (válido en Sprint 3 también)
-- LECCIÓN 18: cross-LLM publishing canónico (`obra/superpowers` modelo)
-- LECCIÓN 19: `extraKnownMarketplaces` en `~/.claude/settings.json`
-
----
-
-## RIESGOS DE LA PRÓXIMA SESIÓN (Sprint 3 sesión 4)
-
-- **Fork ECC wholesale vs wrapper sigma**: si la decisión Paso 3 fue wholesale, validar empíricamente que ECC `build-fix` cubre los rule_ids Tier A del classifier. Si gap >50%, considerar wrapper sigma híbrido.
-- **L38 N=3 puede fallar**: si el build de `auto-fix-mechanic` NO pasa GGA en 1 round, L38 NO promueve a A26 — queda en N=2 formal solamente. Acción: investigar causa raíz, NO bypass.
-- **M3 puede medirse <90%**: si Tier A auto-fix tiene <90% de éxito, ADR-011 NO sube a v1.0 ACCEPTED. Bajar a REJECTED o iterar con auto-fix-mechanic v0.2.
-- **Build estimado 10-15hs**: dividir en sub-sesiones por phase si es necesario (precedente del classifier: S-1..S-3 sesión 1, S-4..S-8 sesión 2).
-
----
-
-## ARCHIVOS CLAVE A TOCAR EN LA PRÓXIMA SESIÓN
-
-- `framework/sigma/auto-fix-mechanic/` (nuevo package)
-- `framework/sigma/auto-fix-mechanic/tests/` (test suite)
-- `auditoria/audit-code-auto-fix-mechanic-YYYY-MM-DD.json` (Paso 7)
-- `auditoria/m3-empirical-tier-a-success-YYYY-MM-DD.json` (M3 medición)
-- `decisions/ADR-011-capa-correctiva-y-scope-aware.md` (eventual v0.9 → v1.0 candidato)
-- `architecture/LECCIONES.md` (eventual L38 → A26 graduation o L39+ nueva)
-- `auditoria/sesion-activa.md` (cierre próxima sesión)
-- `SIGUIENTE-SESION.md` (regenerar al cierre v7.0 → v7.1)
+### Lecciones candidatas N=1 nuevas (Sprint 3)
+- **L39**: audit manual que consolida evidencia GGA previo reduce esfuerzo
+- **L40**: cross-reference testing evita duplicación adversarial
+- **L41**: commit-per-session en builds multi-story produce history limpio
 
 ---
 
@@ -491,24 +206,17 @@ python -m pytest sigma/finding_classifier/tests/ -q
 
 - **Usuario**: Julián Vargas, vibe coder / harness engineer
 - **Cliente recomendado**: Claude Code CLI dentro de `C:\DEPARTAMENTO-SOFTWARE\`
-- **Cuando Julián cuestione "ya está hecho"** → audit empírico INMEDIATO (hit rate 20/20)
+- **Cuando Julián cuestione "ya está hecho"** → audit empírico INMEDIATO
 - **NUNCA proyectar cansancio**
 - **PROTOCOLO-INICIO-CHAT v1.0 PASO 1 OBLIGATORIO** para verificar Project es Framework
 - **2 directorios a NO confundir**: `C:\DEPARTAMENTO-SOFTWARE\` (activo) vs `C:\Users\Windows 11\sigmacontrol-camino-1\` (legacy pause)
-- **L38 ya es FORMAL** — no usarla como "candidata" en docs nuevos
+- **L38 ya es FORMAL N=5** — no usarla como "candidata" en docs nuevos
 - **L35-L37 SIGUEN candidatas N=1** — no promoverlas sin segundo evento empírico
-- **Trinidad correctiva**: classifier ✅ operativo, auto-fix-mechanic 🟡 en construcción, los otros dos ⏳ Sprint 4
+- **ADR-011 es ACCEPTED v1.0** — scope: classifier + mechanic. Tier B/C → v1.1
+- **Trinidad correctiva**: classifier ✅, mechanic ✅, Tier B ⏳, Tier C ⏳
 - **claude-mem requiere `autoUpdate: false`** — no romper el parche local
 
 ---
 
-## CÓMO USAR ESTE ARCHIVO
-
-Al abrir Claude Code CLI:
-
-> *"Seguimos Framework Departamento. HEAD esperado: [commit Sprint 3 sesión 3]. Aplicá PROTOCOLO-INICIO-CHAT. Estado: Sprint 3 sesión 4. Trinidad correctiva: classifier ✅, auto-fix-mechanic 🟡 (BUILD pasos 6-12 esta sesión). Arrancamos T-1 + Paso 6 build auto-fix-mechanic siguiendo plan auditado en sesión 3."*
-
----
-
-Creado: 2026-05-15 | Versión: **7.0** (post Sprint 3 sesión 3 — sync ADR-011 v0.9 + L38 formal N=2 + LECCIONES.md nuevo + auto-fix-mechanic planning)
-Para: Claude que abra próxima sesión (Sprint 3 sesión 4 — BUILD auto-fix-mechanic)
+Creado: 2026-05-15 | Versión: **8.0** (Sprint 3 COMPLETO — Paso 12 cierre formal + ADR-011 ACCEPTED v1.0 + radar polinización)
+Para: Claude que abra próxima sesión (Sprint 4 sesión 1)
