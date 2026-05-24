@@ -1,9 +1,9 @@
 # ADR-011: Capa Correctiva Determinística + Scope-Aware Verification
 
-**Status**: PROPOSED v0.7 PARTIAL
-**Date**: 2026-05-21 (Sprint 2 sesión 1 cierre + Sprint 2 sesión 2 Phase 2 PRD-ready)
-**Sprint**: Sprint 2 — Capa correctiva del Framework (Phase 1 cerrada; Phase 2 PRD-ready, build en Sprint 3)
-**Related**: ADR-006 (Niveles + SOLID), ADR-009 ACCEPTED v1.0 (Stack ecosystem), ADR-010 PROPOSED (Skill Routing via Foreman)
+**Status**: PROPOSED v0.9 PARTIAL
+**Date**: 2026-05-22 (Sprint 3 sesiones 1+2 cerradas — Phase 2 classifier build ejecutado + audit Paso 7+8 + M2 medido)
+**Sprint**: Sprint 3 — Capa correctiva del Framework (Phase 1 cerrada; Phase 2 classifier OPERATIVO; auto-fix-mechanic + correction-agent-bounded + correction-adr-draft pendientes)
+**Related**: ADR-006 (Niveles + SOLID), ADR-009 ACCEPTED v1.0 (Stack ecosystem), ADR-010 PROPOSED (Skill Routing via Foreman), LECCIÓN 38 (N=2 confirmada esta sesión)
 
 ---
 
@@ -196,8 +196,8 @@ Este clasificador NO usa LLM. Es Python puro, declarativo, versionable como cual
 - [x] Documentar en `docs/SCOPE-AWARENESS.md`
 
 ### Sprint 3 (3-5 sesiones)
-- [ ] `sigma:finding-classifier` (~100 LOC Python + YAML)
-- [ ] `sigma:auto-fix-mechanic` (Tier A) — Phase 2.1 evaluación de solapamiento con ECC
+- [x] `sigma:finding-classifier` — ✅ DONE Sprint 3 sesiones 1+2 (2026-05-22). 73 tests PASS en 0.32s, 294 LOC producción + 739 LOC tests (2.5:1). MC1=96.2% cobertura. Commits `06493bc` + `2322e4a`. Ver "Phase 2 BUILD ejecutado" más abajo.
+- [ ] `sigma:auto-fix-mechanic` (Tier A) — Phase 2.1 evaluación de solapamiento con ECC. **Sprint 3 sesión 3+ (PRD-ready en curso)**
 - [ ] `sigma:correction-agent-bounded` (Tier B)
 - [ ] `sigma:correction-adr-draft` (Tier C)
 - [ ] Integración: GGA finding → classifier → tier handler → patch/PR comment
@@ -248,7 +248,7 @@ Este clasificador NO usa LLM. Es Python puro, declarativo, versionable como cual
 ## Métricas de éxito (para promoción PROPOSED → ACCEPTED)
 
 - [x] **M1**: aplicar scope-aware a sandbox-stack y verificar que GGA cierra en ≤2 rounds (vs 4 observados en Sprint 1). **Cumplido N=1: cerró en 1 round (2026-05-21).** Ver sección "Evidencia empírica Phase 1".
-- [ ] **M2**: clasificar empíricamente ~50 findings de proyectos reales (sandbox + Stallen) y verificar distribución ~60% Tier A / ~30% Tier B / ~10% Tier C.
+- [🟡] **M2**: clasificar empíricamente ~50 findings de proyectos reales (sandbox + Stallen) y verificar distribución ~60% Tier A / ~30% Tier B / ~10% Tier C. **Cumplido parcial N=1 (2026-05-22) sobre fixture `sprint1-iteracion3.json` (R10): A=57.7%, B=26.9%, C=15.4% — DENTRO de banda AC2 ±15pp. Ver `auditoria/m2-empirical-distribution-2026-05-22.json`.** Sigue parcial porque N=1 (un solo fixture); Stallen + un tercer proyecto pendientes.
 - [ ] **M3**: auto-fix Tier A debe cerrar ≥90% de los findings clasificados como A sin intervención humana.
 - [ ] **M4**: sub-agente Tier B debe cerrar ≥70% de findings B con un solo patch (no requerir múltiples iteraciones).
 - [ ] **M5**: tiempo total commit-to-green debe bajar al menos 50% comparado con baseline Sprint 1.
@@ -257,13 +257,13 @@ Este clasificador NO usa LLM. Es Python puro, declarativo, versionable como cual
 
 ## Pendiente para promoción a ACCEPTED
 
-Para promover este ADR de PROPOSED v0.5 PARTIAL a ACCEPTED v1.0:
+Para promover este ADR de PROPOSED v0.9 PARTIAL a ACCEPTED v1.0:
 
 - [x] Implementar Phase 1 (scope-aware) y aplicarlo al sandbox-stack.
 - [x] Re-medir rounds de GGA con scope-aware activo. **1 round (N=1).**
-- [ ] Implementar al menos `sigma:finding-classifier` + `sigma:auto-fix-mechanic` Tier A.
-- [ ] Aplicar a un commit real con findings y validar M3 (≥90% Tier A auto-fix).
-- [ ] Documentar la matriz Tier A/B/C definitiva con evidencia empírica.
+- [🟡] Implementar al menos `sigma:finding-classifier` + `sigma:auto-fix-mechanic` Tier A. **Classifier ✅ DONE (Sprint 3 sesiones 1+2). Auto-fix-mechanic en planning (Sprint 3 sesión 3).**
+- [ ] Aplicar a un commit real con findings y validar M3 (≥90% Tier A auto-fix). **Bloqueado hasta auto-fix-mechanic operativo.**
+- [🟡] Documentar la matriz Tier A/B/C definitiva con evidencia empírica. **Curado a priori (27 reglas, 55.6/25.9/18.5%) + medido N=1 sobre fixture (57.7/26.9/15.4%). Pendiente: 2+ fixtures distintos.**
 - [ ] N≥3 corridas de M1 sobre proyectos distintos (sandbox-stack ya cubierto; Stallen + un tercer caso pendientes).
 
 **Si las métricas M1 (N≥3) y M3 no se cumplen** → este ADR baja a REJECTED + redacción de ADR-011-bis con un diseño alternativo.
@@ -387,6 +387,93 @@ Esperan N=2 (cierre sesión con segundo caso empírico) antes de promoverse a le
 
 ---
 
+## Phase 2 BUILD ejecutado — `sigma:finding_classifier` (2026-05-22 — Sprint 3 sesiones 1+2)
+
+Sprint 3 sesiones 1 y 2 ejecutaron los pasos 6-12 del PROTOCOLO-CONSTRUCCION-CODIGO sobre el primer componente de la trinidad correctiva. El classifier es el front-end determinístico que clasifica findings en Tier A/B/C antes de despacharlos a los handlers (auto-fix-mechanic, correction-agent-bounded, correction-adr-draft).
+
+### Artefactos producidos
+
+| Componente | Path | Métrica |
+|------------|------|---------|
+| Package Python | `framework/sigma/finding_classifier/` | 15 archivos (8 prod + 7 tests + __init__) |
+| Producción | `models.py`, `loader.py`, `classifier.py`, `cli.py` | 294 LOC |
+| Tests | `tests/test_*.py` | 739 LOC, **73 tests PASS en 0.32s** |
+| Ratio tests:prod | — | 2.5:1 |
+| Cobertura MC1 | — | **96.2%** |
+| Configuración runtime | `framework/sigma/finding_classifier/rules.yaml` | 27 reglas curadas |
+| Audit Paso 7 (G1-G33 + FG1-FG14 + SOLID + zero-trust) | `auditoria/audit-code-classifier-2026-05-22.json` | **0 críticos** |
+| Audit Paso 8 (adversarial) | tests `test_adversarial_remaining.py` + `test_distribution_m2.py` | PASS |
+| M2 medición empírica | `auditoria/m2-empirical-distribution-2026-05-22.json` | A=57.7% / B=26.9% / C=15.4% (banda AC2 ±15pp ✅) |
+
+### Stories completadas
+
+| Story | Descripción | Status | Commit |
+|-------|-------------|--------|--------|
+| S-1 | YAML loader + schema validation (PyYAML 6.0.3) | ✅ | `06493bc` |
+| S-2 | `classify()` deterministic algorithm | ✅ | `06493bc` |
+| S-3 | `emit_calibration_log()` con JSON aggregation + deduplicación | ✅ | `06493bc` |
+| S-4 | CLI `sigma-classify` con stdin/stdout/exit codes | ✅ | `2322e4a` |
+| S-5 | `--audit` flag con tier→count summary table | ✅ | `2322e4a` |
+| S-6 | Performance validation sobre fixture R10 | ✅ | `2322e4a` |
+| S-7 | Extensibility (slots R/G/FG futuros) | ✅ | `2322e4a` |
+| S-8 | M2 empirical distribution measurement | ✅ | `2322e4a` |
+
+### Veredicto audits
+
+- **Paso 7 (`audit-code-classifier-2026-05-22.json`)**: PASS — 0 críticos en G1-G33 + FG1-FG14 + SOLID + zero-trust validation gates.
+- **Paso 8 (adversariales)**: PASS — 11 tests adversariales definidos en arquitectura sección 10 + tests extra de remaining cases.
+- **GGA pre-commit hook**: PASS en 1 round sobre ambos commits (`06493bc` + `2322e4a`). Sin bypass humano (`--no-verify`). Sin rounds adicionales.
+
+### Deudas precondición resueltas (de audit Paso 5 v0.7)
+
+| Deuda | Status | Resolución |
+|-------|--------|-----------|
+| R07 — AC2 sin story explícita | ✅ Cerrada | S-8 creada con fixture R10 + medición M2 (A=57.7/B=26.9/C=15.4) |
+| R08 — `emit_calibration_log()` implicit en S-3 | ✅ Cerrada | S-3 anotada al iniciar build; función implementada con coverage 100% |
+| R10 — Fixture `sprint1-iteracion3.json` no creado | ✅ Cerrada | Fixture R10 construido y poblado con 26 findings reales |
+
+### Evidencia para promoción de LECCIÓN 38
+
+L38 candidata (originalmente N=1 al cerrar Sprint 3 sesión 1): *"código que sigue PROTOCOLO + audit Paso 5 previa pasa GGA en 1 round (vs 4 rounds + bypass sin auditar)"*.
+
+| Evento | Commit | GGA rounds | Bypass | PROTOCOLO + audit Paso 5 |
+|--------|--------|-----------|--------|--------------------------|
+| Sprint 1 Iteración 3 (baseline contraejemplo) | varios | 4 + asintotizó | ✅ `--no-verify` | ❌ No |
+| Sprint 3 sesión 1 (S-1..S-3, N=1) | `06493bc` | 1 | ❌ Ninguno | ✅ Sí |
+| Sprint 3 sesión 2 (S-4..S-8, N=2) | `2322e4a` | 1 | ❌ Ninguno | ✅ Sí |
+
+**N=2 cumplido. L38 promovida a LECCIÓN formal del Framework** (ver promoción en `decisions/` o `architecture/`).
+
+Primera lección del Framework que cierra empíricamente el ciclo **PREVENTIVA → VERIFICABLE** (2° principio rector): código que respeta la prevención (PROTOCOLO + audit del plan) atraviesa la verificación sin fricción.
+
+### Bump rationale (v0.7 PARTIAL → v0.9 PARTIAL)
+
+| Criterio | v0.5 | v0.7 | v0.9 |
+|----------|------|------|------|
+| Phase 1 implementada | ✅ | ✅ | ✅ |
+| Phase 1 evidencia M1 N≥1 | ✅ (1 round vs 4) | ✅ | ✅ |
+| Phase 2 diseño formalizado | 🟡 sketch ADR | ✅ PRD+dominio+arq+stories+audit | ✅ |
+| Phase 2 classifier BUILD | ❌ | ❌ | ✅ **73 tests PASS, audit Paso 7 PASS, GGA passed 1 round x2** |
+| M2 medición empírica | ❌ sin curar | 🟡 curado a priori (55.6/25.9/18.5) | ✅ **medido N=1 fixture R10 (57.7/26.9/15.4 dentro banda ±15pp)** |
+| L38 N=2 confirmada | ❌ | ❌ | ✅ **commits `06493bc` + `2322e4a`** |
+| Phase 2 auto-fix-mechanic | ❌ | ❌ | ❌ (Sprint 3 sesión 3+) |
+| Phase 2 correction-agent-bounded | ❌ | ❌ | ❌ |
+| Phase 2 correction-adr-draft | ❌ | ❌ | ❌ |
+| M3 medido (Tier A ≥90% auto-fix) | ❌ | ❌ | ❌ (bloqueado por auto-fix-mechanic) |
+| M1 N≥3 sobre proyectos distintos | ❌ N=1 | ❌ N=1 | ❌ N=1 (Stallen + tercer caso pendientes) |
+
+No corresponde v1.0 ACCEPTED hasta:
+- Phase 2 build COMPLETO de la trinidad (al menos classifier + auto-fix-mechanic Tier A operativos en producción).
+- M1 N≥3 sobre proyectos distintos.
+- M3 medido empíricamente con auto-fix-mechanic real sobre findings GGA reales.
+- Matriz Tier A/B/C definitiva con N≥3 fixtures (no solo R10).
+
+### Próximo bump (v0.9 → v1.0 ACCEPTED)
+
+Requiere los 3 componentes restantes de la trinidad (`auto-fix-mechanic`, `correction-agent-bounded`, `correction-adr-draft`) + M3 medido + M1 N≥3. Estimación Sprint 3 sesiones 3-5 (auto-fix-mechanic) + Sprint 4 (correction-agent-bounded + correction-adr-draft + integración).
+
+---
+
 ## Conexiones
 
 - **ADR-006 (Niveles + SOLID)**: este ADR introduce la capa correctiva del Nivel 3 (Tooling) que actualmente está vacía.
@@ -395,6 +482,7 @@ Esperan N=2 (cierre sesión con segundo caso empírico) antes de promoverse a le
 - **LECCIÓN 35 candidata (N=1)**: *"reviewer adversarial sin auto-fix + sin scope-awareness asintotiza al infinito; ship requiere bypass humano consciente, no más rounds"*. Este ADR cierra esta lección estructuralmente.
 - **LECCIÓN 36 candidata (N=1)**: *"calibración de scope antes que capa correctiva — la calibración es cura barata, la capa correctiva es cura estructural pero cara"*. Este ADR la operacionaliza.
 - **LECCIÓN 37 candidata (N=1)**: *"scope awareness y capa correctiva son ortogonales y complementarias — el orden importa: scope primero, correctiva después"*. Este ADR la formaliza como decisión.
+- **LECCIÓN 38 N=2 confirmada (2026-05-22)**: *"código que sigue PROTOCOLO-CONSTRUCCION-CODIGO (pasos 1-5) + audit Paso 5 (R01-R15) sobre el plan pasa GGA en 1 round, sin bypass humano. Versus 4 rounds + bypass cuando se construye sin auditar el plan"*. Promovida a LECCIÓN formal del Framework esta sesión. Primera lección del Framework que cierra empíricamente el ciclo PREVENTIVA→VERIFICABLE del 2° principio rector. Evidencia: commits `06493bc` (N=1) + `2322e4a` (N=2). Contraejemplo baseline: Sprint 1 Iteración 3 (4 rounds GGA + `--no-verify`).
 
 ---
 

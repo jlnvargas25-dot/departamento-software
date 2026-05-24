@@ -37,6 +37,7 @@ NIVEL 5 — Decisiones proyecto/momento   → decisions/ (ADRs)
 | `PRINCIPIOS-ARQUITECTURA.md` | 25 reglas universales A1-A25 (ownership, contratos, zero trust, concurrency, explicit failure, unhappy path, rate limiting, edge protection, async, external resilience, hexagonal, observability, secrets, deployment, data lifecycle, authorization) |
 | `PATRONES-CARPETAS.md` | Estructura de directorios + 6 reglas C1-C6 |
 | `ANTI-PATRONES.md` | 36 anti-patterns identificados con evidencia empírica |
+| `LECCIONES.md` | Registry formal de lecciones N=2+ del Framework. Workflow: N=1 candidata (sesion-activa) → N=2 formal (LECCIONES.md) → N=3+ estructural (A26+ ó AP-3.NN+) |
 
 ## Cómo usar esta carpeta
 
@@ -79,11 +80,18 @@ cambio debe documentarse con razón explícita. Cambios típicos válidos:
 - Aparece un nuevo patrón estructural validado por 3+ proyectos
 - Se descubre un anti-pattern nuevo con evidencia empírica
 - Se formaliza vocabulario industrial (ej: Harness Engineering)
+- Se promueve una lección de `LECCIONES.md` que alcanzó N=3+ estructural a regla A26+ o anti-pattern AP-3.NN+
 
 Cambios típicos INVÁLIDOS (NO modificar Nivel 2 por estas razones):
 - "Stallen necesita X específico" → Va en Nivel 4
 - "Supabase requiere Y" → Va en Nivel 3
 - "Decidí cambiar el approach" → Va en ADR Nivel 5
+- "Esta lección recién N=2" → Va en `LECCIONES.md` (formal pero no estructural todavía)
+- "Esta observación es N=1" → Va en `auditoria/sesion-activa.md` como candidata
+
+`LECCIONES.md` es el único archivo de esta carpeta cuya inmutabilidad es menor:
+crece con cada promoción N=2 y refleja conocimiento operativo del Framework
+antes de cristalizarlo en reglas universales.
 
 ## Relación con Harness Engineering
 
@@ -102,7 +110,14 @@ Las otras subsystems materializadas en otras carpetas del Departamento:
 
 ---
 
-Versión: 1.2 | Creado: 2026-05-15 | Última edición: 2026-05-20
+Versión: 1.3 | Creado: 2026-05-15 | Última edición: 2026-05-22
+Cambios v1.3 (2026-05-22): agregado `LECCIONES.md` como registry formal de
+lecciones N=2+ del Framework. Resuelve gap arquitectónico: hasta esta versión
+las lecciones promovidas vivían distribuidas en ADRs sin índice canónico.
+Workflow formalizado: N=1 candidata (sesion-activa) → N=2 formal
+(LECCIONES.md) → N=3+ estructural (regla A26+ o anti-pattern AP-3.NN+).
+Primera promoción: L38 (PROTOCOLO + audit Paso 5 elimina loop GGA asintótico).
+
 Cambios v1.2 (2026-05-20): ampliado de 19 a 25 reglas A* tras 3er audit
 empírico (Opción D — catálogo completo Nivel 2). Nuevas reglas A20-A25
 cubren dimensiones de paradigma arquitectónico (Hexagonal), observabilidad

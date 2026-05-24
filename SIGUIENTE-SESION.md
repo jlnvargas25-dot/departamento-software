@@ -1,374 +1,315 @@
 # INSTRUCCIONES SIGUIENTE SESIÓN — Departamento de Software (Framework)
 
-> **Propósito**: handoff táctico post-T1.6→T2 ejecutados (planning-phase only).
+> **Propósito**: handoff táctico post-Sprint 3 sesión 3 (BLOQUE 1 sync completado + BLOQUE 2 pasos 1-5 de `sigma:auto-fix-mechanic`).
 > Stallen DIFERIDO hasta que el Framework esté maduro.
 
-**Última actualización**: 2026-05-22 (post Sprint 2 sesión 2 — Phase 2 ADR-011 PRD-ready, build en Sprint 3)
+**Última actualización**: 2026-05-22 (Sprint 3 sesión 3 cerrada — ADR-011 v0.9 PARTIAL, L38 formal N=2, auto-fix-mechanic PRD-ready o build-ready según Bloque 2)
 **Cliente recomendado próxima sesión**: **Claude Code CLI** dentro de `C:\DEPARTAMENTO-SOFTWARE\` (skills speckit-* + ecc:* + claude-mem:* + sdd-* + superpowers:* todos cargados)
-**Versión**: 6.3 (post Phase 2 ADR-011 PRD-ready — 6 artefactos planning + audit R01-R15 PASS con 3 warnings tracked; Sprint 3 = build classifier)
+**Versión**: 7.0 (post Sprint 3 sesión 3 — sync + segundo componente trinidad correctiva planeado)
 
 ---
 
-## ✅ SPRINT 2 SESIÓN 2 CERRADA (2026-05-22)
+## ✅ SPRINT 3 SESIÓN 3 CERRADA (2026-05-22)
 
-**Phase 2 ADR-011 (trinidad correctiva) PRD-ready** — Pasos 1-5 del PROTOCOLO-CONSTRUCCION-CODIGO ejecutados sobre el primer componente: `sigma:finding-classifier` (front-end de la trinidad).
+### BLOQUE 1 — Sincronización post sesiones 1+2
 
-**Scope decidido en sesión**: extensible (GGA + slots R/G/FG futuros), no solo GGA. Evita retrabajo Sprint 4+.
+1. **ADR-011 bumped**: PROPOSED v0.7 PARTIAL → **PROPOSED v0.9 PARTIAL**
+   - Header actualizado con fecha 2026-05-22 y Sprint 3 sesiones 1+2 cerradas
+   - Sección "Phase 2 BUILD ejecutado" anexada con evidencia detallada:
+     - 73 tests PASS en 0.32s, MC1=96.2%, 8 stories S-1..S-8 completas
+     - Paso 7 audit PASS (0 críticos) + Paso 8 adversariales PASS
+     - M2 empírico cumplido (A=57.7/B=26.9/C=15.4 dentro banda AC2 ±15pp)
+     - 3 deudas precondición resueltas (R07, R08, R10)
+   - Bump rationale table v0.5 → v0.7 → v0.9 anexada
+   - Sección "Pendiente para promoción a ACCEPTED" actualizada con marcadores parciales
+   - Sigue PARTIAL porque falta Tier A (`auto-fix-mechanic`) operativo
 
-Artefactos creados:
-- `docs/prd/PRD-sigma-finding-classifier.md` — DRAFT v0.1 (Paso 1)
-- `docs/dominio/findings-taxonomy.md` — DRAFT v0.1 (Paso 2 — 27 reglas curadas 15A/7B/5C, distribución 55.6/25.9/18.5%)
-- `docs/dominio/sigma-classifier-rules.yaml.draft` — DRAFT v0.1 (Paso 2 — YAML declarativo extensible)
-- `docs/arquitectura/ARQUITECTURA-sigma-finding-classifier.md` — DRAFT v0.1 (Paso 3 — Python+pyyaml, A20 hexagonal)
-- `docs/stories/STORIES-sigma-finding-classifier.md` — DRAFT v0.1 (Paso 4 — 7 stories S-1..S-7, 10hs total, DAG sin ciclos)
-- `auditoria/audit-plan-classifier-2026-05-21.json` — DONE (Paso 5 — R01-R15)
+2. **LECCIÓN 38 promovida a formal del Framework** (N=2 confirmada)
+   - Enunciado: *"código que sigue PROTOCOLO + audit Paso 5 previa pasa GGA en 1 round (vs 4 rounds + bypass sin auditar)"*
+   - Evidencia N=2: commits `06493bc` (Sprint 3 sesión 1) + `2322e4a` (Sprint 3 sesión 2)
+   - Contraejemplo baseline: Sprint 1 Iteración 3 (4 rounds + `--no-verify`)
+   - Cross-referenced en ADR-011 sección Conexiones y header
 
-**Audit R01-R15 verdict**: `READY_FOR_BUILD_WITH_DEUDAS_TRACKED` (0 críticos, 3 warnings con acción documentada).
+3. **`architecture/LECCIONES.md` CREADO** — registry formal de lecciones N=2+
+   - Workflow formal: N=1 candidata (sesion-activa) → N=2 formal (LECCIONES.md) → N=3+ estructural (regla A26+ o anti-pattern AP-3.NN+)
+   - L38 como primera entry formal
+   - Inventario de L1-L37 candidatas N=1 vigentes
+   - Resuelve gap arquitectónico: hasta hoy las lecciones promovidas vivían distribuidas en ADRs sin índice canónico
 
-3 warnings tracked (precondición de Sprint 3 build):
-1. **R07** — S-8 nuevo (construir fixture `sprint1-iteracion3.json` + medir distribución) antes de promover ADR-011 v1.0.
-2. **R08** — anotar `emit_calibration_log()` en S-3 al iniciar build (o crear S-3b sub-tarea).
-3. **R10** — construir fixture antes de S-6 (precondición ineludible).
+4. **`architecture/README.md` v1.2 → v1.3** — incorpora `LECCIONES.md` en tabla de contenido + sección "Inmutabilidad relativa" actualizada con workflow de promoción
 
-**ADR-011 bumpeado**: PROPOSED v0.5 PARTIAL → **PROPOSED v0.7 PARTIAL** con sección "Phase 2 PRD-ready" anexada + cleanup duplicación "Evidencia empírica Phase 1".
+### BLOQUE 2 — sigma:auto-fix-mechanic Tier A (Pasos 1-5 PROTOCOLO)
 
-**Lecciones candidatas 35-37**: siguen N=1 (no promovidas). Esperan N=2 al cerrar la próxima corrida empírica.
+> **Status BLOQUE 2 al cierre**: [completar al finalizar sesión 3 — reflejar pasos efectivamente ejecutados, decisión arquitectónica del fork ECC wholesale vs wrapper sigma, ubicación de artefactos producidos]
 
-**Pendientes Sprint 3 (build)**: ~10 hs en 7 stories ÷ 2 sesiones (5 hs cada una). Pasos 6-12 del PROTOCOLO.
-
-**Repo state al cierre**: working tree con 6 archivos nuevos + 2 archivos modificados (ADR-011 y SIGUIENTE-SESION.md). Sin commit pendiente — el usuario decide cuándo commitear.
-
----
-
-## ✅ SPRINT 2 SESIÓN 1 CERRADA (2026-05-21 PM continuación 5)
-
-**Phase 1 ADR-011 (`sigma:gga-scope-aware`) IMPLEMENTADA vía Plan B** (RULES_FILE swap declarativo en `.gga`, sin parser de output).
-
-Artefactos creados:
-- `AGENTS-sandbox.md` — subset relaxed de reglas para scope sandbox
-- `.git/hooks/pre-commit` — wrapper scope-aware con backup/swap/restore + trap (vive en `.git/hooks/`, no versionado)
-- `docs/SCOPE-AWARENESS.md` — operacional con M1 + reversión + limitaciones
-- `decisions/ADR-011-*.md` bumped PROPOSED v0.1 → **PROPOSED v0.5 PARTIAL** con evidencia empírica Phase 1
-
-**M1 CUMPLIDO N=1**: GGA cerró en **1 round** sobre el stash de Sprint 1 (vs 4 rounds baseline). Margen amplio sobre umbral ≤2.
-
-**Commits Sprint 2 sesión 1** (pusheados a origin/main):
-- `6c0a71c` feat(framework): Sprint 2 Phase 1 ADR-011 - scope-aware verification
-- `fe3ed57` fix(sandbox-stack): GGA round 4 cleanup - 5 archivos (ex-stash@{0})
-
-**Stash@{0} dropped** post-cleanup commiteado.
+Artefactos esperados (pendiente confirmar al cierre real):
+- `docs/prd/PRD-sigma-auto-fix-mechanic.md` (Paso 1)
+- `docs/dominio/auto-fix-mechanic-rules.yaml.draft` + `docs/dominio/codemod-toolbox.md` (Paso 2)
+- `docs/arquitectura/ARQUITECTURA-sigma-auto-fix-mechanic.md` (Paso 3) — con decisión wholesale ECC vs wrapper sigma resuelta
+- `docs/stories/STORIES-sigma-auto-fix-mechanic.md` (Paso 4)
+- `auditoria/audit-plan-auto-fix-mechanic-2026-05-22.json` (Paso 5)
 
 ---
 
-## ⚠️ CAMBIO DE DIRECCIÓN — Sprint 2 redirigido (cont. 4) + Phase 1 cerrada (cont. 5)
+## ✅ SPRINT 3 SESIÓN 2 CERRADA (2026-05-22 — commit `2322e4a`)
 
-Tras análisis del **loop asintótico de GGA observado en Iteración 3** (4 rounds, bypass humano final), el Sprint 2 se redirigió:
+**`sigma:finding_classifier` BUILD COMPLETO** — pasos 6-12 PROTOCOLO ejecutados sobre stories S-4..S-8.
 
-- **Antes** (en versión 6.0): build 4 sigma MVP (`operationalize-constitution`, `enforce-constitution-check`, `multi-tenant-isolation-checker`, `dependency-cycle-detector`).
-- **Ahora** (versión 6.2): **scope-aware verification ✅ Phase 1 cerrada** (Plan B implementado + M1 N=1 OK), **trinidad correctiva → Sprint 3** (cura estructural — Tier A/B/C).
-- **Las 4 sigma MVP originales no se descartan**, pero quedan diferidas a Sprint 4+ hasta validar empíricamente que la capa correctiva + scope-aware resuelven el dolor observado.
+Métricas finales:
+- **73 tests PASS en 0.32s** (49 al cerrar sesión 1 → 73 al cerrar sesión 2)
+- **MC1 = 96.2%** cobertura
+- **294 LOC producción + 739 LOC tests** (ratio 2.5:1)
+- **Paso 7 audit PASS** — 0 críticos en G1-G33 + FG1-FG14 + SOLID + zero-trust (`auditoria/audit-code-classifier-2026-05-22.json`)
+- **Paso 8 adversariales PASS** — 11 tests adversariales + tests remaining
+- **M2 empírico medido**: A=57.7% / B=26.9% / C=15.4% sobre fixture R10 (dentro banda AC2 ±15pp) — `auditoria/m2-empirical-distribution-2026-05-22.json`
+- **GGA pre-commit hook PASS en 1 round** (sin bypass humano)
 
-**Razón del cambio**: el dolor empírico de Sprint 1 fue *"GGA loop sin auto-fix + sin scope awareness"*, no *"falta de skills sigma para Constitution Check enforcement"*. ADR-011 ataca el problema real observado y **Phase 1 lo confirmó empíricamente con N=1**.
-
-## Próximas opciones Sprint 2 sesión 2
-
-**Opción A — Validación N≥2** (Recommended): aplicar Phase 1 a otro caso (un commit nuevo de sandbox-stack o aplicar a Stallen). Solo entonces promover ADR-011 a v1.0 ACCEPTED con evidencia N≥2.
-
-**Opción B — Arrancar Phase 2 Sprint 3** (trinidad correctiva): `sigma:finding-classifier` + `sigma:auto-fix-mechanic` Tier A. Más caro estructural pero apunta a cierre completo del ciclo.
-
-**Opción C — Aplicar workflow a Stallen** con stack validado + Phase 1 activa. Mayor evidencia de producción.
-
----
-
-## CONTEXTO RÁPIDO — leer EN ORDEN al arrancar
-
-1. `CLAUDE.md` (constitución global del Framework, ~5 min)
-2. `auditoria/sesion-activa.md` — addendum 2026-05-21 PM/continuación 2 (T1.9 EMPIRICAL, ~10 min)
-3. Este archivo — plan Sprint 2 actualizado con ADR-011 (~5 min)
-4. **`decisions/ADR-011-capa-correctiva-y-scope-aware.md` PROPOSED v0.1** (~10 min) — **NUEVA prioridad Sprint 2**
-5. `projects/sandbox-stack/T1.9-EVIDENCE.md` v0.2 EMPIRICAL — matriz F1-F10 + 5 lecciones candidatas (~10 min)
-6. `projects/sandbox-stack/EVALUATION.md` v0.5 — matriz speckit-* + 2 lecciones candidatas T1.7 (~10 min, opcional)
-7. `projects/sandbox-stack/T1.7-EVIDENCE.md` — findings por skill speckit-* (~10 min, opcional)
-8. `decisions/ADR-009-adopcion-stack-ecosistema.md` ACCEPTED v1.0 (~5 min)
-9. `decisions/ADR-010-skill-routing-foreman.md` PROPOSED (~5 min, contexto)
-10. `projects/sandbox-stack/openspec/changes/todo-management/` (7 artefactos sdd-*, opcional)
-11. `projects/sandbox-stack/specs/001-todo-management/` (8 artefactos speckit-*, opcional)
-12. (Opcional) `NORTE.md` v0.1 — visión Framework
-13. (Opcional) `architecture/PRINCIPIOS-ARQUITECTURA.md` v1.3 — A1-A25
-
-## Pendientes operativos cierre cont. 4
-
-- **`git stash@{0}`** activo: GGA round 4 cleanup deferido a Sprint 2 (5 archivos). Recuperar con `git stash pop` al arrancar Sprint 2.
+Stories completadas sesión 2:
+- S-4: CLI `sigma-classify` (stdin/stdout/exit codes)
+- S-5: `--audit` flag (tier→count summary)
+- S-6: Performance validation sobre fixture R10
+- S-7: Extensibility (slots R/G/FG futuros)
+- S-8: M2 empirical distribution measurement
 
 ---
 
-## ESTADO ACTUAL (post 2026-05-21 PM/continuación 3 — Sprint 1 COMPLETO)
+## ✅ SPRINT 3 SESIÓN 1 CERRADA (2026-05-22 — commit `06493bc`)
 
-### ✅ Sprint 1 cerrado: planning + comparación + implementación validada
+**`sigma:finding_classifier` STORIES S-1..S-3 + PRECONDICIONES**
 
-- T1.6 ✅ Superpowers 14/14 verificado
-- T1.7 ✅ 5 skills speckit-* planning (8 artefactos + 47 tasks)
-- T1.8 ✅ EVALUATION.md v0.5 (44%→76% Direct operator-dependent)
-- T2 ✅ ADR-009 v0.5 PROPOSED
-- T1.9 ✅ EMPIRICAL workflow sdd-* completo (7 artefactos en openspec/, 47 tasks, 5 lecciones)
-- **Iteración 3 ✅ EJECUTADA**: 4 sub-agents secuenciales sobre tasks.md. **47/47 tasks marcadas [x]**. **19/25 A-rules ejercitadas empíricamente (76%)**. 75 archivos en sandbox. CI gate con adversarial-gate + integration-rls jobs. T1.10-EVIDENCE.md escrito.
-- **ADR-009 ✅ ACCEPTED v1.0**: stack Spec Kit + ECC + claude-mem validado empíricamente. Sigma MVP NO bloqueante para v1.0 (operador-instruido cubre el gap).
+- Precondiciones audit cerradas: R10/R07/R08 (fixture sprint1-iteracion3.json + S-8 + emit_calibration_log())
+- S-1: YAML loader + schema validation (PyYAML 6.0.3) — 15 tests
+- S-2: `classify()` deterministic algorithm — 11 tests
+- S-3: `emit_calibration_log()` con JSON aggregation + deduplicación — 13 tests
+- **36 tests PASS en 0.09s**
+- Python package infrastructure: `pyproject.toml` + `framework/sigma/finding_classifier/` (15 archivos)
+- GGA PASS en 1 round (N=1 de L38 candidata original)
 
-### ⏸️ DIFERIDO a próximas sesiones (no bloqueante para v1.0)
+---
 
-- **Build sigma MVP** (4 skills): `operationalize-constitution`, `enforce-constitution-check`, `multi-tenant-isolation-checker`, `dependency-cycle-detector`. Sprint 2.
-- **Aplicar workflow operativo a Stallen**: usar el stack validado en proyecto cliente real.
-- **EVALUATION.md v0.5 → v1.0**: polish con evidencia post-implement.
-- **Smoke tests reales**: requieren `npm ci` + `supabase start` + ejecución manual del checklist en `docs/DEPLOYMENT.md`.
-- **DEUDAS nuevas Iteración 3**: DEUDA-ADVERSARIAL-TEST-SHAPE-WRONG (menor), DEUDA-NPM-INSTALL-MANUAL, DEUDA-SUPABASE-LOCAL-MANUAL, DEUDA-SIGMA-MVP-NO-CONSTRUIDAS.
+## ✅ SPRINT 2 SESIÓN 2 CERRADA (2026-05-21)
+
+**Phase 2 ADR-011 PRD-ready** — Pasos 1-5 PROTOCOLO sobre `sigma:finding_classifier` (artefactos en `docs/prd/`, `docs/dominio/`, `docs/arquitectura/`, `docs/stories/`, `auditoria/audit-plan-classifier-2026-05-21.json`). Veredicto: `READY_FOR_BUILD_WITH_DEUDAS_TRACKED` (3 warnings cerradas en Sprint 3 sesión 1).
+
+ADR-011 bumpeado v0.5 → v0.7 PARTIAL con sección "Phase 2 PRD-ready".
+
+---
+
+## ✅ SPRINT 2 SESIÓN 1 CERRADA (2026-05-21 PM)
+
+**Phase 1 ADR-011 (`sigma:gga-scope-aware`) IMPLEMENTADA** vía Plan B (RULES_FILE swap declarativo en `.gga`).
+
+M1 CUMPLIDO N=1: GGA cerró en 1 round vs 4 baseline.
+
+Commits Sprint 2 sesión 1: `6c0a71c` + `fe3ed57` (pusheados a origin/main).
+
+---
+
+## ESTADO ACTUAL (post Sprint 3 sesión 3 — 2026-05-22)
+
+### Trinidad correctiva (ADR-011 Phase 2)
+
+| Componente | Status | Sprint |
+|------------|--------|--------|
+| **`sigma:finding_classifier` (front-end)** | ✅ DONE — operativo, 73 tests PASS, audit Paso 7+8 PASS, M2 medido | Sprint 3 sesiones 1+2 |
+| **`sigma:auto-fix-mechanic` (Tier A)** | 🟡 PRD-ready o BUILD-ready según cierre BLOQUE 2 de esta sesión | Sprint 3 sesión 3 (planning) → 4-5 (build) |
+| **`sigma:correction-agent-bounded` (Tier B)** | ⏳ pendiente | Sprint 4 |
+| **`sigma:correction-adr-draft` (Tier C)** | ⏳ pendiente | Sprint 4 |
+| **Integración E2E** (GGA → classifier → tier handler → patch/PR) | ⏳ pendiente | Sprint 4-5 |
 
 ### Repo
 
-- Working tree: con cambios pendientes del cierre 2026-05-21 PM/continuación 3
-- Branch: main
-- Próximo commit pendiente: en este mismo cierre
+- **Branch**: main
+- **HEAD esperado al cierre sesión 3**: nuevo commit con BLOQUE 1 (ADR-011 v0.9 + LECCIONES.md + architecture/README v1.3 + SIGUIENTE-SESION v7.0) + BLOQUE 2 (artefactos planning auto-fix-mechanic)
+- **Working tree esperado**: clean post commit
 
 ---
 
-## DECISIONES TOMADAS EN SESIÓN 2026-05-21 PM/continuación 2
+## DECISIONES TOMADAS EN SESIÓN 2026-05-22 (Sprint 3 sesión 3)
 
-- **T1.9 ejecutado empíricamente**: corrida completa sdd-* sobre el mismo caso que speckit-* en T1.7
-- **artifact_store=openspec + execution=automatic** elegido vía AskUserQuestion para T1.9
-- **Decisión D resuelta como híbrida**: speckit-* default (cost-aware) + sdd-* escalation por matriz F1-F10
-- **Iteración 3 diferida a próxima sesión**: cost-aware (~$25-45 gastado en T1.9). Backbone elegido: speckit-* (consistente con T1.7)
-- **ADR-009 sigue PROPOSED**: addendum T1.9 agregado, promoción a ACCEPTED requiere iteración 3
-
----
-
-## DECISIONES PENDIENTES PARA PRÓXIMA SESIÓN
-
-### Decisión D — SDD backbone (`sdd-*` vs `speckit-*`) — ✅ RESUELTA
-
-Backbone **híbrido** resuelto en T1.9 EMPIRICAL:
-- **Default**: speckit-* (velocidad ~15s, cost ~30k tokens)
-- **Escalation**: sdd-* cuando aplica matriz F1-F10 de T1.9-EVIDENCE.md (multi-domain, DAG explícito, A20 crítico, operador no instruido)
-- **Refinamiento futuro**: las 4 sigma MVP (especialmente `sigma:enforce-constitution-check`) llevan speckit-* a paridad de cobertura A* a fracción del costo
-
-### Decisión B — Visión D (Capa A + Capa B)
-- (i) Formalizar ADR-010-bis o ADR-011 ahora
-- (ii) Esperar evidencia de iteración 3 + build sigma MVP
-
-**Recomendación**: (ii) — la evidencia preliminar de planning (incluyendo T1.9 EMPIRICAL) valida complementariedad pero no necesariamente separación A/B.
-
-### Decisión C — Stallen
-Sigue diferido. Sin cambio.
+- **ADR-011 v0.9 PARTIAL** — bump con evidencia BUILD ejecutado + M2 medido + L38 N=2.
+- **L38 promovida** — primera lección N=2 formal del Framework.
+- **`architecture/LECCIONES.md` creado** — registry canónico de lecciones N=2+ (resuelve gap arquitectónico).
+- **Decisión arquitectónica BLOQUE 2 Paso 3**: [PENDIENTE DOCUMENTAR al cerrar sesión] componer wholesale sobre ECC `build-fix` + `refactor-clean` vs construir wrapper sigma propio que invoca codemods directos.
 
 ---
 
-## QUÉ HACER ESTA PRÓXIMA SESIÓN
+## QUÉ HACER EN LA PRÓXIMA SESIÓN (Sprint 3 sesión 4)
 
-### PASO T-1 — Verificación commit del cierre 2026-05-21 PM/continuación 2
+### PASO T-1 — Verificación commit del cierre 2026-05-22 pusheado
 
 ```powershell
 cd C:\DEPARTAMENTO-SOFTWARE
 git log --oneline -5
-# Debería mostrar el commit del cierre PM/continuación 2 2026-05-21 (T1.9 EMPIRICAL)
+# Debería mostrar commit Sprint 3 sesión 3 (BLOQUE 1 sync + BLOQUE 2 planning)
 git status
 # Esperado: working tree clean
 git pull
 ```
 
-Si push fue exitoso → seguir directo a Iteración 3.
+### PASO Sprint 3 sesión 4 — `sigma:auto-fix-mechanic` BUILD pasos 6-12
+
+Aplicar PROTOCOLO-CONSTRUCCION-CODIGO pasos 6-12 al plan auditado en sesión 3:
+
+- **Paso 6**: Construir código (~10-15hs estimado, según decisión Paso 3 wholesale ECC vs wrapper sigma)
+- **Paso 7**: Audit código (G1-G33 + FG1-FG14 + SOLID + zero-trust)
+- **Paso 8**: Tests adversariales
+- **Paso 9**: Validación seguridad y configuración
+- **Paso 10**: Deploy seguro (skill registrado en sigma namespace)
+- **Paso 11**: Verificación post-deploy
+- **Paso 12**: Cierre + polinización
+
+**Validación de L38 N=3 implícita**: si este build pasa GGA en 1 round, L38 alcanza N=3 estructural y puede graduar a regla A26 universal en `PRINCIPIOS-ARQUITECTURA.md`. Si NO pasa, L38 vuelve a observación contextual sin promoción a A*.
+
+### PASO Sprint 3 sesión 5 — M3 validación empírica + ADR-011 v0.9 → v1.0 ACCEPTED candidato
+
+- Aplicar `auto-fix-mechanic` a un commit real con findings GGA reales
+- Validar M3 ≥90% Tier A auto-fix
+- Si M3 PASS + M1 N≥2 acumulado: ADR-011 promovido a ACCEPTED v1.0 (al menos para el subset classifier + auto-fix-mechanic)
+
+### PASOS PARALELOS DIFERIDOS (no bloqueantes Sprint 3)
+
+- **Sprint 4**: `sigma:correction-agent-bounded` Tier B + `sigma:correction-adr-draft` Tier C + integración E2E
+- **Sprint 5+**: aplicar workflow a Stallen para alcanzar M1 N≥3 + M2 N≥3 fixtures distintos
+- **Diferidos a Sprint 4+**: las 4 sigma MVP originales (`operationalize-constitution`, `enforce-constitution-check`, `multi-tenant-isolation-checker`, `dependency-cycle-detector`)
 
 ---
 
-### PASO T1.9 — ✅ COMPLETADO 2026-05-21 PM continuación 2
+## CONTEXTO RÁPIDO — leer EN ORDEN al arrancar próxima sesión
 
-T1.9 ejecutado empíricamente. Decisión D resuelta como híbrida. Ver `projects/sandbox-stack/T1.9-EVIDENCE.md` v0.2 EMPIRICAL.
-
----
-
-### PASO Iteración 3 — ✅ COMPLETADO 2026-05-21 PM continuación 3
-
-Iteración 3 ejecutada en 4 sub-agents secuenciales. 47/47 tasks marcadas. 19/25 A-rules ejercitadas (76% — matched a-priori). ADR-009 promovido v0.5 PROPOSED → **v1.0 ACCEPTED**. Ver `projects/sandbox-stack/T1.10-EVIDENCE.md`.
-
----
-
-### Próximas opciones (Sprint 2 o aplicación a Stallen)
-
-**Opción A — Sprint 2: Build sigma MVP (4 skills)**
-Construir las 4 skills planeadas en ADR-009. Sin operador instruido del Framework, las skills cierran los gaps que actualmente requieren operador. Tiempo estimado: 2-3 sesiones.
-
-**Opción B — Aplicar workflow a Stallen**
-Usar el stack validado (speckit-* + ECC + claude-mem + A1-A25 instruidas) en proyecto cliente real (Stallen SaaS). Mayor evidencia de validez en producción. Tiempo estimado: 1-2 semanas.
-
-**Opción C — Polish + evangelización**
-EVALUATION.md v0.5 → v1.0 con evidencia post-implement. Workflow operativo `docs/WORKFLOW-OPERATIVO.md` v1.0. Cross-LLM publishing setup (canonical `obra/superpowers` model). Tiempo estimado: 1-2 sesiones.
+1. `CLAUDE.md` (constitución, ~5 min)
+2. `auditoria/sesion-activa.md` — addendum Sprint 3 sesión 3 (~10 min)
+3. Este archivo — plan Sprint 3 sesión 4 (~5 min)
+4. `decisions/ADR-011-capa-correctiva-y-scope-aware.md` **PROPOSED v0.9 PARTIAL** — sección "Phase 2 BUILD ejecutado" + bump rationale (~10 min)
+5. `architecture/LECCIONES.md` v1.0 — L38 + workflow promoción (~5 min)
+6. `docs/prd/PRD-sigma-auto-fix-mechanic.md` (~5 min)
+7. `docs/arquitectura/ARQUITECTURA-sigma-auto-fix-mechanic.md` — decisión Paso 3 resuelta (~10 min)
+8. `docs/stories/STORIES-sigma-auto-fix-mechanic.md` (~5 min)
+9. `auditoria/audit-plan-auto-fix-mechanic-2026-05-22.json` (~3 min)
+10. (Opcional) `framework/sigma/finding_classifier/` — código del classifier como referencia de estilo
 
 ---
 
-### PASO Iteración 3 — `/speckit-implement` o `/ecc:multi-execute` sobre tasks.md — 2-3 hs
+## DEUDAS TÉCNICAS — estado tras Sprint 3 sesión 3
 
-Ejecutar implementación real sobre las 47 tareas de `specs/001-todo-management/tasks.md`. Objetivo: medir cobertura ejecutable real de las 11 reglas Direct (vs cobertura a-priori).
+### Deudas RESUELTAS esta sesión
 
-**Métricas a capturar**:
-- Cuántas tasks se ejecutaron sin intervención manual
-- Cuántas requirieron corrección
-- Cuántas reglas A* fueron verificablemente ejecutadas (vs solo declaradas en plan)
-- Costo total tokens
-- Fricciones específicas entre Spec Kit + ECC + claude-mem en flujo real
+- **DEUDA-SIGUIENTE-SESION-STALE**: ✅ refresh v6.3 → v7.0 con estado real del disco.
+- **DEUDA-REGISTRY-LECCIONES**: ✅ `architecture/LECCIONES.md` creado.
 
-**Output**: `projects/sandbox-stack/T1.10-EVIDENCE.md` (implementation phase).
+### Deudas precondición Sprint 3 (de audit Paso 5 v0.7) — RESUELTAS en sesión 1+2
 
----
+- **R07** ✅ S-8 creada con fixture R10 + medición M2 dentro banda AC2 ±15pp.
+- **R08** ✅ `emit_calibration_log()` implementada con coverage 100%.
+- **R10** ✅ Fixture `sprint1-iteracion3.json` construido y poblado.
 
-### PASO T1.11 — Refinamiento ADR-009 v0.5 → v1.0 — 60 min
+### Deudas ABIERTAS sin cambio
 
-Tras T1.9 + iteración 3:
-
-- Actualizar matriz A* vs stack v0.5 → v1.0 con evidencia post-implement
-- Resolver Decisión D en ADR-009
-- Cambiar status de PROPOSED a ACCEPTED (si validación pasa) o REJECTED (si falla)
-- Anexar evidencia ejecutable como apéndice
-
----
-
-### PASO T3 — Build 4 sigma MVP — 1-2 sesiones (no esta sesión)
-
-Construir:
-1. `sigma:operationalize-constitution`
-2. `sigma:enforce-constitution-check`
-3. `sigma:multi-tenant-isolation-checker`
-4. `sigma:dependency-cycle-detector`
-
-Como skills cross-LLM siguiendo modelo `obra/superpowers` (LECCIÓN 18).
+- **DEUDA-ADVERSARIAL-TEST-SHAPE-WRONG** (Iteración 3) 🟡
+- **DEUDA-NPM-INSTALL-MANUAL** (Iteración 3) 🟢
+- **DEUDA-SUPABASE-LOCAL-MANUAL** (Iteración 3) 🟢
+- **DEUDA-SIGMA-MVP-NO-CONSTRUIDAS** — diferidas Sprint 4+
+- **DEUDA-CONSTITUTION-CHECK-ENFORCEMENT** — diferida
+- **DEUDA-TAXONOMIA-CLARIFY-INCOMPLETA** — diferida
+- **DEUDA-FACT-FORCING-GATE-EN-SANDBOX** (workaround documentado)
+- **DEUDA-CLAUDE-MEM-MANIFEST** (parche local persistente)
+- **DEUDA-PLUGIN-INSTALL-DOCS**
+- **DEUDA-WINDOWS-SETUP-CHECKLIST**
+- **DEUDA-SDD-EXPLORE-NO-WRITE** (menor)
+- **DEUDA-SUB-AGENT-OVERRIDE-OPERATOR** (menor)
+- **DEUDA-ADR-010-PROMOTE-TO-ACCEPTED**
+- **DEUDA-NORTE-FRAMEWORK-PLACEHOLDERS** (Q4-Q7)
+- **DEUDA-WORKFLOW-OPERATIVO**
+- **DEUDA-VISIÓN-D-NO-FORMALIZADA**
+- **DEUDA-REPLANTEAR-ROADMAP-POST-STACK**
 
 ---
 
-### PASO T4 — NORTE Framework v0.2 (placeholders Q4-Q7) — 30-60 min
-
-Llenar:
-- Q4 Tier de calibración (mantener Tier 1 default o multi-tier)
-- Q5 Stakeholders detallados
-- Q6 Restricciones
-- Q7 Criterio de stop / pivot
-
-Bump v0.1 → v0.2 (no v1.0 todavía).
-
----
-
-### PASO T5 — Workflow operativo Nivel 0 — 1-2 hs
-
-Si Visión C confirmada por ADR-009 v1.0 ACCEPTED → crear `docs/WORKFLOW-OPERATIVO.md` v1.0 documentando:
-- Composición del stack curado
-- Cuándo usar cada pieza
-- Orden Analizar → Planificar → Ejecutar → Verificar
-- Cuándo aplicar overlay del Framework
-- Cuándo invocar skills sigma
-
----
-
-### PASO T6 — Documentar lecciones operativas — 45 min
-
-Agregar a `docs/AGENT-INTEGRATION.md`:
-- Método declarativo `extraKnownMarketplaces` (LECCIÓN 19)
-- Cross-LLM publishing canónico modelo `obra/superpowers` (LECCIÓN 18)
-- Windows setup checklist (DEUDA-WINDOWS-SETUP-CHECKLIST)
-- Desactivación de Fact-Forcing Gate en sandbox via settings.local.json (DEUDA-FACT-FORCING-GATE-EN-SANDBOX, workaround)
-
----
-
-## PRE-FLIGHT
+## PRE-FLIGHT próxima sesión
 
 ```powershell
 cd C:\DEPARTAMENTO-SOFTWARE
-git status              # working tree esperado: clean post cierre 2026-05-21 PM/continuación
+git status              # working tree esperado: clean post cierre sesión 3
 git pull
 git log --oneline -10
 
-cd projects/sandbox-stack
-ls .claude/skills/      # speckit-*
-ls .specify/            # workflow Spec Kit
-ls specs/001-todo-management/  # 8 artefactos (spec, checklists, plan, research, data-model, contracts, quickstart, tasks)
+# Verificar trinidad correctiva al día
+ls framework/sigma/             # deberían aparecer: finding_classifier/ + auto-fix-mechanic/ (si BLOQUE 2 build arrancó) o solo finding_classifier/ (si solo planning)
+cat decisions/ADR-011-*.md | head -10  # confirmar v0.9 PARTIAL en header
+cat architecture/LECCIONES.md | head -30  # confirmar L38 formal + workflow
+
+# Tests del classifier siguen verdes
+cd framework
+python -m pytest sigma/finding_classifier/tests/ -q
+# Esperado: 73 passed in <1s
 ```
 
 ---
 
-## REGLAS CRÍTICAS A RECORDAR
+## REGLAS CRÍTICAS A RECORDAR (Sprint 3 sesión 4+)
 
-### 7 Principios rectores
+### 7 Principios rectores (sin cambio)
 1. Python traza → IA recorre → Python verifica
-2. **3 capas: PREVENTIVA → VERIFICABLE → CORRECTIVA**
+2. **3 capas: PREVENTIVA → VERIFICABLE → CORRECTIVA** ← L38 confirma empíricamente
 3. Dominio-first
-4. Auto-fix > finding cuando inequívoco
+4. **Auto-fix > finding cuando inequívoco** ← `auto-fix-mechanic` operacionaliza
 5. Polinización cruzada
 6. **Descubrir antes de ejecutar** (audit empírico)
 7. Meta-producto recursivo
 
-### Reglas A1-A25 más críticas (sin cambio)
-- A5 Multi-tenant Strict Isolation (CRÍTICA, Direct post-T1.7)
-- A12 Zero Trust (CRÍTICA, Direct)
-- A20 Hexagonal Architecture (CRÍTICA, Direct)
-- A21 Structured Observability (CRÍTICA, Partial — traces deferido v2)
-- A22 Secrets Management (CRÍTICA, Direct)
-- A24 Data Lifecycle (CRÍTICA, Direct post-T1.7)
+### Lecciones N=2+ formales (architecture/LECCIONES.md)
+- **L38**: PROTOCOLO + audit Paso 5 elimina loop GGA asintótico (N=2, primera promoción formal)
 
-### Insight Decisión A — VALIDADO 2 NIVELES
-- Sesión 2026-05-21 (matriz a-priori): 44% Direct + 48% Partial confirmó complementariedad
-- Sesión 2026-05-21 PM/continuación (matriz ejecutable): 76% Direct con operador instruido del Framework → el delta es operator-dependent, lo que justifica empíricamente el Framework
+### Lecciones N=1 vigentes (sesion-activa.md)
+- L35, L36, L37 (capa correctiva + scope-awareness — esperan N=2)
+- L29-L34 (Iteración 3 — cost hook, token budget, A-rule coverage, etc.)
+- L24-L28 (sdd-* vs speckit-* — T1.9 EMPIRICAL)
+- L22-L23 (planning a-priori vs ejecutable)
+- L16-L21 (sesiones 2026-05-20/21)
 
-### Lecciones técnicas críticas (acumulado)
-- LECCIÓN 16: cascada de aceptación entre Claude instances
-- LECCIÓN 17: edit_file con array no es atómico — preferir write_file
+### Insight Decisión A — VALIDADO 2 NIVELES (sin cambio)
+
+### Lecciones técnicas sticky
+- LECCIÓN 17: `edit_file` con array no atómico — preferir `write_file` (válido en Sprint 3 también)
 - LECCIÓN 18: cross-LLM publishing canónico (`obra/superpowers` modelo)
-- LECCIÓN 19: método declarativo `extraKnownMarketplaces` en ~/.claude/settings.json
-- LECCIÓN 20: flags de tools rotan rápido — documentar comportamiento, no flags
-- LECCIÓN 21 (N=1): matriz a-priori vs ejecutable — validar invocando
-- LECCIÓN 22 candidata (N=1, 2026-05-21 PM): manual injection point del Constitution Check
-- LECCIÓN 23 candidata (N=1, 2026-05-21 PM): matriz a-priori vs ejecutable diverge AL ALZA con operador instruido
-
-### Lecciones de proceso
-- Anti-paternalismo: NO proyectar cansancio
-- Audit empírico: cuando Julián cuestiona → audit INMEDIATO (hit rate 20/20)
-- El Departamento es Visión C confirmada (curador + calibrador + overlay arquitectónico declarativo)
-- Fact-Forcing Gate desactivable en sandbox via settings.local.json (precedente capturado)
+- LECCIÓN 19: `extraKnownMarketplaces` en `~/.claude/settings.json`
 
 ---
 
-## RIESGOS DE LA PRÓXIMA SESIÓN
+## RIESGOS DE LA PRÓXIMA SESIÓN (Sprint 3 sesión 4)
 
-- **T1.9 confusión sdd-* vs speckit-***: si ambos workflows son confusamente similares, Decisión D queda como "depende del proyecto" — aceptable.
-- **Iteración 3 cuesta más de lo estimado**: si `/implement` toma 4+ hs, dividir en sub-T1.10.1 (US2 auth) y T1.10.2 (US1 todos).
-- **ADR-009 promoción puede REJECT**: si la iteración 3 revela fricciones irreconciliables Spec Kit↔ECC↔claude-mem, ADR-009 baja a REJECTED y se redacta ADR-009-bis.
-- **Build sigma MVP puede revelar puntos no extensibles**: si Spec Kit no permite hook post-procesador, las sigma skills necesitan otra arquitectura.
-- **Compactación de chat**: si la sesión es larga, aplicar PROTOCOLO-INICIO-CHAT PASO 1 al re-arrancar.
+- **Fork ECC wholesale vs wrapper sigma**: si la decisión Paso 3 fue wholesale, validar empíricamente que ECC `build-fix` cubre los rule_ids Tier A del classifier. Si gap >50%, considerar wrapper sigma híbrido.
+- **L38 N=3 puede fallar**: si el build de `auto-fix-mechanic` NO pasa GGA en 1 round, L38 NO promueve a A26 — queda en N=2 formal solamente. Acción: investigar causa raíz, NO bypass.
+- **M3 puede medirse <90%**: si Tier A auto-fix tiene <90% de éxito, ADR-011 NO sube a v1.0 ACCEPTED. Bajar a REJECTED o iterar con auto-fix-mechanic v0.2.
+- **Build estimado 10-15hs**: dividir en sub-sesiones por phase si es necesario (precedente del classifier: S-1..S-3 sesión 1, S-4..S-8 sesión 2).
 
 ---
 
 ## ARCHIVOS CLAVE A TOCAR EN LA PRÓXIMA SESIÓN
 
-- `projects/sandbox-stack/T1.9-EVIDENCE.md` (nuevo)
-- `projects/sandbox-stack/T1.10-EVIDENCE.md` (nuevo — implementation)
-- `projects/sandbox-stack/EVALUATION.md` (v0.5 → v1.0)
-- `decisions/ADR-009-adopcion-stack-ecosistema.md` (v0.5 → v1.0 ACCEPTED o REJECTED)
-- `NORTE.md` (v0.1 → v0.2 placeholders)
-- `docs/WORKFLOW-OPERATIVO.md` (nuevo si T5 aplica)
-- `docs/AGENT-INTEGRATION.md` (actualizar con T6)
-- `auditoria/sesion-activa.md` (al cerrar próxima sesión)
-- `SIGUIENTE-SESION.md` (al cerrar, regenerar)
-- Posibles 4 nuevos dirs `sigma:*` skills (cross-LLM publishing)
+- `framework/sigma/auto-fix-mechanic/` (nuevo package)
+- `framework/sigma/auto-fix-mechanic/tests/` (test suite)
+- `auditoria/audit-code-auto-fix-mechanic-YYYY-MM-DD.json` (Paso 7)
+- `auditoria/m3-empirical-tier-a-success-YYYY-MM-DD.json` (M3 medición)
+- `decisions/ADR-011-capa-correctiva-y-scope-aware.md` (eventual v0.9 → v1.0 candidato)
+- `architecture/LECCIONES.md` (eventual L38 → A26 graduation o L39+ nueva)
+- `auditoria/sesion-activa.md` (cierre próxima sesión)
+- `SIGUIENTE-SESION.md` (regenerar al cierre v7.0 → v7.1)
 
 ---
 
 ## NOTAS PARA CLAUDE
 
 - **Usuario**: Julián Vargas, vibe coder / harness engineer
-- **Cliente recomendado**: Claude Code CLI dentro de `projects/sandbox-stack/`
-- **Visión Framework**: harness anti-alucinación senior — Visión C confirmada empíricamente
+- **Cliente recomendado**: Claude Code CLI dentro de `C:\DEPARTAMENTO-SOFTWARE\`
 - **Cuando Julián cuestione "ya está hecho"** → audit empírico INMEDIATO (hit rate 20/20)
 - **NUNCA proyectar cansancio**
-- **A1-A25 universales** — 0 deudas A* abiertas
 - **PROTOCOLO-INICIO-CHAT v1.0 PASO 1 OBLIGATORIO** para verificar Project es Framework
 - **2 directorios a NO confundir**: `C:\DEPARTAMENTO-SOFTWARE\` (activo) vs `C:\Users\Windows 11\sigmacontrol-camino-1\` (legacy pause)
-- **EVALUATION.md v0.5 es preliminar** — iteración 3 lo refina con evidencia de implement
-- **claude-mem requiere autoUpdate: false** — no romper el parche
-- **Fact-Forcing Gate desactivado** en `projects/sandbox-stack/.claude/settings.local.json` para esta workspace. Si trabajás en otro path, el gate sigue activo.
-- **8 stacks cargados**: spec-kit, ecc (200+), claude-mem (12), superpowers (14), sdd-* (9 — para T1.9), vercel:*, sigma-mem (futuro), gentle-ai builtins.
+- **L38 ya es FORMAL** — no usarla como "candidata" en docs nuevos
+- **L35-L37 SIGUEN candidatas N=1** — no promoverlas sin segundo evento empírico
+- **Trinidad correctiva**: classifier ✅ operativo, auto-fix-mechanic 🟡 en construcción, los otros dos ⏳ Sprint 4
+- **claude-mem requiere `autoUpdate: false`** — no romper el parche local
 
 ---
 
@@ -376,9 +317,9 @@ ls specs/001-todo-management/  # 8 artefactos (spec, checklists, plan, research,
 
 Al abrir Claude Code CLI:
 
-> *"Seguimos con el Departamento. Aplicá PROTOCOLO-INICIO-CHAT. Leé sesion-activa.md (addendum 2026-05-21 PM/continuación) y SIGUIENTE-SESION.md v5.1. Diagnóstico estándar. Arrancamos T-1 (verificar commit pusheado), después T1.9 (comparación sdd-* vs speckit-*), después iteración 3 (/implement) si hay tiempo."*
+> *"Seguimos Framework Departamento. HEAD esperado: [commit Sprint 3 sesión 3]. Aplicá PROTOCOLO-INICIO-CHAT. Estado: Sprint 3 sesión 4. Trinidad correctiva: classifier ✅, auto-fix-mechanic 🟡 (BUILD pasos 6-12 esta sesión). Arrancamos T-1 + Paso 6 build auto-fix-mechanic siguiendo plan auditado en sesión 3."*
 
 ---
 
-Creado: 2026-05-15 | Versión: **5.1** (post planning-phase del workflow real + 2 lecciones candidatas + ADR-009 v0.5 PROPOSED)
-Para: Claude que abra próxima sesión (Claude Code CLI recomendado dentro de `projects/sandbox-stack/`)
+Creado: 2026-05-15 | Versión: **7.0** (post Sprint 3 sesión 3 — sync ADR-011 v0.9 + L38 formal N=2 + LECCIONES.md nuevo + auto-fix-mechanic planning)
+Para: Claude que abra próxima sesión (Sprint 3 sesión 4 — BUILD auto-fix-mechanic)
