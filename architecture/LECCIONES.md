@@ -50,15 +50,16 @@ estrictos) + audit Paso 5 (R01-R15) sobre el plan PASA GGA en 1 round, sin
 bypass humano. En contraposición a 4 rounds + bypass humano (`--no-verify`)
 cuando se construye sin auditar el plan previamente.*
 
-**Estado**: ✅ **N=2 CONFIRMADA** — promovida a LECCIÓN formal 2026-05-22.
+**Estado**: ✅ **N=3 CONFIRMADA** (promovida a LECCIÓN formal 2026-05-22 con N=2; N=3 alcanzado 2026-05-24).
 
 **Evidencia empírica**:
 
 | Evento | Commit/Sprint | GGA rounds | Bypass | PROTOCOLO+audit Paso 5 previo |
 |--------|---------------|-----------|--------|-------------------------------|
 | Sprint 1 Iteración 3 (baseline contraejemplo) | varios | 4 + asintotizó | ✅ `--no-verify` | ❌ No |
-| Sprint 3 sesión 1 — N=1 | `06493bc` (S-1..S-3) | 1 | ❌ Ninguno | ✅ Sí |
-| Sprint 3 sesión 2 — N=2 | `2322e4a` (S-4..S-8) | 1 | ❌ Ninguno | ✅ Sí |
+| Sprint 3 sesión 1 — N=1 | `06493bc` (S-1..S-3 classifier) | 1 | ❌ Ninguno | ✅ Sí |
+| Sprint 3 sesión 2 — N=2 | `2322e4a` (S-4..S-8 classifier) | 1 | ❌ Ninguno | ✅ Sí |
+| Sprint 3 sesión 4 — N=3 | `3701463` (S-1..S-5 auto-fix-mechanic, 90 tests) | 1 | ❌ Ninguno | ✅ Sí |
 
 **Importancia para el Framework**: primera lección que cierra empíricamente
 el ciclo **PREVENTIVA → VERIFICABLE** (2° principio rector). Demuestra que la
@@ -84,9 +85,21 @@ estructuralmente el costo de la capa verifiable (GGA + reviewers adversariales).
   auto-fix + sin scope-awareness asintotiza al infinito"*. L38 confirma que el
   bypass humano del baseline NO era necesario si el plan estaba auditado.
 
-**Próxima validación esperada**: N=3 cuando se construya `sigma:auto-fix-mechanic`
-siguiendo el mismo workflow (Sprint 3 sesiones 4-5). Si N=3 se cumple, L38 puede
-graduar a regla A26 universal en `PRINCIPIOS-ARQUITECTURA.md`.
+**Próxima validación esperada**: N≥1 sobre proyecto DISTINTO al Framework
+Departamento (ej. Stallen). L38 actualmente tiene N=3 sobre commits del MISMO
+proyecto — esto valida la lección en el contexto operativo del Framework pero
+NO califica para graduación a regla A26 universal según `architecture/README.md`
+("aparece un nuevo patrón estructural validado por 3+ proyectos"). Para
+A26 universal: replicar workflow PROTOCOLO + audit Paso 5 en Stallen (o tercer
+proyecto) y verificar mismo comportamiento (GGA 1 round). Si se cumple,
+graduar a A26 con ADR de promoción.
+
+**Nota interpretativa N=3 (2026-05-24)**: el resultado consistente sobre
+3 componentes del Framework (classifier S-1..S-3, classifier S-4..S-8,
+mechanic S-1..S-5) con scopes y stacks distintos (loader + classify + CLI +
+fixture-based testing vs orchestrator + snapshot + subprocess wrapper +
+verifier dispatcher) sugiere robustez del patrón cross-component dentro del
+proyecto. La validación cross-proyecto sigue siendo el siguiente hito formal.
 
 **Falsabilidad**: L38 quedaría refutada si un futuro código que pasa PROTOCOLO
 + audit Paso 5 estricto NO pasa GGA en 1 round. En ese caso bajar a candidata
