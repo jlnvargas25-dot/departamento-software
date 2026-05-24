@@ -30,3 +30,7 @@ htmlcov/
 .tox/
 build/
 dist/
+
+# Node (framework/sigma/auto_fix_mechanic/codemods/* — ts-morph codemods)
+node_modules/
+package-lock.json

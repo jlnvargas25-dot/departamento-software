@@ -3,9 +3,68 @@
 > **Propósito**: handoff táctico post-Sprint 3 sesión 3 (BLOQUE 1 sync completado + BLOQUE 2 pasos 1-5 de `sigma:auto-fix-mechanic`).
 > Stallen DIFERIDO hasta que el Framework esté maduro.
 
-**Última actualización**: 2026-05-24 (Sprint 3 sesión 4 cerrada — auto-fix-mechanic S-1..S-5 core operativo, 90 tests PASS)
+**Última actualización**: 2026-05-24 (Sprint 3 sesión 5 cerrada — auto-fix-mechanic build end-to-end completo, 181 tests PASS, R08 cerrada)
 **Cliente recomendado próxima sesión**: **Claude Code CLI** dentro de `C:\DEPARTAMENTO-SOFTWARE\` (skills speckit-* + ecc:* + claude-mem:* + sdd-* + superpowers:* todos cargados)
-**Versión**: 7.1 (post Sprint 3 sesión 4 — S-1..S-5 core build; S-6..S-8 + audits Paso 7+8 en sesión 5)
+**Versión**: 7.2 (post Sprint 3 sesión 5 — mechanic end-to-end operativo; audits Paso 7+8 en sesión 6)
+
+---
+
+## ✅ SPRINT 3 SESIÓN 5 CERRADA (2026-05-24)
+
+**`sigma:auto_fix_mechanic` BUILD END-TO-END COMPLETO** — pasos 6 del PROTOCOLO ejecutado sobre la segunda mitad del plan auditado. Trinidad correctiva ya tiene 2/3 componentes operativos. Codemods custom funcionales con smoke tests; audits Paso 7+8 diferidos a sesión 6.
+
+### Stories completadas
+
+| Story | Descripción | Tests | LOC prod |
+|-------|-------------|-------|----------|
+| S-6.1 | Codemod `non_null_to_optional.js` (ts-morph, contextual PropertyAccess/ElementAccess) | smoke | ~110 |
+| S-6.2 | Codemod `console_to_logger.js` (ts-morph, console.* → logger.*, inject import) | smoke | ~110 |
+| S-6.3 | Codemod `console_to_json_structured.js` Deno (Edge Functions scope, `serializeErr` helper inline → **R08 CERRADA**) | smoke | ~170 |
+| S-6.4 | Codemod `infer_type_from_context.js` (conservador, type checker inference, escalation if unresolvable) | smoke | ~80 |
+| S-7 | Codemods Python: `rename_migration_timestamp.py` (git log priority, DRY-RUN, rollback log) + `add_volatile_marker.py` (regex SQL, idempotente) | smoke | ~250 |
+| S-8 | CLI `sigma-mechanic` (stdin/stdout, --metrics MM1-MM5) + 9 tests CLI + 3 M3 empirical + 3 idempotency + 3 extensibility | 18 | ~150 |
+
+### Métricas finales sesión 5
+
+- **181 tests PASS en 5.4s** (73 classifier + 90 mechanic S-1..S-5 sesión 4 + 18 mechanic S-8 sesión 5)
+- ~870 LOC adicionales (~150 Python CLI + ~720 codemods) → total mechanic ~1600 LOC prod + ~1100 tests
+- 6 codemods funcionales validados via smoke tests manuales (ts-morph 22.0.0 + Python stdlib)
+- Toolbox completo: 8 eslint + 2 prettier + 4 ts-morph + 2 python = 16 tools cubriendo 15 rule_ids Tier A
+- **R08 audit Paso 5 CERRADA**: `serializeErr()` helper inline en `console_to_json_structured.js`
+
+### Smoke tests manuales ejecutados (validación funcional)
+
+- `non_null_to_optional` sobre `non_null.ts`: applied=4 remaining=1 (1 standalone `user!.email!` escala correctamente)
+- `console_to_logger` sobre `console_logger.ts`: applied=4 remaining=0, import injectado `@/lib/logger`
+- `console_to_json_structured` sobre `supabase/functions/.../index.ts`: applied=3 remaining=0, `serializeErr` helper presente, error case con `msg + err` separados correctamente
+- `infer_type_from_context` sobre `type_cast.ts`: applied=2 (literal shape + ApiResponse), escalated=1 (`value as any` con value:unknown)
+- `add_volatile_marker` sobre `missing_volatile.sql`: applied=2, control STABLE preservado, verify exit 0
+- `rename_migration_timestamp` sobre `0001_initial.sql`: DRY-RUN print mapping, apply renombra, verify exit 0
+
+### Decisiones de implementación tomadas
+
+- **ts-morph 22.0.0 instalado local en `codemods/`** (no global). `node_modules/` + `package-lock.json` gitignored.
+- **Apply-mode siempre exit 0**: si un codemod escala parcialmente, no causa rollback inmediato; verify-mode posterior detecta residuo y orchestrator decide. Alineado con patrón S-5 (atomicidad delegada a orchestrator via FileSnapshot).
+- **Scope guard por path heurística**: `console_to_logger` skip si file está en `supabase/functions/`; `console_to_json_structured` skip si file NO está en `supabase/functions/`. Ortogonal y declarativo.
+- **`infer_type_from_context` conservador**: skip si tipo inferido es `any`/`unknown`/`never` o >120 chars (legibilidad + brittleness).
+- **`serializeErr` inline** (no en file compartido): mantiene atomicidad por-file (cada codemod auto-contenido).
+- **M3 sandbox threshold ≥0.5** (vs ≥0.9 producción): tests usan handlers stub Python en lugar de stack TS real; M3 real >90% se medirá en E2E con stack instalado.
+
+### Deudas tracking
+
+- **R08** ✅ CERRADA en S-6.3.
+- **DEUDA-CODEMODS-NO-PYTEST-AUTOMATED** *(NUEVA, menor)*: smoke tests de codemods son manuales (Bash). Para integración CI, agregar `test_codemods_smoke.py` con `pytest.mark.skipif` cuando Node falta. Diferida a sesión 6 audit.
+- **DEUDA-M3-REAL-NOT-MEASURED**: M3 real (>90% sobre stack TS) requiere environment con ESLint/Prettier/ts-morph reales aplicables sobre proyecto target. Diferida a integración Stallen o sandbox-stack iteration 4.
+
+### Próxima sesión (Sprint 3 sesión 6)
+
+**Audit Paso 7 + Paso 8 + M3 real opcional**:
+- Audit Paso 7 (G1-G33 + FG1-FG14 + SOLID + zero-trust) sobre los 16 archivos del mechanic
+- Audit Paso 8 (15 categorías adversariales documentadas en arquitectura sec 9.1)
+- Si Paso 7 + 8 PASS sin críticos: ADR-011 candidato a **promover v0.9 PARTIAL → v1.0 ACCEPTED** (al menos para classifier + mechanic, dejando Tier B/C para v1.1)
+- (Opcional) M3 real sobre sandbox-stack si environment lo permite
+
+**Validación L38 N=4**: si commit final sesión 5 + commits sesión 6 pasan GGA en 1 round, L38 acumula evidencia adicional intra-proyecto.
 
 ---
 

@@ -1,0 +1,13 @@
+{
+  "name": "sigma-auto-fix-mechanic-codemods",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ts-morph custom codemods invocados por sigma:auto-fix-mechanic via subprocess (ADR-011 Phase 2)",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ts-morph": "^22.0.0"
+  }
+}
