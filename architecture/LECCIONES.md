@@ -50,7 +50,7 @@ estrictos) + audit Paso 5 (R01-R15) sobre el plan PASA GGA en 1 round, sin
 bypass humano. En contraposición a 4 rounds + bypass humano (`--no-verify`)
 cuando se construye sin auditar el plan previamente.*
 
-**Estado**: ✅ **N=4 CONFIRMADA** (promovida a LECCIÓN formal 2026-05-22 con N=2; N=3 alcanzado 2026-05-24 ses 4; N=4 alcanzado 2026-05-24 ses 5).
+**Estado**: ✅ **N=5 CONFIRMADA** (promovida a LECCIÓN formal 2026-05-22 con N=2; N=3 ses 4; N=4 ses 5; N=5 ses 6).
 
 **Evidencia empírica**:
 
@@ -61,6 +61,7 @@ cuando se construye sin auditar el plan previamente.*
 | Sprint 3 sesión 2 — N=2 | `2322e4a` (S-4..S-8 classifier) | 1 | ❌ Ninguno | ✅ Sí |
 | Sprint 3 sesión 4 — N=3 | `3701463` (S-1..S-5 mechanic core, 90 tests) | 1 | ❌ Ninguno | ✅ Sí |
 | Sprint 3 sesión 5 — N=4 | `797772f` (S-6..S-8 mechanic E2E, 181 tests, R08 cerrada) | 1 | ❌ Ninguno | ✅ Sí |
+| Sprint 3 sesión 6 — N=5 | `d35c3f0` (Audit Paso 7+8 PASS + polish 3 advisories, 194 tests) | 1 | ❌ Ninguno | ✅ Sí (audit consolidado) |
 
 **Importancia para el Framework**: primera lección que cierra empíricamente
 el ciclo **PREVENTIVA → VERIFICABLE** (2° principio rector). Demuestra que la
