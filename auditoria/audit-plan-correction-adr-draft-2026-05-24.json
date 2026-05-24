@@ -1,0 +1,19 @@
+{
+  "audit_id": "audit-plan-correction-adr-draft-2026-05-24",
+  "audit_date": "2026-05-24",
+  "component_under_audit": "sigma:correction_adr_draft (Tier C handler)",
+  "protocolo_step": "Paso 5",
+  "audited_artifacts": [
+    "docs/prd/PRD-sigma-correction-adr-draft.md",
+    "docs/arquitectura/ARQUITECTURA-sigma-correction-adr-draft.md"
+  ],
+  "summary": {
+    "total_validators": 15,
+    "pass": 14,
+    "warn": 0,
+    "fail": 0,
+    "na": 1,
+    "verdict": "READY_FOR_BUILD",
+    "notes": "Simplest component — no LLM, no external deps, no rollback needed. Template-only. R06 N/A (no tables)."
+  }
+}

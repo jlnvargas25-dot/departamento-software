@@ -22,6 +22,7 @@ dev = [
 sigma-classify = "sigma.finding_classifier.cli:main"
 sigma-mechanic = "sigma.auto_fix_mechanic.cli:main"
 sigma-correct = "sigma.correction_agent_bounded.cli:main"
+sigma-adr-draft = "sigma.correction_adr_draft.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["sigma*"]
