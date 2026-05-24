@@ -1,0 +1,153 @@
+{
+  "audit_id": "audit-plan-auto-fix-mechanic-2026-05-22",
+  "audit_date": "2026-05-22",
+  "auditor": "operador-manual (sigma:plan-auditor no construido aun, mismo gap que classifier audit 2026-05-21)",
+  "sprint": "Sprint 3 sesion 3 BLOQUE 2.5",
+  "component_under_audit": "sigma:auto-fix-mechanic (Phase 2 ADR-011 Tier A handler, segundo componente de la trinidad correctiva)",
+  "protocolo_step": "Paso 5 PROTOCOLO-CONSTRUCCION-CODIGO.md",
+  "precedent": "audit-plan-classifier-2026-05-21.json — mismo formato, mismo auditor, mismo workflow",
+  "audited_artifacts": [
+    "docs/prd/PRD-sigma-auto-fix-mechanic.md",
+    "docs/dominio/auto-fix-mechanic-rules.yaml.draft",
+    "docs/dominio/codemod-toolbox.md",
+    "docs/arquitectura/ARQUITECTURA-sigma-auto-fix-mechanic.md",
+    "docs/stories/STORIES-sigma-auto-fix-mechanic.md"
+  ],
+  "validators": {
+    "R01_ancestros_validos": {
+      "status": "PASS",
+      "notes": "Plan ancla en ADR-011 PROPOSED v0.9 PARTIAL (referencia explicita en los 5 artefactos). Upstream classifier v0.1.0 referenciado como dependencia operativa. 7 principios rectores citados como ancestros conceptuales (especialmente 1ro Python verifica, 2do 3 capas, 4to auto-fix > finding)."
+    },
+    "R02_referencias_coherentes": {
+      "status": "PASS",
+      "notes": "Cross-references entre PRD <-> dominio (YAML + toolbox.md) <-> arquitectura <-> stories matchean. Cada artefacto cita los hermanos en header Related: y referencia evidencia entre secciones (ej. arquitectura seccion 2.1 cita codemod-toolbox seccion 3 para evidencia ECC vs wrapper sigma)."
+    },
+    "R03_detectar_ciclos": {
+      "status": "PASS",
+      "notes": "DAG de stories: S-1 -> (S-2, S-3, S-4) -> S-5 -> S-8. S-6 y S-7 dependen solo de S-1 (codemods son ejecutables standalone, no requieren core). Verificado en seccion 'Resumen del backlog' de stories con diagrama explicito. Sin ciclos."
+    },
+    "R04_deps_fuera_de_scope": {
+      "status": "WARN",
+      "notes": "Stack del mechanic: Python 3.10+ stdlib + pyyaml (heredado classifier) + filelock (NUEVA). Tools externos invocados via subprocess (Node.js, ESLint, Prettier, ts-morph) son responsabilidad del environment, NO se instalan por el mechanic. Adapter normalizer upstream out-of-scope (responsabilidad del integrator, igual que classifier).",
+      "warning_detail": "filelock es nueva dep externa no presente en classifier. Mitigacion documentada en stories sec 'Riesgos del plan': fallback a fcntl (Posix) / msvcrt (Windows) stdlib si filelock no disponible.",
+      "action_required": "Confirmar antes de S-3 build: instalar filelock O implementar fallback stdlib. Documentar en pyproject.toml extras_require."
+    },
+    "R05_naming_conventions": {
+      "status": "PASS",
+      "notes": "rule_ids: UPPERCASE-KEBAB-CASE (consistente con classifier). Handler entries en YAML: snake_case. Tools: lowercase (eslint, prettier, ts-morph-custom, python-custom-script). Python: snake_case functions, PascalCase dataclasses. Codemod scripts: snake_case.ts/.py. Sin colisiones detectadas. Coherente con precedente classifier."
+    },
+    "R06_colisiones_de_tablas": {
+      "status": "N/A",
+      "notes": "Componente NO introduce schema de DB. Solo files YAML + JSON in-memory + escritura/lectura de archivos target (Tier A fixes). Mismo veredicto que classifier."
+    },
+    "R07_plan_vs_grafo_consistency": {
+      "status": "PASS",
+      "notes": "Cobertura AC -> stories al 9/9 (sec 'ACs del PRD vs cobertura de stories' en STORIES doc):  AM1=S-1+S-5+S-6+S-7+S-8, AM2=S-4+S-5, AM3=S-3+S-5, AM4=S-5+S-8, AM5=S-1+S-8, AM6=S-1+S-8, AM7=S-3+S-5+S-8, AM8=S-8, AM9=S-2. Sin gaps."
+    },
+    "R08_funciones_declaradas_no_creadas": {
+      "status": "WARN",
+      "notes": "Arquitectura declara funciones principales que SI estan en stories: load_handlers (S-1), run_preflight_check (S-2), invoke_tool (S-2), FileSnapshot (S-3), run_verification (S-4), process_finding/run_batch (S-5), main CLI (S-8). Codemods con --verify mode (S-6/S-7).",
+      "warning_detail": "Helper serializeErr() mencionado en arquitectura sec 5 transformation A21-OBS-1b-DENO-CONSOLE pero NO listado explicitamente como artefacto S-6. Es funcion auxiliar del codemod console_to_json_structured.ts. Costo minimo (5-10 LOC TS) pero merece anotacion.",
+      "action_required": "Anotar en S-6 al iniciar build que codemod console_to_json_structured.ts incluye helper serializeErr() inline o en codemods/lib.ts compartido."
+    },
+    "R09_aislamiento_de_scope": {
+      "status": "PASS_WITH_CAVEAT",
+      "notes": "Mechanic lee filesystem (target files + YAML) + ESCRIBE filesystem (fixes Tier A aplicados con rollback) + escribe stderr (logging estructurado) + lee stdin (findings JSON). NO accede a network, NO accede a DB, NO maneja secrets.",
+      "caveat": "Cambio de scope vs classifier: classifier era read-only filesystem, mechanic ESCRIBE archivos target. Esto es by-design (Tier A handler debe aplicar fix). PRD C4/C10 documenta restricciones (no toca .git/, no muta config fuera de fix). AM3 rollback atomico + R-5 reversibilidad mitigan exposure. Documentado explicitamente en arquitectura sec 13 (A23 Deployment Safety)."
+    },
+    "R10_stubs_necesarios": {
+      "status": "WARN",
+      "notes": "Fixture sprint1-iteracion3.json YA existe (creado por classifier S-6/S-8 en Sprint 3 sesion 1, segun ADR-011 v0.7 audit Paso 5 cierre). Filtrar a Tier A se hace en S-8 (test_m3_empirical). Reutilizacion del fixture es viable.",
+      "warning_detail": "Faltan fixture files TARGET (archivos .ts/.sql con los patrones a fixear para los tests de S-3, S-4, S-6, S-7). Son archivos de prueba, no fixture-data, pero necesarios para tests pasen.",
+      "action_required": "Agregar al DoD de S-1: crear tests/fixtures/target_files/ con archivos minimales para cada uno de los 15 rule_ids Tier A (al menos uno por handler). Pueden ser archivos sinteticos pequenos (10-30 lineas c/u). O crear en S-3/S-4 segun necesidad y referenciar back a S-1 DoD."
+    },
+    "R11_tamano_de_thread": {
+      "status": "PASS_WITH_CAVEAT",
+      "notes": "8 stories totalizando 16 hs estimadas. Dividido en 2 sesiones: sesion 4 (~8.5 hs: S-1..S-5) + sesion 5 (~7.5 hs: S-6..S-8 + audits).",
+      "caveat": "8.5 hs en sesion 4 esta JUSTO en el limite superior de sesion realista (precedente classifier fue ~5 hs/sesion). Si S-5 orchestrator toma >2hs por edge cases, splitear y postponer S-5 a sesion 5. Plan contempla split de S-6 en S-6a/S-6b en sec 'Riesgos del plan' por si codemods ts-morph toman mas de 4hs.",
+      "action_required": "Monitor tiempo real durante sesion 4. Si S-1+S-2+S-3+S-4 toman >5hs, terminar sesion 4 ahi y mover S-5 a sesion 5 (sesion 5 quedaria mas larga pero menos riesgo de S-5 a medias)."
+    },
+    "R12_cobertura_de_dominio": {
+      "status": "PASS",
+      "notes": "15/15 rule_ids Tier A v0.1.0 del classifier tienen handler en auto-fix-mechanic-rules.yaml.draft. Cobertura 100% directa. 4 tools cubren 100% (8 eslint + 2-3 prettier + 4 ts-morph custom + 2 python custom). Decision wholesale ECC vs wrapper sigma resuelta en arquitectura sec 2 con evidencia (codemod-toolbox.md sec 3 mostro 0/15 cobertura ECC). NO hay rule_id Tier A sin handler."
+    },
+    "R13_cobertura_de_modulos": {
+      "status": "PASS",
+      "notes": "Arquitectura define ~13 archivos en framework/sigma/auto_fix_mechanic/ (core Python: __init__, models, loader, preflight, orchestrator, snapshot, verifier, invoker, cli + codemods/ 6 archivos: 4 .ts + 2 .py + tests ~14 archivos). Stories cubren la totalidad: S-1 (loader+models+pyproject), S-2 (preflight+invoker), S-3 (snapshot), S-4 (verifier), S-5 (orchestrator), S-6 (codemods ts-morph 4 archivos), S-7 (codemods Python 2 archivos), S-8 (CLI + tests M3+idempotency+extensibility). Sin modulos huerfanos."
+    },
+    "R14": {
+      "status": "N/A",
+      "notes": "R14 no aparece en la lista del PROTOCOLO-CONSTRUCCION-CODIGO.md (linea 265-279 valida solo R01-R13 y R15). Probablemente reservado o consolidado. Mismo veredicto que audit del classifier."
+    },
+    "R15_deps_transitivas": {
+      "status": "PASS_WITH_CAVEAT",
+      "notes": "Python deps directas: stdlib + pyyaml + filelock (potencialmente). pyyaml heredado validado. filelock es lib pequena sin transitives problematicas. Tools externos via npx (no instala globalmente). ts-morph transitives propias (typescript) son del proyecto target.",
+      "caveat": "filelock es NUEVA dep si se adopta (vs fallback stdlib fcntl/msvcrt). Decision en S-3 build (DoD pide confirmacion antes de implementar lock). Si fallback stdlib se elige, R15 100% PASS sin caveat."
+    }
+  },
+  "summary": {
+    "criticals": 0,
+    "warnings": 3,
+    "passes": 8,
+    "passes_with_caveat": 2,
+    "n_a": 2
+  },
+  "warnings_breakdown": [
+    {
+      "validator": "R04",
+      "title": "filelock nueva dep externa",
+      "action": "Confirmar pre-S3: install filelock O fallback stdlib (fcntl/msvcrt). Documentar en pyproject extras_require.",
+      "severity": "minor"
+    },
+    {
+      "validator": "R08",
+      "title": "serializeErr() helper implicito en codemod console_to_json_structured.ts",
+      "action": "Anotar en S-6 al iniciar build: codemod incluye helper inline o en codemods/lib.ts compartido.",
+      "severity": "trivial"
+    },
+    {
+      "validator": "R10",
+      "title": "Fixture files target (TS/SQL con patrones) no listados explicitamente en S-1",
+      "action": "Agregar al DoD de S-1 (o crear durante S-3/S-4 con back-reference): tests/fixtures/target_files/ con archivos minimos por rule_id Tier A. ~15 archivos sinteticos pequenos.",
+      "severity": "minor"
+    }
+  ],
+  "caveats_breakdown": [
+    {
+      "validator": "R09",
+      "title": "Mechanic ESCRIBE filesystem (cambio scope vs classifier read-only)",
+      "mitigation": "By-design: Tier A handler debe aplicar fix. AM3 rollback + R-5 reversibilidad + sec 13 arquitectura mitigan. Sin accion adicional requerida."
+    },
+    {
+      "validator": "R11",
+      "title": "Sesion 4 estimada 8.5h en limite superior",
+      "mitigation": "Plan contempla split (S-5 movible a sesion 5). Monitor tiempo real durante ejecucion. Sin accion adicional pre-build."
+    },
+    {
+      "validator": "R15",
+      "title": "filelock dep cae bajo R04",
+      "mitigation": "Resuelto por accion R04 (fallback stdlib viable)."
+    }
+  ],
+  "verdict": "READY_FOR_BUILD_WITH_DEUDAS_TRACKED",
+  "verdict_rationale": "0 criticos. 3 warnings + 2 caveats, TODOS con accion documentada (R04/R08/R10) o mitigacion clara (R09/R11). PASS_WITH_CAVEAT en R09 (write scope by-design, mitigado por rollback) y R11 (tiempo) son aceptables. Plan apto para entrar a Sprint 3 sesion 4 build siempre que las 3 acciones de warnings se cierren como parte de S-1 DoD o pre-build setup. Patron empirico replicado del classifier (audit Paso 5 PASS_with_3_warnings_tracked) — consistente con L38 N=2 (PROTOCOLO + audit -> GGA 1 round).",
+  "next_step": "Si BLOQUE 2 sesion 3 se cierra acá: commit BLOQUE 2 + push junto con BLOQUE 1 al cierre (decision tomada por operador). Si decide continuar pre-build: cerrar las 3 acciones warnings antes de S-1 (filelock vs fallback, anotacion serializeErr, fixture files target). Sprint 3 sesion 4 arranca S-1 build con plan auditado limpio.",
+  "principio_rector_audit_self_check": {
+    "1_python_verifica": "Audit hecho manualmente por operador (sigma:plan-auditor existira en Sprint 4+). Operador-instruido cubre el gap. Mismo patron que classifier (Sprint 2 sesion 2).",
+    "2_3_capas": "Audit es la capa VERIFICABLE aplicada al propio plan (meta-verificacion). Cierra preventiva (plan diseñado siguiendo PROTOCOLO) -> verificable (este audit) antes de correctiva (build sesion 4+).",
+    "4_auto_fix_sobre_finding": "El componente bajo audit OPERACIONALIZA este principio. La recursividad es interesante: el mechanic es el handler de auto-fix, y este audit valida que el plan del mechanic siga el principio que el mechanic encarna.",
+    "6_descubrir_antes_de_ejecutar": "R12 contrasto cobertura curada (15) vs requerida (15 del classifier). 100% match. Sec 2 arquitectura documenta evidencia ECC vs wrapper sigma ANTES de decidir. NO especulacion."
+  },
+  "l38_check": {
+    "lesson_status": "L38 N=2 formal (architecture/LECCIONES.md v1.0)",
+    "applicability_to_mechanic_build": "DIRECTAMENTE APLICABLE. Si el build Sprint 3 sesion 4+5 sigue PROTOCOLO + este audit Paso 5 paso a paso, expectativa: GGA pasa en 1 round (consistente con L38). Si falla -> revisar covariantes (cambios en GGA, scope distinto, etc.).",
+    "n3_observation_target": "Sprint 3 sesion 4 sera evento N=3 para L38. Si pasa GGA en 1 round, L38 puede graduar a regla A26 universal en architecture/PRINCIPIOS-ARQUITECTURA.md."
+  },
+  "diferencias_vs_audit_classifier": {
+    "complexity_higher": "Mechanic tiene mas componentes (orchestrator + snapshot + verifier + invoker vs solo loader + classifier del classifier). Mas LOC proyectado (~600-800 vs ~294 del classifier).",
+    "more_tests_projected": "~115 tests vs 73 del classifier. Ratio similar 2:1 prod (vs 2.5:1 del classifier).",
+    "external_tool_dependency": "Mechanic depende de tools externos (eslint, prettier, ts-morph, node). Classifier solo dependia de Python+pyyaml. Pre-flight check (S-2) es nuevo concepto vs classifier.",
+    "write_scope": "Mechanic escribe filesystem (Tier A fix); classifier era read-only. Cambio mitigado por snapshot+rollback (S-3) + R-5 reversibilidad.",
+    "decision_architectural_documented": "Plan resolve fork wholesale ECC vs wrapper sigma con evidencia (codemod-toolbox.md sec 3) + alternativas rechazadas explicitas (arquitectura sec 2.2). Classifier no tenia fork arquitectonico equivalente."
+  }
+}

@@ -38,16 +38,37 @@
 
 4. **`architecture/README.md` v1.2 → v1.3** — incorpora `LECCIONES.md` en tabla de contenido + sección "Inmutabilidad relativa" actualizada con workflow de promoción
 
-### BLOQUE 2 — sigma:auto-fix-mechanic Tier A (Pasos 1-5 PROTOCOLO)
+### BLOQUE 2 — sigma:auto-fix-mechanic Tier A (Pasos 1-5 PROTOCOLO) ✅ COMPLETO
 
-> **Status BLOQUE 2 al cierre**: [completar al finalizar sesión 3 — reflejar pasos efectivamente ejecutados, decisión arquitectónica del fork ECC wholesale vs wrapper sigma, ubicación de artefactos producidos]
+Pasos 1-5 ejecutados con plan apto para entrar a build (Sprint 3 sesión 4+). Artefactos producidos:
 
-Artefactos esperados (pendiente confirmar al cierre real):
-- `docs/prd/PRD-sigma-auto-fix-mechanic.md` (Paso 1)
-- `docs/dominio/auto-fix-mechanic-rules.yaml.draft` + `docs/dominio/codemod-toolbox.md` (Paso 2)
-- `docs/arquitectura/ARQUITECTURA-sigma-auto-fix-mechanic.md` (Paso 3) — con decisión wholesale ECC vs wrapper sigma resuelta
-- `docs/stories/STORIES-sigma-auto-fix-mechanic.md` (Paso 4)
-- `auditoria/audit-plan-auto-fix-mechanic-2026-05-22.json` (Paso 5)
+| Paso | Artefacto | Status |
+|------|-----------|--------|
+| 1 | `docs/prd/PRD-sigma-auto-fix-mechanic.md` | DRAFT v0.1 — 15 secciones, 9 ACs (AM1-AM9), 10 constraints, M3 + MM1-MM5 metrics |
+| 2 | `docs/dominio/auto-fix-mechanic-rules.yaml.draft` | DRAFT v0.1 — 15/15 handlers para rule_ids Tier A v0.1.0 del classifier |
+| 2 | `docs/dominio/codemod-toolbox.md` | DRAFT v0.1 — catálogo 4 tools + evidencia ECC vs wrapper (sec 3) |
+| 3 | `docs/arquitectura/ARQUITECTURA-sigma-auto-fix-mechanic.md` | DRAFT v0.1 — 15 secciones con decisión clave resuelta + 5 alternativas rechazadas |
+| 4 | `docs/stories/STORIES-sigma-auto-fix-mechanic.md` | DRAFT v0.1 — 8 stories (S-1..S-8), 16hs en 2 sesiones, DAG sin ciclos |
+| 5 | `auditoria/audit-plan-auto-fix-mechanic-2026-05-22.json` | DONE — 0 críticos, 3 warnings tracked, veredicto `READY_FOR_BUILD_WITH_DEUDAS_TRACKED` |
+
+**Decisión arquitectónica clave RESUELTA (Paso 3)**: **wrapper sigma propio** (NO wholesale ECC).
+- Evidencia: ECC `build-fix` + `refactor-clean` tienen 0/15 cobertura directa de los 15 rule_ids Tier A; usan LLM (viola C1 PRD); no determinísticos (viola AM7 idempotencia). Ver `codemod-toolbox.md` sec 3 y `ARQUITECTURA` sec 2.
+- Toolbox: 4 tools cubren 15/15 — ESLint (8 rule_ids), Prettier (2-3), ts-morph custom (4), Python custom (2).
+- ECC sigue útil como composición lateral (operador puede invocarlo para casos fuera del classifier), no como backend wholesale del mechanic.
+- 5 alternativas rechazadas explícitas en ARQUITECTURA sec 2.2.
+
+**3 precondiciones audit Paso 5 a cerrar antes de S-1 build** (Sprint 3 sesión 4):
+1. **R04** — `filelock` nueva dep externa: confirmar install vs fallback stdlib (fcntl/msvcrt). Acción en S-3.
+2. **R08** — helper `serializeErr()` implícito en codemod `console_to_json_structured.ts`: anotar en S-6 al iniciar build.
+3. **R10** — fixture files target (.ts/.sql con patrones): agregar al DoD de S-1 (~15 archivos sintéticos pequeños por rule_id Tier A).
+
+**Métricas estimadas del build próximo**:
+- ~600-800 LOC Python prod
+- ~250-450 LOC codemods custom (4 ts-morph + 2 Python)
+- ~115 tests proyectados (ratio ~2:1 vs prod)
+- 2 sesiones de build: sesión 4 (S-1..S-5 core, ~8.5hs) + sesión 5 (S-6..S-8 codemods + integración, ~7.5hs)
+
+**Observación L38 N=3 esperada**: si el build sigue PROTOCOLO + este audit, expectativa GGA passes 1 round = N=3 que graduaría L38 a regla A26 universal en `PRINCIPIOS-ARQUITECTURA.md`.
 
 ---
 

@@ -1,0 +1,290 @@
+# auto-fix-mechanic-rules.yaml — DRAFT v0.1
+#
+# Status: DRAFT v0.1 (Sprint 3 sesión 3 — Paso 2 PROTOCOLO dominio)
+# Owner: Departamento de Software
+# Source curado: docs/dominio/codemod-toolbox.md (catálogo tools externos)
+# Consumer: sigma.auto_fix_mechanic (Python package, Sprint 3 sesión 4 build)
+# Related: PRD-sigma-auto-fix-mechanic.md, framework/sigma/finding_classifier/rules.yaml v0.1.0
+#
+# Cada handler mapea un rule_id Tier A del classifier a un codemod externo concreto +
+# verificación post-fix. Si el handler falla la verificación, el mechanic hace rollback
+# atómico y escala a Tier C (NO improvisa el fix).
+#
+# Diseño extensible: agregar handler nuevo = agregar entry acá + opcional script en
+# framework/sigma/auto_fix_mechanic/codemods/. NO cambia el core Python.
+
+version: "0.1.0-draft"
+
+metadata:
+  created: "2026-05-22"
+  source_classifier_version: "0.1.0"
+  total_rule_ids_tier_a: 15
+  total_handlers_defined: 15
+  coverage: "15/15 (100%)"
+  toolbox_summary:
+    eslint_fix: 8
+    prettier_write: 2
+    ts_morph_custom: 4
+    python_custom_script: 2
+  note: |
+    MISSING-SEMI cae en eslint o prettier según config del proyecto;
+    se documenta como prettier acá pero handler debe respetar config local.
+
+# ----------------------------------------------------------------------------
+# Handlers Tier A — cobertura del classifier rules.yaml v0.1.0
+# ----------------------------------------------------------------------------
+
+handlers:
+
+  TS-1:
+    tool: eslint
+    invocation: "npx eslint --fix --rule '{prefer-const: error, no-var: error, no-unused-vars: error}' <file>"
+    pattern_target: "TypeScript strict mode violations (familia de rules)"
+    verification:
+      method: re-run-eslint
+      command: "npx eslint --quiet <file>"
+      expected_exit_code: 0
+    rollback_strategy: file-level revert (git checkout -- <file>)
+    notes: "Familia amplia; eslint --fix cubre 80%+. Si reslata findings, escalar restantes a Tier C."
+
+  TS-NON-NULL-ASSERTION:
+    tool: ts-morph-custom
+    codemod_script: codemods/non_null_to_optional.ts
+    pattern_target: "expr.kind === SyntaxKind.NonNullExpression (x!)"
+    transformation: "x! → x? (optional chain) OR guard if (x) { ... } según context AST"
+    verification:
+      method: ast-check
+      query: "TSNonNullExpression count must be 0 in target file"
+    rollback_strategy: file-level revert
+    notes: "Si AST detecta uso inside condition where guard inserción cambia semántica de control flow, escalar a Tier C."
+
+  A21-OBS-1-CONSOLE-LOG:
+    tool: ts-morph-custom
+    codemod_script: codemods/console_to_logger.ts
+    pattern_target: "CallExpression callee=PropertyAccessExpression{object=console, property=log|error|warn|info}"
+    transformation: |
+      console.log(args)  → logger.info(args)  ; inject `import { logger } from '@/lib/logger'` si falta
+      console.error(args) → logger.error(args)
+      console.warn(args)  → logger.warn(args)
+    verification:
+      method: ast-check
+      query: "console.{log,error,warn,info} calls count must be 0 in target file"
+      additional: "logger import must exist if any logger.* call was injected"
+    rollback_strategy: file-level revert
+    notes: "Requiere context: ¿existe alias '@/lib/logger'? Si no, leer tsconfig.json paths. Si proyecto no usa pino, escalar a Tier C."
+
+  A21-OBS-1b-DENO-CONSOLE:
+    tool: ts-morph-custom
+    codemod_script: codemods/console_to_json_structured.ts
+    pattern_target: "console.log calls in Edge Functions (file path: supabase/functions/**/*.ts)"
+    transformation: |
+      console.log(msg)          → console.log(JSON.stringify({ level: "info", msg }))
+      console.error(err, ctx?)  → console.log(JSON.stringify({ level: "error", err: serializeErr(err), ctx }))
+    verification:
+      method: ast-check
+      query: "console.log calls must wrap argument with JSON.stringify({level, ...})"
+    rollback_strategy: file-level revert
+    notes: "Solo aplica en supabase/functions/. Detection por path heurística. Si fuera de scope, no-op."
+
+  NO-VAR:
+    tool: eslint
+    invocation: "npx eslint --fix --rule 'no-var: error' <file>"
+    pattern_target: "VariableStatement with VarKeyword"
+    transformation: "var x → let x"
+    verification:
+      method: re-run-eslint
+      command: "npx eslint --quiet --rule 'no-var: error' <file>"
+      expected_exit_code: 0
+    rollback_strategy: file-level revert
+    notes: "Si AST detecta hoisting dependency, escalar a Tier C (raro)."
+
+  VAR-TO-CONST:
+    tool: eslint
+    invocation: "npx eslint --fix --rule 'prefer-const: error' <file>"
+    pattern_target: "let declaration without reassignment in scope"
+    transformation: "let x = 1 → const x = 1 (cuando no hay reassign downstream)"
+    verification:
+      method: re-run-eslint
+      command: "npx eslint --quiet --rule 'prefer-const: error' <file>"
+      expected_exit_code: 0
+    rollback_strategy: file-level revert
+
+  MIGRATION-NAMING:
+    tool: python-custom-script
+    codemod_script: codemods/rename_migration_timestamp.py
+    pattern_target: "Files matching glob 'supabase/migrations/0\\d{3}_*.sql'"
+    transformation: |
+      0001_initial.sql → 202605221130_initial.sql
+      Timestamp source: file mtime (Posix) OR git log first commit date OR current UTC if untracked.
+      Format: YYYYMMDDHHmm (UTC).
+    verification:
+      method: filename-regex
+      pattern: '^\d{12}_[a-z0-9_-]+\.sql$'
+      directory: supabase/migrations/
+    rollback_strategy: git mv revert (script logs original→new mapping para revertir)
+    notes: "Operación destructiva (rename). DRY-RUN mode obligatorio antes de aplicar. R-5 reversibilidad: mantener mapping en .sigma-mechanic/migration-renames.log para rollback."
+
+  TYPE-CAST-AS-ANY:
+    tool: ts-morph-custom
+    codemod_script: codemods/infer_type_from_context.ts
+    pattern_target: "AsExpression with type = AnyKeyword"
+    transformation: |
+      x as any → x as <inferred type from RHS o context>
+      Inference strategy:
+        1. Si RHS es literal → inferir del literal
+        2. Si es call expression con return type explícito → usar return type
+        3. Si es property access → resolver tipo de la property
+        4. Si no resuelve → escalar a Tier C (NO inventar)
+    verification:
+      method: ast-check
+      query: "AsExpression where type is AnyKeyword count must be 0 OR equal pre-fix count (no se forzó si no resolvía)"
+    rollback_strategy: file-level revert
+    notes: "Codemod más complejo. Conservador: si inference da `unknown` o `never`, escalar a Tier C en lugar de aplicar."
+
+  PGSQL-MISSING-VOLATILE:
+    tool: python-custom-script
+    codemod_script: codemods/add_volatile_marker.py
+    pattern_target: "CREATE FUNCTION ... AS $$ ... $$ LANGUAGE plpgsql (sin VOLATILE|STABLE|IMMUTABLE)"
+    transformation: |
+      CREATE FUNCTION foo() RETURNS trigger AS $$ ... $$ LANGUAGE plpgsql
+        → CREATE FUNCTION foo() RETURNS trigger AS $$ ... $$ LANGUAGE plpgsql VOLATILE
+      Default: VOLATILE (Postgres default + más seguro). Operador puede sobreescribir post-fix
+      a STABLE/IMMUTABLE si tiene certeza semántica.
+    verification:
+      method: regex-grep
+      pattern: 'LANGUAGE plpgsql\s+(VOLATILE|STABLE|IMMUTABLE)'
+      assertion: "every CREATE FUNCTION in target file must match"
+    rollback_strategy: file-level revert
+    notes: "Conservador (VOLATILE = strictest = correcto pero suboptimal performance). Documentar en patch_summary la elección VOLATILE por default."
+
+  LET-WITHOUT-REASSIGN:
+    tool: eslint
+    invocation: "npx eslint --fix --rule 'prefer-const: error' <file>"
+    pattern_target: "let declaration without reassignment"
+    transformation: "let x = 1 → const x = 1 (idéntico a VAR-TO-CONST por overlap rule)"
+    verification:
+      method: re-run-eslint
+      command: "npx eslint --quiet --rule 'prefer-const: error' <file>"
+      expected_exit_code: 0
+    rollback_strategy: file-level revert
+    notes: "Alias funcional de VAR-TO-CONST; mismo tool. Mantener entries separadas para trazabilidad por rule_id del classifier."
+
+  UNUSED-IMPORT:
+    tool: eslint
+    invocation: "npx eslint --fix --rule '@typescript-eslint/no-unused-vars: error' <file>"
+    plugin_required: eslint-plugin-unused-imports
+    pattern_target: "ImportDeclaration with all specifiers unused"
+    transformation: "remove unused import statement (líneas enteras o specifiers individuales)"
+    verification:
+      method: re-run-eslint
+      command: "npx eslint --quiet --rule '@typescript-eslint/no-unused-vars: error' <file>"
+      expected_exit_code: 0
+    rollback_strategy: file-level revert
+    notes: "Cuidado: side-effect imports (ej. 'import \"./styles.css\"') NO deben removerse. Plugin unused-imports respeta convención. Si proyecto no usa el plugin, fallback a eslint core rule."
+
+  TRAILING-WHITESPACE:
+    tool: prettier
+    invocation: "npx prettier --write <file>"
+    pattern_target: "trailing spaces at end of lines"
+    transformation: "strip trailing whitespace (Prettier hace esto automáticamente)"
+    verification:
+      method: re-run-prettier-check
+      command: "npx prettier --check <file>"
+      expected_exit_code: 0
+    rollback_strategy: file-level revert
+
+  MISSING-SEMI:
+    tool: prettier
+    invocation: "npx prettier --write <file>"
+    pattern_target: "missing semicolon (project convention dependent)"
+    transformation: "add semi según prettier config del proyecto (.prettierrc semi=true|false)"
+    verification:
+      method: re-run-prettier-check
+      command: "npx prettier --check <file>"
+      expected_exit_code: 0
+    rollback_strategy: file-level revert
+    notes: |
+      Respeta prettier config local. Si proyecto usa semi=false, NO-OP (no fuerza semis).
+      Fallback a eslint si proyecto no tiene prettier (rule 'semi: error').
+
+  IMPORT-ORDER:
+    tool: eslint
+    invocation: "npx eslint --fix --rule 'import/order: error' <file>"
+    plugin_required: eslint-plugin-import
+    pattern_target: "ImportDeclarations out of canonical order"
+    transformation: "reorder imports: builtin → external → internal (@/...) → relative (./)"
+    verification:
+      method: re-run-eslint
+      command: "npx eslint --quiet --rule 'import/order: error' <file>"
+      expected_exit_code: 0
+    rollback_strategy: file-level revert
+
+  OBJECT-SHORTHAND:
+    tool: eslint
+    invocation: "npx eslint --fix --rule 'object-shorthand: error' <file>"
+    pattern_target: "ObjectLiteralExpression with PropertyAssignment where key.text === value.text"
+    transformation: "{foo: foo} → {foo}"
+    verification:
+      method: re-run-eslint
+      command: "npx eslint --quiet --rule 'object-shorthand: error' <file>"
+      expected_exit_code: 0
+    rollback_strategy: file-level revert
+
+# ----------------------------------------------------------------------------
+# Política ante handler no definido
+# ----------------------------------------------------------------------------
+
+defaults:
+  missing_handler_action: escalate_to_tier_c
+  missing_handler_reason: "handler_not_implemented_for_rule_id"
+  notes: |
+    Si llega un finding clasificado como Tier A pero sin handler en este YAML,
+    el mechanic NO improvisa. Escala a Tier C con razón clara para que el
+    operador decida: (a) implementar el handler ahora, o (b) re-clasificar el
+    rule_id como Tier B/C en classifier/rules.yaml.
+
+# ----------------------------------------------------------------------------
+# SLOTS RESERVADOS — handlers para validadores futuros (Sprint 4+)
+# ----------------------------------------------------------------------------
+# R01-* ... R15-* (sigma:plan-auditor handlers)    — Sprint 4+
+# G01-* ... G33-* (sigma:code-gates handlers)       — Sprint 4+
+# FG01-* ... FG14-* (sigma:feature-gates handlers)  — Sprint 4+
+
+# ----------------------------------------------------------------------------
+# Pre-flight check (toolbox availability at boot)
+# ----------------------------------------------------------------------------
+
+preflight:
+  required_tools:
+    - name: node
+      check_command: "node --version"
+      min_version: "18.0.0"
+      install_hint: "https://nodejs.org/ — required para ESLint, Prettier, ts-morph"
+    - name: npx
+      check_command: "npx --version"
+      install_hint: "viene con npm (node)"
+    - name: eslint
+      check_command: "npx eslint --version"
+      install_hint: "npm install -g eslint OR debe estar en el proyecto target"
+    - name: prettier
+      check_command: "npx prettier --version"
+      install_hint: "npm install -g prettier OR debe estar en el proyecto target"
+    - name: python
+      check_command: "python --version"
+      min_version: "3.10"
+      install_hint: "obligatorio para custom scripts (rename_migration, add_volatile)"
+
+  optional_tools:
+    - name: ts-morph
+      check_command: "node -e 'require.resolve(\"ts-morph\")'"
+      install_hint: "npm install --save-dev ts-morph en proyecto target SI hay TS custom codemods"
+      required_for_handlers: [TS-NON-NULL-ASSERTION, A21-OBS-1-CONSOLE-LOG, A21-OBS-1b-DENO-CONSOLE, TYPE-CAST-AS-ANY]
+
+  failure_mode: fail-fast-with-clear-message
+  notes: |
+    Si algún required tool falta → mechanic exit 1 con mensaje:
+    "Missing required tool '<name>'. Install: <install_hint>"
+
+    Si algún optional tool falta → mechanic continúa pero deshabilita los handlers
+    que lo requieren. Esos rule_ids escalan a Tier C con razón
+    "optional_tool_unavailable:<tool>".
