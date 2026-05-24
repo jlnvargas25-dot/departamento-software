@@ -25,6 +25,33 @@ function usage() {
   process.exit(2);
 }
 
+/**
+ * Intenta aplicar la transformacion a un NonNullExpression segun el kind de su parent.
+ * Retorna "applied" si modifico el AST, "escalated" si el contexto no es manejable.
+ * El caller decide si continuar el iter (applied => break + restart) o seguir (escalated).
+ */
+function applyToParent(node) {
+  if (node.wasForgotten()) return "skipped";
+  const parent = node.getParent();
+  if (!parent) return "escalated";
+  const parentKind = parent.getKind();
+  if (parentKind === SyntaxKind.PropertyAccessExpression) {
+    const oldText = parent.getText();
+    const newText = oldText.replace(/!\./, "?.");
+    if (newText === oldText) return "escalated";
+    parent.replaceWithText(newText);
+    return "applied";
+  }
+  if (parentKind === SyntaxKind.ElementAccessExpression) {
+    const oldText = parent.getText();
+    const newText = oldText.replace(/!\[/, "?.[");
+    if (newText === oldText) return "escalated";
+    parent.replaceWithText(newText);
+    return "applied";
+  }
+  return "escalated";
+}
+
 function main() {
   const args = process.argv.slice(2);
   let verifyMode = false;
@@ -61,42 +88,15 @@ function main() {
   for (let i = 0; i < MAX_ITERS; i++) {
     const nodes = sourceFile.getDescendantsOfKind(SyntaxKind.NonNullExpression);
     if (nodes.length === 0) break;
-
-    // Procesar el primero que sea manejable.
     let changed = false;
     for (const node of nodes) {
-      if (node.wasForgotten()) continue;
-      const parent = node.getParent();
-      if (!parent) {
-        escalated++;
-        continue;
-      }
-      const parentKind = parent.getKind();
-      if (parentKind === SyntaxKind.PropertyAccessExpression) {
-        const oldText = parent.getText();
-        const newText = oldText.replace(/!\./, "?.");
-        if (newText === oldText) {
-          escalated++;
-          continue;
-        }
-        parent.replaceWithText(newText);
+      const result = applyToParent(node);
+      if (result === "applied") {
         applied++;
         changed = true;
         break;
       }
-      if (parentKind === SyntaxKind.ElementAccessExpression) {
-        const oldText = parent.getText();
-        const newText = oldText.replace(/!\[/, "?.[");
-        if (newText === oldText) {
-          escalated++;
-          continue;
-        }
-        parent.replaceWithText(newText);
-        applied++;
-        changed = true;
-        break;
-      }
-      escalated++;
+      if (result === "escalated") escalated++;
     }
     if (!changed) break;
   }

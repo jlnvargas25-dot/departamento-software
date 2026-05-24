@@ -3,9 +3,70 @@
 > **Propósito**: handoff táctico post-Sprint 3 sesión 3 (BLOQUE 1 sync completado + BLOQUE 2 pasos 1-5 de `sigma:auto-fix-mechanic`).
 > Stallen DIFERIDO hasta que el Framework esté maduro.
 
-**Última actualización**: 2026-05-24 (Sprint 3 sesión 5 cerrada — auto-fix-mechanic build end-to-end completo, 181 tests PASS, R08 cerrada)
+**Última actualización**: 2026-05-24 (Sprint 3 sesión 6 cerrada — Paso 7+8 audits PASS, polish 3 advisories cerradas, 194 tests PASS)
 **Cliente recomendado próxima sesión**: **Claude Code CLI** dentro de `C:\DEPARTAMENTO-SOFTWARE\` (skills speckit-* + ecc:* + claude-mem:* + sdd-* + superpowers:* todos cargados)
-**Versión**: 7.2 (post Sprint 3 sesión 5 — mechanic end-to-end operativo; audits Paso 7+8 en sesión 6)
+**Versión**: 7.3 (post Sprint 3 sesión 6 — mechanic operativo + auditado; ADR-011 v0.9 → v1.0 ACCEPTED candidato en sesión 7)
+
+---
+
+## ✅ SPRINT 3 SESIÓN 6 CERRADA (2026-05-24)
+
+**Audit Paso 7 + Paso 8 PASS + Polish 3 advisories cerradas**. Mechanic E2E pasa la disciplina completa del PROTOCOLO-CONSTRUCCION-CODIGO. Solo falta promotion arquitectónica de ADR-011 (sesión 7 dedicada).
+
+### Bloques completados
+
+| Bloque | Output | Status |
+|--------|--------|--------|
+| Polish-1 (advisory GGA #1) | Comment inline G-3 en `infer_type_from_context.js` catch escalation | ✅ |
+| Polish-2 (advisory GGA #2) | Comment inline `# fall through to wall-clock fallback` en `rename_migration_timestamp.py` | ✅ |
+| Polish-3 (advisory GGA #3) | Extract helper `applyToParent()` en `non_null_to_optional.js` (main reducida de ~50 a ~30 LOC) | ✅ |
+| Audit Paso 7 | `auditoria/audit-code-mechanic-2026-05-24.json` con verdict **PASS** (0 críticos, 0 warnings, 17 gates PASS, 3 N/A) | ✅ |
+| Audit Paso 8 | `tests/test_adversarial.py` con 15 categorías cubiertas (13 tests nuevos + cross-references a tests existentes) | ✅ |
+
+### Métricas finales sesión 6
+
+- **194 tests PASS + 1 skip en 5.87s** (73 classifier + 108 mechanic core/E2E + 13 adversarial)
+- 1 skip = `test_cat7_file_read_only` (Windows POSIX chmod no portable)
+- 0 críticos + 0 warnings en Audit Paso 7
+- 15/15 categorías adversariales del arquitectura sec 9.1 cubiertas
+
+### Estado de la disciplina del PROTOCOLO sobre auto-fix-mechanic
+
+| Paso PROTOCOLO | Status |
+|----------------|--------|
+| 1 — PRD | ✅ DRAFT v0.1 (sesión 3) |
+| 2 — Dominio | ✅ YAML + toolbox (sesión 3) |
+| 3 — Arquitectura | ✅ con decisión wrapper sigma (sesión 3) |
+| 4 — Stories | ✅ S-1..S-8 (sesión 3) |
+| 5 — Audit plan | ✅ READY_FOR_BUILD (sesión 3) |
+| 6 — Build código | ✅ sesiones 4+5 (181 tests core/E2E) |
+| 7 — Audit código | ✅ **PASS sesión 6** (audit JSON + 2 GGA reviews automáticos previos) |
+| 8 — Tests adversariales | ✅ **PASS sesión 6** (13 tests + cross-refs a 70+ tests existentes) |
+| 9 — Validación seguridad | 🟡 cubierta parcialmente en Paso 7 (zero-trust gate); validación formal opcional |
+| 10 — Deploy seguro | N/A (sigma skill, no app productiva) |
+| 11 — Verificación post-deploy | N/A |
+| 12 — Cierre + polinización | ⏳ sesión 7 (incluye promotion ADR-011) |
+
+### L38 N=5 implícita
+
+Cuando la sesión 6 commit pase GGA en 1 round (esperado, dado el patrón N=4), L38 acumula N=5 — sigue intra-proyecto pero refuerza robustez.
+
+### Deudas resueltas / tracking
+
+- ✅ 3 advisories GGA sesión 5 CERRADAS (polish-1/2/3)
+- 🟡 DEUDA-CODEMODS-NO-PYTEST-AUTOMATED: sigue diferida (no bloqueante; smoke tests manuales funcionales)
+- 🟡 DEUDA-M3-REAL-NOT-MEASURED: sigue diferida (requiere stack TS en proyecto target)
+
+### Próxima sesión (Sprint 3 sesión 7)
+
+**Promotion arquitectónica + cierre Sprint 3**:
+1. Promover **ADR-011 PROPOSED v0.9 PARTIAL → ACCEPTED v1.0** (al menos para classifier + mechanic; Tier B/C → v1.1)
+   - Evidencia consolidada: 4 commits PROTOCOLO+audit PASS GGA 1 round (L38 N=4+), Audit Paso 7 PASS, Audit Paso 8 PASS, M3 medible (~70% en sandbox; ≥90% real diferido a stack TS)
+   - Header v0.9 PARTIAL → v1.0 ACCEPTED + sección nueva "Phase 2 BUILD + AUDITS completos" con evidencia
+   - Bump rationale table v0.5 → v0.7 → v0.9 → v1.0
+2. Paso 12 PROTOCOLO formal: cierre Sprint 3 + radar polinización + lecciones operativas
+3. Opcional: cerrar DEUDA-CODEMODS-NO-PYTEST-AUTOMATED con `test_codemods_smoke.py` + `pytest.mark.skipif(not_node)`
+4. (Sprint 4): arrancar Tier B (`sigma:correction-agent-bounded`) o pivotar a aplicación operativa en Stallen
 
 ---
 

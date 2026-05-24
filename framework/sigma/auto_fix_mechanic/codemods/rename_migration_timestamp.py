@@ -127,6 +127,7 @@ def _resolve_timestamp(f: Path) -> str:
         utc = dt.datetime.fromtimestamp(mtime, tz=dt.timezone.utc)
         return utc.strftime("%Y%m%d%H%M")
     except OSError:
+        # fall through to wall-clock fallback (last-resort per docstring priority)
         pass
     return dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d%H%M")
 

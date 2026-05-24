@@ -79,6 +79,7 @@ function main() {
     try {
       inferred = expr.getType().getText(ae);
     } catch (err) {
+      // type inference failed (e.g. unresolved symbol) -> escalate, see file header
       escalated++;
       continue;
     }

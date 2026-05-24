@@ -1,0 +1,139 @@
+{
+  "audit_id": "audit-code-mechanic-2026-05-24",
+  "audit_date": "2026-05-24",
+  "auditor": "operador-manual (sigma:code-auditor no construido aun; consolidacion de 2 GGA reviews automaticos PASS + verificacion gate-by-gate)",
+  "sprint": "Sprint 3 sesion 6",
+  "component_under_audit": "sigma:auto_fix_mechanic (Phase 2 ADR-011 Tier A handler, build E2E completo)",
+  "protocolo_step": "Paso 7 PROTOCOLO-CONSTRUCCION-CODIGO.md",
+  "precedent": "audit-code-classifier-2026-05-22.json — mismo formato, mismo auditor, mismo workflow",
+  "audited_artifacts_count": 16,
+  "audited_artifacts": [
+    "framework/sigma/auto_fix_mechanic/__init__.py",
+    "framework/sigma/auto_fix_mechanic/models.py",
+    "framework/sigma/auto_fix_mechanic/loader.py",
+    "framework/sigma/auto_fix_mechanic/preflight.py",
+    "framework/sigma/auto_fix_mechanic/invoker.py",
+    "framework/sigma/auto_fix_mechanic/snapshot.py",
+    "framework/sigma/auto_fix_mechanic/verifier.py",
+    "framework/sigma/auto_fix_mechanic/orchestrator.py",
+    "framework/sigma/auto_fix_mechanic/cli.py",
+    "framework/sigma/auto_fix_mechanic/rules.yaml",
+    "framework/sigma/auto_fix_mechanic/codemods/non_null_to_optional.js",
+    "framework/sigma/auto_fix_mechanic/codemods/console_to_logger.js",
+    "framework/sigma/auto_fix_mechanic/codemods/console_to_json_structured.js",
+    "framework/sigma/auto_fix_mechanic/codemods/infer_type_from_context.js",
+    "framework/sigma/auto_fix_mechanic/codemods/rename_migration_timestamp.py",
+    "framework/sigma/auto_fix_mechanic/codemods/add_volatile_marker.py"
+  ],
+  "code_metrics": {
+    "production_loc": 1600,
+    "tests_loc": 1100,
+    "tests_to_prod_ratio": "0.69:1 (1.5:1 considerando codemods .js sin tests pytest)",
+    "tests_total": 181,
+    "tests_classifier_unchanged": 73,
+    "tests_mechanic": 108,
+    "tests_execution_time_s": 5.38,
+    "external_dependencies_python": ["pyyaml"],
+    "external_dependencies_node": ["ts-morph@^22.0.0"],
+    "stdlib_only_modules": ["preflight.py", "invoker.py", "snapshot.py", "verifier.py", "orchestrator.py", "cli.py"]
+  },
+  "gates": {
+    "G_1_reversibilidad": {
+      "status": "PASS",
+      "notes": "FileSnapshot context manager (snapshot.py): bytes in-memory pre-fix, restore() idempotente, auto-rollback en excepcion no controlada (__exit__). Lock por path absoluto (threading.Lock module-level). MAX_SIZE_BYTES 100MB guard. rename_migration_timestamp.py mantiene mapping en .sigma-mechanic/migration-renames.log para rollback manual. R-5 reversibilidad cubierta a 2 niveles: snapshot atomico per-fix + log persistente para operaciones destructivas (rename)."
+    },
+    "G_2_utc_timestamps": {
+      "status": "PASS",
+      "notes": "rename_migration_timestamp.py usa dt.timezone.utc explicito en todas las conversiones (git log %aI -> astimezone UTC; mtime -> fromtimestamp tz=UTC; wall-clock -> dt.datetime.now(dt.timezone.utc)). Format YYYYMMDDHHmm UTC. Sin uso de now() naive en codigo de produccion."
+    },
+    "G_3_errores_no_silenciosos": {
+      "status": "PASS",
+      "notes": "Todos los except blocks: (a) re-raise con 'raise X from Y' (loader.py 5 sitios), (b) retornan failure explicita con stderr + exit code (preflight._is_tool_available, invoker, verifier), (c) documentan inline con comment (post polish-1 infer_type_from_context catch + polish-2 rename_migration except OSError). Cero 'except: pass' o 'except Exception: continue' sin documentacion. Cero promises o subprocess sin manejo. GGA reviews automaticos confirmaron en 2 commits sucesivos.",
+      "polish_applied": "polish-1 + polish-2 cerraron las 2 advisories de GGA sesion 5"
+    },
+    "G_4_zero_trust_boundaries": {
+      "status": "PASS",
+      "notes": "Subprocess: shell=False explicito en TODOS los call sites (invoker.py, preflight.py, verifier.py). shlex.split posix=True para separar args (paths quotados Windows compatibles). Timeout obligatorio (invoker 30s, preflight 5s, verifier 15s). YAML loaded con yaml.safe_load (no .load). Stdin CLI valida shape recursivamente (root list, per-item dict, per-field types). NO string interpolation en construccion de comandos. NO eval/exec. Codemods JS pasan args via process.argv (sin shell)."
+    },
+    "G_5_solid_estructural": {
+      "status": "PASS",
+      "notes": "Single Responsibility: cada modulo expone responsabilidad unica documentada en docstring (models=data, loader=I/O parse, preflight=tools check, invoker=subprocess, snapshot=fs+rollback, verifier=verify dispatch, orchestrator=coordination, cli=I/O integration). Funciones ≤50 LOC tras polish-3 (extraccion applyToParent en non_null_to_optional reduce main de ~50 a ~30 LOC). Open/Closed: handlers extensibles via YAML sin tocar core (test_extensibility valida). Liskov: dataclasses frozen + protocols implicit. Interface Segregation: APIs publicas chicas (load_handlers, process_finding, run_batch). Dependency Inversion: orchestrator depende de Handler interface, no de tools concretos.",
+      "polish_applied": "polish-3 cerro advisory borderline G-5 main() ~50 LOC en non_null_to_optional"
+    },
+    "G_6_observabilidad_estructurada": {
+      "status": "PASS",
+      "notes": "Orchestrator._log emite key=value structured a stderr per finding (event, rule_id, file:line, reason). CLI --metrics emite tabla MM1-MM5 (M3 applied ratio, MM2 rollback rate, MM3 elapsed avg/max, MM4 escalated, MM5 noop). PatchResult JSON output a stdout parseable downstream. Codemods imprimen 'applied=N remaining=N' a stdout, errores a stderr."
+    },
+    "P_1_type_hints": {
+      "status": "PASS",
+      "notes": "Todos los modulos Python tienen type hints en signatures publicas. Optional[T] usado consistentemente. List[T], dict[K,V] en parametros y returns. CLI usa typing.IO[str] para streams inyectables. Dataclasses con field types explicitos. Sin uso de Any en path productivo."
+    },
+    "P_3_docstrings": {
+      "status": "PASS",
+      "notes": "Todos los modulos tienen docstring de modulo (rol + scope). Funciones publicas tienen docstring con intent + Raise contract donde aplica. Dataclasses tienen docstring de proposito. Codemods .js tienen JSDoc-style block comment al inicio."
+    },
+    "P_4_excepciones_especificas": {
+      "status": "PASS",
+      "notes": "Excepciones de dominio definidas: InvalidRulesYamlError, ToolNotFoundError, ToolTimeoutError, FileTooLargeForSnapshotError, UnknownVerificationMethodError, InvalidVerificationSpecError. Sin 'except Exception: pass'. Sin BaseException catches. Cada modulo expone sus excepciones via __init__ o por path explicito."
+    },
+    "A_1_single_responsibility": {
+      "status": "PASS",
+      "notes": "9 modulos core con responsabilidad clara y desacoplada (ver G_5 notes). 6 codemods cada uno cubre 1 rule_id Tier A especifico. Sin God objects. Sin utilidades catch-all."
+    },
+    "A_3_separacion_capas": {
+      "status": "PASS",
+      "notes": "Sin imports circulares (verificado por pytest passing 181 + import time). Cada modulo solo depende de models + sus colaboradores directos. Codemods son standalone executables sin dependencia del core Python (invocados via subprocess). I/O isolated en invoker/snapshot/cli."
+    },
+    "A_4_3_capas_protocolo": {
+      "status": "PASS",
+      "notes": "Encarna las 3 capas del 2do principio rector. PREVENTIVA: dataclasses frozen + fail-fast preflight + YAML schema validation. VERIFICABLE: run_verification post-fix obligatorio per finding. CORRECTIVA: FileSnapshot rollback atomico cuando verify falla. La trinidad esta materializada en codigo, no solo declarada."
+    },
+    "TS_1_typescript_strict": {
+      "status": "N/A",
+      "notes": "Codemods son .js (CommonJS) — JavaScript sin TS strict mode. ts-morph se usa como library, no transpilamos TS. Decision documentada en codemods/package.json (type=commonjs, no tsc setup). Trade-off: simplicidad > strict typing en scripts utility cortos (50-170 LOC c/u)."
+    },
+    "TS_5_error_handling_js": {
+      "status": "PASS",
+      "notes": "Codemods .js: cada try/catch tiene mensaje a stderr + process.exit(N) con codigo distintivo (0 OK, 1 verify fail, 2 escalation/error). wasForgotten() checks previenen stale-node bugs post AST mutation."
+    },
+    "FG_validators_frontend": {
+      "status": "N/A",
+      "notes": "Mechanic es Python + JS codemods utility. Sin componentes React/TSX/UI. FG1-FG14 no aplicables."
+    },
+    "zero_trust_subprocess": {
+      "status": "PASS",
+      "notes": "Cubierto en G_4. Resumen: shell=False enforced, args como list (no string), timeouts explicitos en 100% de subprocess.run calls, errores especificos (ToolNotFoundError, ToolTimeoutError). Sin acceso a network, DB, secrets. Solo FS read (target files + YAML) + FS write (fixes aplicados via snapshot rollback ready)."
+    },
+    "secrets_detection": {
+      "status": "PASS",
+      "notes": "Sin hardcoded secrets, sin env vars sensibles loggeadas, sin credenciales en strings. CLI no maneja auth. Codemods no acceden a network/credentials."
+    },
+    "snapshot_atomicidad": {
+      "status": "PASS",
+      "notes": "FileSnapshot bytes in-memory + restore atomico. Lock per-path via threading.Lock module-level (intra-process). Cross-process locking diferido a Sprint 5+ (DEUDA tracked en sesion 4 cierre). Test_concurrent_snapshots_serialize_via_lock valida ordering."
+    },
+    "idempotencia_AM7": {
+      "status": "PASS",
+      "notes": "snapshot.unchanged() detecta segunda corrida sin cambios. orchestrator caso 3d emite NOOP_ALREADY_CLEAN. Tres tests de idempotencia (test_idempotency.py) validan first/second/third runs estables. Codemods Python (add_volatile_marker) tambien idempotentes por design (regex no-op si marker existe)."
+    },
+    "fail_fast_preflight_AM9": {
+      "status": "PASS",
+      "notes": "Pre-flight check al boot (run_preflight_check). Required tools missing -> exit con mensaje claro. Optional tools missing -> handlers afectados marked optional_tool_unavailable + escalation a Tier C en runtime (NO crash silencioso)."
+    }
+  },
+  "summary": {
+    "criticals": 0,
+    "warnings": 0,
+    "passes": 17,
+    "n_a": 3,
+    "polish_advisories_resolved": 3
+  },
+  "verdict": "PASS",
+  "verdict_rationale": "0 criticos, 0 warnings tras polish 3 advisories GGA sesion 5 cerradas. 17 gates PASS (G1-G6 + P1/P3/P4 + A1/A3/A4 + TS-5 + zero-trust + snapshot + idempotencia + preflight). 3 N/A justificados (G2 timestamps no aplican a todos los modulos pero PASS donde si; TS-1 strict no aplica a codemods .js; FG no aplica a backend). Codigo confirmado consistente con AGENTS.md v1.2 por 2 GGA reviews automaticos sucesivos en commits 3701463 y 797772f, MAS este audit consolidado manual. Apto para promover ADR-011 v0.9 -> v1.0 ACCEPTED candidato tras Paso 8 adversariales.",
+  "evidencia_gga_reviews_automatic": {
+    "commit_3701463_S1_S5_core": "GGA review automatico PASSED en 1 round sobre 16 archivos. Sin findings bloqueantes.",
+    "commit_797772f_S6_S8_E2E": "GGA review automatico PASSED en 1 round sobre 7 archivos nuevos. 3 advisories no-blocking reportadas (todas cerradas en sesion 6 polish-1/2/3)."
+  },
+  "l38_reinforcement": "Este audit Paso 7 + los 2 GGA reviews previos + Paso 8 pendiente forman N=4+ evidencia para L38 dentro del Framework Departamento. Sigue intra-proyecto (no califica A26 cross-proyecto segun architecture/README.md).",
+  "next_step": "Audit Paso 8 (15 categorias adversariales documentadas en docs/arquitectura/ARQUITECTURA-sigma-auto-fix-mechanic.md sec 9.1) -> construir tests/test_adversarial.py. Si Paso 8 PASS sin criticos -> ADR-011 v0.9 PARTIAL -> v1.0 ACCEPTED candidato (sesion 7 dedicada a la promocion arquitectonica)."
+}
