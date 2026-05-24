@@ -20,6 +20,7 @@ dev = [
 
 [project.scripts]
 sigma-classify = "sigma.finding_classifier.cli:main"
+sigma-mechanic = "sigma.auto_fix_mechanic.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["sigma*"]

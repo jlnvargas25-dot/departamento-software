@@ -3,9 +3,57 @@
 > **Propósito**: handoff táctico post-Sprint 3 sesión 3 (BLOQUE 1 sync completado + BLOQUE 2 pasos 1-5 de `sigma:auto-fix-mechanic`).
 > Stallen DIFERIDO hasta que el Framework esté maduro.
 
-**Última actualización**: 2026-05-22 (Sprint 3 sesión 3 cerrada — ADR-011 v0.9 PARTIAL, L38 formal N=2, auto-fix-mechanic PRD-ready o build-ready según Bloque 2)
+**Última actualización**: 2026-05-24 (Sprint 3 sesión 4 cerrada — auto-fix-mechanic S-1..S-5 core operativo, 90 tests PASS)
 **Cliente recomendado próxima sesión**: **Claude Code CLI** dentro de `C:\DEPARTAMENTO-SOFTWARE\` (skills speckit-* + ecc:* + claude-mem:* + sdd-* + superpowers:* todos cargados)
-**Versión**: 7.0 (post Sprint 3 sesión 3 — sync + segundo componente trinidad correctiva planeado)
+**Versión**: 7.1 (post Sprint 3 sesión 4 — S-1..S-5 core build; S-6..S-8 + audits Paso 7+8 en sesión 5)
+
+---
+
+## ✅ SPRINT 3 SESIÓN 4 CERRADA (2026-05-24)
+
+**`sigma:auto_fix_mechanic` S-1..S-5 core OPERATIVO** — pasos 6 del PROTOCOLO ejecutado sobre la mitad core del plan auditado en sesión 3. Build completo + commit + push pusheado a origin/main.
+
+### Stories completadas
+
+| Story | Descripción | Tests | LOC prod |
+|-------|-------------|-------|----------|
+| S-1 | Foundation: pyproject + models + loader + 8 fixtures (R10 cerrada) | 30 | ~150 |
+| S-2 | Pre-flight check toolbox (AM9) + Invoker (subprocess wrapper) | 18 | ~130 |
+| S-3 | Snapshot + rollback atómico (R-5 reversibilidad) + threading.Lock intra-process | 14 | ~110 |
+| S-4 | Verifier dispatcher 5 methods (re-run-eslint, prettier-check, ast-check, filename-regex, regex-grep) | 17 | ~160 |
+| S-5 | Orchestrator + escalation logic (4 casos del flow + AM7 idempotencia) | 11 | ~180 |
+
+**Métricas finales sesión 4**:
+- **90 tests mechanic PASS en 3.4s** (suite total 163: 73 classifier sin regresión + 90 mechanic)
+- ~730 LOC producción + ~1100 LOC tests (ratio 1.5:1)
+- 8 fixture files target con cobertura 15/15 rule_ids Tier A
+
+### Precondiciones audit cerradas durante el build
+
+- **R04 — filelock**: ✅ Cerrada via stdlib `threading.Lock` intra-process (cero dep externa, consistente con classifier). Cross-process (fcntl/msvcrt) diferido a Sprint 5+ si surge necesidad real.
+- **R08 — `serializeErr()` helper**: ⏳ Pospuesto a S-6 sesión 5 (codemod ts-morph `console_to_json_structured.ts` aún no construido).
+- **R10 — fixture target files**: ✅ Cerrada con 8 archivos sintéticos en `framework/sigma/auto_fix_mechanic/tests/fixtures/target_files/` cubriendo los 15 rule_ids.
+
+### Decisiones de implementación tomadas
+
+- **Lock cross-platform**: `threading.Lock` + dict global por path absoluto (intra-process suficiente para Sprint 3). Documentado en `snapshot.py` como diferimiento explícito.
+- **shlex.split**: `posix=True` (no `posix=False`) — Windows-compat con paths quotados (`"C:\Users\Windows 11\..."`); previene `[WinError 5]` por quotes literales en args.
+- **Reemplazo `<file>` POST-split**: paths con espacios en `tmp_path` (pytest) quedan como single arg sin necesidad de quote escaping.
+- **Verification timeout default 15s** (vs invocación 30s) — verify es más liviano (re-run del tool en modo check).
+- **Logging estructurado a stderr**: `[mechanic] event=<x> rule_id=<y> file=<z>:<n> reason=<r>` por finding — parseable, sin acoplar a logger framework específico.
+
+### Próxima sesión (Sprint 3 sesión 5)
+
+**S-6..S-8 + audits**:
+- S-6: 4 codemods ts-morph custom (non_null_to_optional, console_to_logger, console_to_json_structured con `serializeErr()` helper [R08 cerrada], infer_type_from_context) — ~4hs
+- S-7: 2 codemods Python custom (rename_migration_timestamp, add_volatile_marker) — ~1.5hs
+- S-8: CLI `sigma-mechanic` + M3 empirical measurement sobre fixture sprint1-iteracion3 — ~2hs
+- Audit Paso 7 (G1-G33 + FG1-FG14 + SOLID + zero-trust)
+- Audit Paso 8 (tests adversariales obligatorios — categorías 1-15 sección 9.1 arquitectura)
+
+**Validación L38 N=3**: si commit final sesión 5 pasa GGA en 1 round sin bypass → L38 alcanza N=3 estructural → puede graduar a regla A26 universal en `architecture/PRINCIPIOS-ARQUITECTURA.md`.
+
+**Si M3 ≥90% medido en S-8** → ADR-011 candidato a promover de PROPOSED v0.9 PARTIAL a ACCEPTED v1.0.
 
 ---
 
