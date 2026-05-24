@@ -1,0 +1,94 @@
+{
+  "audit_id": "audit-plan-correction-agent-2026-05-24",
+  "audit_date": "2026-05-24",
+  "auditor": "operador-manual (sigma:plan-auditor no construido aun)",
+  "sprint": "Sprint 4 sesion 1",
+  "component_under_audit": "sigma:correction_agent_bounded (Phase 2 ADR-011 Tier B handler, tercer componente de la trinidad correctiva)",
+  "protocolo_step": "Paso 5 PROTOCOLO-CONSTRUCCION-CODIGO.md",
+  "precedent": "audit-plan-auto-fix-mechanic-2026-05-22.json",
+  "audited_artifacts": [
+    "docs/prd/PRD-sigma-correction-agent-bounded.md",
+    "docs/dominio/correction-templates-catalog.md",
+    "docs/arquitectura/ARQUITECTURA-sigma-correction-agent-bounded.md",
+    "docs/stories/STORIES-sigma-correction-agent-bounded.md"
+  ],
+  "validators": {
+    "R01_ancestros_validos": {
+      "status": "PASS",
+      "notes": "Plan ancla en ADR-011 ACCEPTED v1.0. Upstream classifier v0.1.0 + mechanic v0.1.0 referenciados. Principios rectores 1, 2, 4 citados. FileSnapshot reuse documentado como dependencia del mechanic."
+    },
+    "R02_referencias_coherentes": {
+      "status": "PASS",
+      "notes": "Cross-references PRD <-> dominio (templates catalog) <-> arquitectura <-> stories coherentes. action_hints en templates catalog (7) matchean rules.yaml Tier B (7). Cada artefacto cita hermanos en header."
+    },
+    "R03_detectar_ciclos": {
+      "status": "PASS",
+      "notes": "DAG stories: S-1 -> S-2 -> S-3 -> S-4 -> S-5 -> S-6. S-7 paralelo con deps solo de S-1. Sin ciclos."
+    },
+    "R04_deps_fuera_de_scope": {
+      "status": "WARN",
+      "notes": "Dependencia nueva: anthropic SDK para LLM calls. No presente en classifier ni mechanic (ambos son Python puro sin LLM). Requiere API key configurada en environment.",
+      "warning_detail": "anthropic SDK es la primera dependencia LLM del framework sigma. Impacto: pyproject.toml necesita optional dependency [llm] o [correction]. API key management: env var ANTHROPIC_API_KEY.",
+      "action_required": "Confirmar antes de S-3 build: (a) instalar anthropic SDK como dep opcional, (b) documentar API key requirement en README, (c) tests de S-3 usan mock (no LLM real)."
+    },
+    "R05_naming_conventions": {
+      "status": "PASS",
+      "notes": "Package: correction_agent_bounded (snake_case, consistente con finding_classifier y auto_fix_mechanic). Templates: kebab-case filenames (consistente con action_hints). Models: PascalCase dataclasses."
+    },
+    "R06_colisiones_de_tablas": {
+      "status": "N/A",
+      "notes": "No hay tablas DB. Templates son archivos YAML standalone. Namespace templates/correction/ es nuevo sin colision."
+    },
+    "R07_aceptacion_medible": {
+      "status": "PASS",
+      "notes": "7 ACs funcionales (AB1-AB7) + 3 no funcionales (AB8-AB10) con criterios objetivos verificables. M4 ADR-011 (>=70% patch success) referenciado como metric principal. MM1-MM4 metricas operativas definidas."
+    },
+    "R08_helpers_y_utils": {
+      "status": "PASS",
+      "notes": "FileSnapshot reutilizado del mechanic (import, no duplicacion). llm_client.py es wrapper minimo ~20 LOC. prompt_builder.py resuelve placeholders — logica clara, no util generico."
+    },
+    "R09_scope_feature_flags": {
+      "status": "PASS",
+      "notes": "No hay feature flags en el componente. project_context.yaml incluye feature_flag_config como referencia del proyecto target, no del framework. --dry-run flag en CLI es mecanismo de test, no feature flag."
+    },
+    "R10_fixtures_y_datos_test": {
+      "status": "WARN",
+      "notes": "Fixtures necesarias: project_context.yaml de test + archivos .ts/.sql con patrones Tier B (silent catch, missing auth, missing zod, etc.). Similar a mechanic fixtures pero con patrones distintos.",
+      "warning_detail": "7 target files con patrones Tier B no existen aun. Deben crearse en S-1 como DoD.",
+      "action_required": "Agregar al DoD de S-1: crear fixtures target_files/ con patrones para cada uno de los 7 action_hints."
+    },
+    "R11_riesgos_top3": {
+      "status": "PASS",
+      "notes": "4 riesgos documentados en PRD (RB1-RB4). RB1 (bug sutil post-patch) y RB4 (hallucinated imports) son los mas criticos. Mitigaciones: verificacion especifica por template (no generica) + rollback. 12 adversarial categories en arquitectura sec 9."
+    },
+    "R12_cross_check_empirico": {
+      "status": "PASS",
+      "notes": "7 reglas Tier B provienen de findings reales de Sprint 1 Iteracion 3. Templates diseñados contra patrones observados empiricamente, no especulados. Cross-check con rules.yaml: 7/7 action_hints cubiertos."
+    },
+    "R13_estimacion_vs_scope": {
+      "status": "PASS",
+      "notes": "~12hs en 2 sesiones. 7 stories con estimaciones individuales. 71 tests proyectados, 500-700 LOC prod + 200 YAML templates. Consistente con ratio del mechanic (~730 LOC core + ~1100 tests en 2 sesiones build)."
+    },
+    "R14_integracion_upstream": {
+      "status": "PASS",
+      "notes": "Input: ClassifiedFinding (importado de classifier.models). Output: CorrectionResult JSON (nuevo model). FileSnapshot importado de mechanic.snapshot. No modifica upstream — consume interfaces existentes."
+    },
+    "R15_rollback_plan": {
+      "status": "PASS",
+      "notes": "Rollback atomico via FileSnapshot (probado con 194 tests en mechanic). Escalacion a Tier C si verificacion falla. Package es additive (no modifica classifier ni mechanic). git revert del commit deshace todo."
+    }
+  },
+  "summary": {
+    "total_validators": 15,
+    "pass": 12,
+    "warn": 2,
+    "fail": 0,
+    "na": 1,
+    "verdict": "READY_FOR_BUILD_WITH_DEUDAS_TRACKED",
+    "warnings_tracked": [
+      "R04: anthropic SDK como primera dep LLM — confirmar install strategy antes de S-3",
+      "R10: 7 fixture files target con patrones Tier B — crear en S-1 DoD"
+    ],
+    "critical_blockers": []
+  }
+}
