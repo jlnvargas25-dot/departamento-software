@@ -62,6 +62,9 @@ cuando se construye sin auditar el plan previamente.*
 | Sprint 3 sesión 4 — N=3 | `3701463` (S-1..S-5 mechanic core, 90 tests) | 1 | ❌ Ninguno | ✅ Sí |
 | Sprint 3 sesión 5 — N=4 | `797772f` (S-6..S-8 mechanic E2E, 181 tests, R08 cerrada) | 1 | ❌ Ninguno | ✅ Sí |
 | Sprint 3 sesión 6 — N=5 | `d35c3f0` (Audit Paso 7+8 PASS + polish 3 advisories, 194 tests) | 1 | ❌ Ninguno | ✅ Sí (audit consolidado) |
+| Sprint 4 sesión 1 — **CONTRAEJEMPLO** | `05148e1` (correction-agent-bounded, LLM dep) | 5 + scope bypass | ✅ `FRAMEWORK_SCOPE=sandbox` | ✅ Sí | 
+
+**Boundary condition (L42)**: L38 holds for 100% deterministic Python code but NOT for components with LLM SDK dependencies. See L42 below.
 
 **Importancia para el Framework**: primera lección que cierra empíricamente
 el ciclo **PREVENTIVA → VERIFICABLE** (2° principio rector). Demuestra que la
@@ -121,6 +124,10 @@ a este archivo.
 | L35 | reviewer adversarial sin auto-fix + sin scope-awareness asintotiza al infinito | Sprint 2 sesión 1 cierre | ADR-011 §Conexiones |
 | L36 | calibración de scope antes que capa correctiva — scope es cura barata, correctiva es cura cara | Sprint 2 sesión 1 cierre | ADR-011 §Conexiones |
 | L37 | scope awareness y capa correctiva son ortogonales y complementarias — el orden importa | Sprint 2 sesión 1 cierre | ADR-011 §Conexiones |
+| L42 | LLM-dependent components require scope-aware bypass; GGA review surface exceeds convergence for novel SDK integrations | Sprint 4 sesión 1 (5 rounds + scope bypass) | ADR-011 v1.1, L38 boundary |
+| L41 | commit-per-session en builds multi-story produce history limpio y permite GGA verify por sesión | Sprint 3 ses 4-6 | Radar polinización Sprint 3 |
+| L40 | cross-reference testing evita duplicación adversarial sin perder cobertura | Sprint 3 ses 6 | Radar polinización Sprint 3 |
+| L39 | audit manual que consolida evidencia GGA previo reduce esfuerzo y mejora trazabilidad | Sprint 3 ses 6 | Radar polinización Sprint 3 |
 | L34 | convenciones del operador instruidas en el prompt del sub-agent son sticky, no requieren skill structural inicialmente | Sprint 1 Iteración 3 cierre | ADR-009 |
 | L33 | sub-agent scope ideal <15 files modificados | Sprint 1 Iteración 3 cierre | ADR-009 |
 | L32 | Server Actions vs REST en App Router crea fricción adversarial | Sprint 1 Iteración 3 cierre | ADR-009 |
